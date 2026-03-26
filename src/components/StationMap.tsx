@@ -1,33 +1,21 @@
 import { useEffect, useState } from "react";
 import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
-import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import type { GasStation } from "@/types/station";
-import { StatusBadge } from "./StatusBadge";
 import { toast } from "sonner";
-
-// Fix default marker icon issue with bundlers
-delete (L.Icon.Default.prototype as any)._getIconUrl;
+import L from "leaflet";
+import {
+	CARTO_LIGHT_TILE_URL,
+	createPinIcon,
+	MANILA_CENTER,
+	OSM_ATTRIBUTION,
+} from "@/lib/leaflet";
 
 const statusColors = {
 	Available: "#22c55e",
 	Low: "#f59e0b",
 	Out: "#ef4444",
 } as const;
-
-function createPinIcon(color: string) {
-	const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="40" viewBox="0 0 28 40">
-    <path d="M14 0C6.268 0 0 6.268 0 14c0 10.5 14 26 14 26s14-15.5 14-26C28 6.268 21.732 0 14 0z" fill="${color}"/>
-    <circle cx="14" cy="14" r="6" fill="white" opacity="0.9"/>
-  </svg>`;
-	return L.divIcon({
-		html: svg,
-		className: "",
-		iconSize: [28, 40],
-		iconAnchor: [14, 40],
-		popupAnchor: [0, -40],
-	});
-}
 
 function FitBounds({ stations }: { stations: GasStation[] }) {
 	const map = useMap();
@@ -44,8 +32,7 @@ interface StationMapProps {
 }
 
 export function StationMap({ stations }: StationMapProps) {
-	// const center: [number, number] = [14.5995, 120.9842]; // Manila
-	const [center, setCenter] = useState([14.5995, 120.9842]);
+	const [center, setCenter] = useState<[number, number]>(MANILA_CENTER);
 
 	const handleDetectLocation = () => {
 		if (!navigator.geolocation) {
@@ -78,8 +65,8 @@ export function StationMap({ stations }: StationMapProps) {
 				style={{ background: "hsl(222 47% 11%)" }}
 			>
 				<TileLayer
-					attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>'
-					url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
+					attribution={OSM_ATTRIBUTION}
+					url={CARTO_LIGHT_TILE_URL}
 				/>
 				<FitBounds stations={stations} />
 				{stations.map((station) => (

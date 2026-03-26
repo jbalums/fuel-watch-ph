@@ -161,7 +161,7 @@ export default function Index() {
         )}
 
         {tab === "report" && <ReportForm />}
-        {tab === "admin" && <AdminDashboard />}
+        {tab === "admin" && isAdmin && <AdminDashboard />}
       </main>
 
       <BottomNav active={tab} onChange={handleTabChange} isAdmin={isAdmin} />

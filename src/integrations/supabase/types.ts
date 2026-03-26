@@ -16,39 +16,59 @@ export type Database = {
     Tables: {
       fuel_reports: {
         Row: {
+          applied_station_id: string | null
           created_at: string
           fuel_type: string
           id: string
           lat: number | null
           lng: number | null
           price: number
+          review_status: string
+          reviewed_at: string | null
+          reviewed_by: string | null
           station_name: string
           status: string
           user_id: string
         }
         Insert: {
+          applied_station_id?: string | null
           created_at?: string
           fuel_type: string
           id?: string
           lat?: number | null
           lng?: number | null
           price: number
+          review_status?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           station_name: string
           status?: string
           user_id: string
         }
         Update: {
+          applied_station_id?: string | null
           created_at?: string
           fuel_type?: string
           id?: string
           lat?: number | null
           lng?: number | null
           price?: number
+          review_status?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           station_name?: string
           status?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fuel_reports_applied_station_id_fkey"
+            columns: ["applied_station_id"]
+            isOneToOne: false
+            referencedRelation: "gas_stations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       gas_stations: {
         Row: {
@@ -142,12 +162,24 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      approve_fuel_report: {
+        Args: {
+          _report_id: string
+        }
+        Returns: string
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
         Returns: boolean
+      }
+      reject_fuel_report: {
+        Args: {
+          _report_id: string
+        }
+        Returns: string
       }
     }
     Enums: {

@@ -1,5 +1,6 @@
 export type FuelType = "Unleaded" | "Premium" | "Diesel";
 export type StationStatus = "Available" | "Low" | "Out";
+export type FuelReportReviewStatus = "pending" | "approved" | "rejected";
 
 export interface GasStation {
   id: string;
@@ -18,13 +19,17 @@ export interface GasStation {
 export interface FuelReport {
   id: string;
   stationName: string;
-  lat: number;
-  lng: number;
+  lat: number | null;
+  lng: number | null;
   price: number;
   fuelType: FuelType;
   status: StationStatus;
   reportedAt: string;
   reportedBy: string;
+  reviewStatus: FuelReportReviewStatus;
+  reviewedAt: string | null;
+  reviewedBy: string | null;
+  appliedStationId: string | null;
 }
 
 export type SortOption = "cheapest" | "nearest" | "status";
