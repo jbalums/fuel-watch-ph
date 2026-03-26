@@ -1,9 +1,10 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import type { GasStation } from "@/types/station";
 import { StatusBadge } from "./StatusBadge";
+import { toast } from "sonner";
 
 // Fix default marker icon issue with bundlers
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -43,11 +44,33 @@ interface StationMapProps {
 }
 
 export function StationMap({ stations }: StationMapProps) {
-	const center: [number, number] = [14.5995, 120.9842]; // Manila
+	// const center: [number, number] = [14.5995, 120.9842]; // Manila
+	const [center, setCenter] = useState([14.5995, 120.9842]);
+
+	const handleDetectLocation = () => {
+		if (!navigator.geolocation) {
+			toast.error("Geolocation not supported");
+			return;
+		}
+		navigator.geolocation.getCurrentPosition(
+			(pos) => {
+				setCenter([pos.coords.latitude, pos.coords.longitude]);
+				toast.success("Location detected!");
+			},
+			() => {
+				toast.error("Could not detect location");
+			},
+		);
+	};
+
+	useEffect(() => {
+		handleDetectLocation();
+	}, []);
 
 	return (
 		<div className="overflow-hidden rounded-2xl border border-border shadow-sovereign">
 			<MapContainer
+				key={`map-center-${center[0]}`}
 				center={center}
 				zoom={12}
 				scrollWheelZoom

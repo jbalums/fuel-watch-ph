@@ -66,29 +66,18 @@ export default function Auth() {
 		setLoading(false);
 	};
 	const signInWithGoogle = async () => {
+		setGoogleLoading(true);
 		const { data, error } = await supabase.auth.signInWithOAuth({
 			provider: "google",
 			options: {
-				redirectTo: "/", // Your app's callback URL
+				redirectTo:
+					window.location.hostname === "localhost"
+						? "http://localhost:8080/"
+						: "https://fuel-watch-ph.pages.dev/",
 			},
 		});
 	};
-	const login = useGoogleLogin({
-		onSuccess: async (tokenResponse) => {
-			setGoogleLoading(true);
 
-			const { data, error } = await supabase.auth.signInWithIdToken({
-				provider: "google",
-				token: tokenResponse.access_token, // Or credential if using a JWT response
-			});
-			if (error) {
-				console.error("Supabase auth error:", error.message);
-			} else {
-				console.log("Supabase session started:", data.session);
-			}
-		},
-		onError: (error) => console.log("Login Failed:", error),
-	});
 	return (
 		<div className="flex min-h-screen items-center justify-center bg-background px-5">
 			<motion.div
@@ -194,8 +183,7 @@ export default function Auth() {
 
 				<motion.button
 					whileTap={{ scale: 0.97 }}
-					onClick={login}
-					// onClick={handleGoogleSignIn}
+					onClick={signInWithGoogle}
 					disabled={googleLoading}
 					className="mt-4 flex w-full items-center justify-center gap-3 rounded-xl bg-card py-3.5 font-medium text-foreground shadow-sovereign sovereign-ease hover:bg-muted transition-colors disabled:opacity-50"
 				>
