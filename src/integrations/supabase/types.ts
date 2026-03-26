@@ -80,6 +80,7 @@ export type Database = {
           lng: number
           name: string
           price_per_liter: number
+          prices: Json
           report_count: number
           status: string
           updated_at: string
@@ -93,6 +94,7 @@ export type Database = {
           lng: number
           name: string
           price_per_liter?: number
+          prices?: Json
           report_count?: number
           status?: string
           updated_at?: string
@@ -106,6 +108,7 @@ export type Database = {
           lng?: number
           name?: string
           price_per_liter?: number
+          prices?: Json
           report_count?: number
           status?: string
           updated_at?: string

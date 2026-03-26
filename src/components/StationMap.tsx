@@ -59,7 +59,7 @@ export function StationMap({ stations }: StationMapProps) {
 			<MapContainer
 				key={`map-center-${center[0]}`}
 				center={center}
-				zoom={12}
+				zoom={14}
 				scrollWheelZoom
 				className="h-[75vh] w-full"
 				style={{ background: "hsl(222 47% 11%)" }}
