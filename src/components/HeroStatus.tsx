@@ -7,7 +7,7 @@ interface HeroStatusProps {
 
 const fuelTypes: FuelType[] = ["Unleaded", "Premium", "Diesel"];
 const fuelTypesColors: string[] = [
-	"text-blue-600",
+	"text-green-600",
 	"text-red-600",
 	"text-amber-600",
 ];
