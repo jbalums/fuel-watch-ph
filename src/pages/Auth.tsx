@@ -7,7 +7,7 @@ import { motion } from "framer-motion";
 import { Fuel, Mail, Lock, User, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
 import { useGoogleLogin } from "@react-oauth/google";
-
+import logo from "@/assets/images/logo.png";
 export default function Auth() {
 	const navigate = useNavigate();
 	const { user } = useAuth();
@@ -88,8 +88,9 @@ export default function Auth() {
 			>
 				{/* Logo */}
 				<div className="mb-8 flex flex-col items-center gap-3">
-					<div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary">
-						<Fuel className="h-7 w-7 text-primary-foreground" />
+					<div className="flex h-28 w-32 items-center justify-center rounded-2xl bg-white shadow-sm">
+						{/* <Fuel className="h-7 w-7 text-primary-foreground" /> */}
+						<img src={logo} className="h-24 w-24" />
 					</div>
 					<h1 className="text-headline text-foreground">
 						FuelWatch PH

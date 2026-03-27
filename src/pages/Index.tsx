@@ -17,7 +17,7 @@ import { useStations } from "@/hooks/useStations";
 import { Fuel, LogIn, Loader2 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAdminRole } from "@/hooks/useAdminRole";
-
+import logo from "@/assets/images/Icon.png";
 type Tab = "home" | "map" | "search" | "report" | "admin";
 
 export default function Index() {
@@ -69,8 +69,8 @@ export default function Index() {
 			<header className="sticky top-0 z-40 surface-glass px-5 py-4">
 				<div className="container flex items-center justify-between">
 					<div className="flex items-center gap-3">
-						<div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary">
-							<Fuel className="h-5 w-5 text-primary-foreground" />
+						<div className="flex h-9 w-9 items-center justify-center">
+							<img src={logo} className="h-8 w-8" />
 						</div>
 						<div>
 							<h1 className="text-base font-bold text-foreground tracking-tight">
