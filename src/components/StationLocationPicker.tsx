@@ -47,7 +47,7 @@ function GoogleStationLocationPicker({
 		[existingStations],
 	);
 	const [viewportCenter, setViewportCenter] = useState(
-		selectedPosition ?? existingCenter ?? MANILA_CENTER,
+		selectedPosition ?? MANILA_CENTER,
 	);
 	const [basemap, setBasemap] = useState<GoogleBasemapOption>("standard");
 	const [isResolvingAddress, setIsResolvingAddress] = useState(false);
@@ -89,13 +89,7 @@ function GoogleStationLocationPicker({
 	}, [selectedPosition]);
 
 	useEffect(() => {
-		if (!selectedPosition && existingCenter) {
-			setViewportCenter(existingCenter);
-		}
-	}, [existingCenter, selectedPosition]);
-
-	useEffect(() => {
-		if (selectedPosition || existingCenter || !navigator.geolocation) {
+		if (selectedPosition || !navigator.geolocation) {
 			return;
 		}
 
@@ -107,7 +101,7 @@ function GoogleStationLocationPicker({
 				});
 			},
 			() => {
-				setViewportCenter(MANILA_CENTER);
+				setViewportCenter(existingCenter ?? MANILA_CENTER);
 			},
 		);
 	}, [existingCenter, selectedPosition]);

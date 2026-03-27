@@ -59,7 +59,7 @@ export function StationCard({ station, index }: StationCardProps) {
 							<p className="mt-0.5 text-2xl font-bold tabular-nums text-shadow-sm text-shadow-blue-300">
 								{station.status === "Out"
 									? "—"
-									: `₱${parseFloat(station.prices?.Unleaded).toFixed(2)}`}
+									: `₱${station.prices?.Unleaded > 0 ? parseFloat(station.prices?.Unleaded).toFixed(2) : "-"}`}
 							</p>
 						</div>
 						<div className="h-10 w-[1px] bg-slate-200 dark:bg-slate-600"></div>
@@ -70,7 +70,7 @@ export function StationCard({ station, index }: StationCardProps) {
 							<p className="mt-0.5 text-2xl font-bold tabular-nums text-foreground">
 								{station.status === "Out"
 									? "—"
-									: `₱${parseFloat(station.prices?.Premium).toFixed(2)}`}
+									: `₱${station.prices?.Premium > 0 ? parseFloat(station.prices?.Premium).toFixed(2) : "-"}`}
 							</p>
 						</div>
 						<div className="h-10 w-[1px] bg-slate-200 dark:bg-slate-600"></div>
@@ -81,7 +81,7 @@ export function StationCard({ station, index }: StationCardProps) {
 							<p className="mt-0.5 text-2xl font-bold tabular-nums text-foreground">
 								{station.status === "Out"
 									? "—"
-									: `₱${parseFloat(station.prices?.Diesel).toFixed(2)}`}
+									: `₱${station.prices?.Diesel > 0 ? parseFloat(station.prices?.Diesel).toFixed(2) : "-"}`}
 							</p>
 						</div>
 					</div>

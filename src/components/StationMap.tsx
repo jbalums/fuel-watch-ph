@@ -28,6 +28,7 @@ interface StationMapProps {
 
 function GoogleStationMap({ stations }: StationMapProps) {
 	const [center, setCenter] = useState(MANILA_CENTER);
+	const [hasUserLocation, setHasUserLocation] = useState(false);
 	const [selectedStationId, setSelectedStationId] = useState<string | null>(
 		null,
 	);
@@ -44,6 +45,7 @@ function GoogleStationMap({ stations }: StationMapProps) {
 					lat: position.coords.latitude,
 					lng: position.coords.longitude,
 				});
+				setHasUserLocation(true);
 			},
 			() => {
 				toast.error("Could not detect location");
@@ -54,6 +56,12 @@ function GoogleStationMap({ stations }: StationMapProps) {
 	useEffect(() => {
 		const map = mapRef.current;
 		if (!map) {
+			return;
+		}
+
+		if (hasUserLocation) {
+			map.setCenter(center);
+			map.setZoom(15);
 			return;
 		}
 
@@ -74,7 +82,7 @@ function GoogleStationMap({ stations }: StationMapProps) {
 			bounds.extend({ lat: station.lat, lng: station.lng });
 		}
 		map.fitBounds(bounds, 80);
-	}, [center, stations]);
+	}, [center, hasUserLocation, stations]);
 
 	useEffect(() => {
 		if (!selectedStationId || !mapRef.current) {
