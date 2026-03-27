@@ -36,6 +36,20 @@ function getFuelSortPrice(station: GasStation, fuelFilter: FilterFuelType) {
 	return station.prices[fuelFilter] ?? Number.POSITIVE_INFINITY;
 }
 
+function formatCompactUserName(rawName: string) {
+	const parts = rawName.trim().split(/\s+/).filter(Boolean);
+
+	if (parts.length === 0) {
+		return "";
+	}
+
+	if (parts.length === 1) {
+		return parts[0];
+	}
+
+	return `${parts[0]} ${parts[1][0].toUpperCase()}.`;
+}
+
 export default function Index() {
 	const { user } = useAuth();
 	const { isAdmin } = useAdminRole();
@@ -46,6 +60,12 @@ export default function Index() {
 	const [fuelFilter, setFuelFilter] = useState<FilterFuelType>("All");
 	const [statusFilter, setStatusFilter] = useState<StatusFilter>("All");
 	const [sortBy, setSortBy] = useState<SortOption>("price_asc");
+	const compactUserName = formatCompactUserName(
+		user?.user_metadata?.name ||
+			user?.user_metadata?.display_name ||
+			user?.email ||
+			"",
+	);
 
 	const filteredStations = useMemo(() => {
 		let list = [...stations];
@@ -96,7 +116,7 @@ export default function Index() {
 
 	return (
 		<div className="min-h-screen bg-background pb-24">
-			<header className="sticky top-0 z-40 surface-glass px-5 py-4">
+			<header className="sticky top-0 z-40 surface-glass px-2 md:px-5 py-4">
 				<div className="container flex items-center justify-between">
 					<div className="flex items-center gap-3">
 						<div className="flex h-9 w-9 items-center justify-center">
@@ -111,12 +131,12 @@ export default function Index() {
 							</p>
 						</div>
 					</div>
-					<div className="flex items-center gap-4">
+					<div className="flex items-center gap-3">
 						<ThemeToggle />
 						{user ? (
 							<button
 								onClick={() => navigate("/profile")}
-								className="sovereign-ease transition-transform hover:scale-105 flex items-center gap-2"
+								className="sovereign-ease transition-transform hover:scale-105 flex items-center gap-1"
 							>
 								<Avatar className="h-8 w-8 ring-1 ring-border">
 									<AvatarImage
@@ -133,7 +153,7 @@ export default function Index() {
 									</AvatarFallback>
 								</Avatar>
 								<span className="text-sm font-bold text-primary">
-									{user.user_metadata?.name}
+									{compactUserName}
 								</span>
 							</button>
 						) : (
