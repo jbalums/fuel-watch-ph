@@ -119,8 +119,8 @@ function GoogleStationMap({ stations }: StationMapProps) {
 			}}
 			options={{
 				fullscreenControl: true,
-				mapTypeControl: false,
-				streetViewControl: false,
+				mapTypeControl: true,
+				streetViewControl: true,
 				gestureHandling: "greedy",
 			}}
 		>
