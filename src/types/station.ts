@@ -12,6 +12,7 @@ export interface GasStation {
   status: StationStatus;
   fuelType: FuelType;
   pricePerLiter: number;
+  updatedAt: string;
   lastUpdated: string;
   reportCount: number;
 }
@@ -32,5 +33,6 @@ export interface FuelReport {
   appliedStationId: string | null;
 }
 
-export type SortOption = "cheapest" | "nearest" | "status";
+export type SortOption = "price_asc" | "price_desc";
 export type FilterFuelType = FuelType | "All";
+export type StatusFilter = StationStatus | "All";

@@ -1,4 +1,8 @@
-import { FilterFuelType, SortOption } from "@/types/station";
+import {
+  FilterFuelType,
+  SortOption,
+  StatusFilter,
+} from "@/types/station";
 import { cn } from "@/lib/utils";
 import { ArrowDownUp } from "lucide-react";
 
@@ -7,14 +11,17 @@ interface SearchFilterProps {
   onSearchChange: (q: string) => void;
   fuelFilter: FilterFuelType;
   onFuelFilterChange: (f: FilterFuelType) => void;
+  statusFilter: StatusFilter;
+  onStatusFilterChange: (status: StatusFilter) => void;
   sortBy: SortOption;
   onSortChange: (s: SortOption) => void;
 }
 
 const fuelTypes: FilterFuelType[] = ["All", "Unleaded", "Premium", "Diesel"];
+const statusOptions: StatusFilter[] = ["All", "Available", "Low", "Out"];
 const sortOptions: { value: SortOption; label: string }[] = [
-  { value: "cheapest", label: "Cheapest" },
-  { value: "status", label: "Status" },
+  { value: "price_asc", label: "Low to High" },
+  { value: "price_desc", label: "High to Low" },
 ];
 
 export function SearchFilter({
@@ -22,9 +29,13 @@ export function SearchFilter({
   onSearchChange,
   fuelFilter,
   onFuelFilterChange,
+  statusFilter,
+  onStatusFilterChange,
   sortBy,
   onSortChange,
 }: SearchFilterProps) {
+  const priceSortEnabled = fuelFilter !== "All";
+
   return (
     <div className="flex flex-col gap-3">
       {/* Search */}
@@ -53,23 +64,48 @@ export function SearchFilter({
           </button>
         ))}
 
-        {/* Sort */}
-        <div className="ml-auto flex shrink-0 items-center gap-1">
-          <ArrowDownUp className="h-3.5 w-3.5 text-muted-foreground" />
-          {sortOptions.map((opt) => (
-            <button
-              key={opt.value}
-              onClick={() => onSortChange(opt.value)}
+        <div className="ml-auto flex shrink-0 items-center gap-2">
+          <select
+            value={statusFilter}
+            onChange={(e) =>
+              onStatusFilterChange(e.target.value as StatusFilter)
+            }
+            className="rounded-full bg-surface-alt px-3 py-1.5 text-ui text-foreground outline-none focus:ring-2 focus:ring-primary/20 sovereign-ease transition-all"
+          >
+            {statusOptions.map((status) => (
+              <option key={status} value={status}>
+                {status === "All" ? "All Statuses" : status}
+              </option>
+            ))}
+          </select>
+
+          <div className="flex shrink-0 items-center gap-1">
+            <ArrowDownUp
               className={cn(
-                "rounded-full px-3 py-1.5 text-ui sovereign-ease transition-colors",
-                sortBy === opt.value
-                  ? "bg-accent text-accent-foreground"
-                  : "text-muted-foreground hover:text-foreground"
+                "h-3.5 w-3.5",
+                priceSortEnabled
+                  ? "text-muted-foreground"
+                  : "text-muted-foreground/50"
               )}
-            >
-              {opt.label}
-            </button>
-          ))}
+            />
+            {sortOptions.map((opt) => (
+              <button
+                key={opt.value}
+                onClick={() => onSortChange(opt.value)}
+                disabled={!priceSortEnabled}
+                className={cn(
+                  "rounded-full px-3 py-1.5 text-ui sovereign-ease transition-colors",
+                  priceSortEnabled && sortBy === opt.value
+                    ? "bg-accent text-accent-foreground"
+                    : priceSortEnabled
+                      ? "text-muted-foreground hover:text-foreground"
+                      : "cursor-not-allowed text-muted-foreground/50"
+                )}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
     </div>

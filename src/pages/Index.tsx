@@ -11,24 +11,41 @@ import { StationMap } from "@/components/StationMap";
 import { AdminDashboard } from "@/components/AdminDashboard";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { mockAlerts } from "@/data/mockStations";
-import { FilterFuelType, SortOption } from "@/types/station";
+import {
+	FilterFuelType,
+	FuelType,
+	GasStation,
+	SortOption,
+	StatusFilter,
+} from "@/types/station";
 import { useAuth } from "@/contexts/AuthContext";
 import { useStations } from "@/hooks/useStations";
 import { Fuel, LogIn, Loader2 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAdminRole } from "@/hooks/useAdminRole";
 import logo from "@/assets/images/Icon.png";
+
 type Tab = "home" | "map" | "search" | "report" | "admin";
 
+function hasValidFuelPrice(station: GasStation, fuelType: FuelType) {
+	const price = station.prices[fuelType];
+	return typeof price === "number" && Number.isFinite(price) && price > 0;
+}
+
+function getFuelSortPrice(station: GasStation, fuelFilter: FilterFuelType) {
+	return station.prices[fuelFilter] ?? Number.POSITIVE_INFINITY;
+}
+
 export default function Index() {
-	const { user, signOut } = useAuth();
+	const { user } = useAuth();
 	const { isAdmin } = useAdminRole();
 	const navigate = useNavigate();
 	const { data: stations = [], isLoading: stationsLoading } = useStations();
 	const [tab, setTab] = useState<Tab>("home");
 	const [searchQuery, setSearchQuery] = useState("");
 	const [fuelFilter, setFuelFilter] = useState<FilterFuelType>("All");
-	const [sortBy, setSortBy] = useState<SortOption>("cheapest");
+	const [statusFilter, setStatusFilter] = useState<StatusFilter>("All");
+	const [sortBy, setSortBy] = useState<SortOption>("price_asc");
 
 	const filteredStations = useMemo(() => {
 		let list = [...stations];
@@ -40,21 +57,34 @@ export default function Index() {
 					s.address.toLowerCase().includes(q),
 			);
 		}
-		if (fuelFilter !== "All") {
-			list = list.filter((s) => s.fuelType === fuelFilter);
+		if (statusFilter !== "All") {
+			list = list.filter((station) => station.status === statusFilter);
 		}
-		if (sortBy === "cheapest") {
+		if (fuelFilter !== "All") {
+			list = list.filter((station) =>
+				hasValidFuelPrice(station, fuelFilter),
+			);
+		}
+		if (fuelFilter === "All") {
+			list.sort(
+				(a, b) =>
+					new Date(b.updatedAt).getTime() -
+					new Date(a.updatedAt).getTime(),
+			);
+		} else {
 			list.sort((a, b) => {
 				if (a.status === "Out") return 1;
 				if (b.status === "Out") return -1;
-				return a.pricePerLiter - b.pricePerLiter;
+
+				const priceDelta =
+					getFuelSortPrice(a, fuelFilter) -
+					getFuelSortPrice(b, fuelFilter);
+
+				return sortBy === "price_desc" ? priceDelta * -1 : priceDelta;
 			});
-		} else if (sortBy === "status") {
-			const order = { Available: 0, Low: 1, Out: 2 };
-			list.sort((a, b) => order[a.status] - order[b.status]);
 		}
 		return list;
-	}, [stations, searchQuery, fuelFilter, sortBy]);
+	}, [stations, searchQuery, fuelFilter, sortBy, statusFilter]);
 
 	const handleTabChange = (t: Tab) => {
 		if ((t === "report" || t === "admin") && !user) {
@@ -129,6 +159,8 @@ export default function Index() {
 							onSearchChange={setSearchQuery}
 							fuelFilter={fuelFilter}
 							onFuelFilterChange={setFuelFilter}
+							statusFilter={statusFilter}
+							onStatusFilterChange={setStatusFilter}
 							sortBy={sortBy}
 							onSortChange={setSortBy}
 						/>
@@ -174,6 +206,8 @@ export default function Index() {
 							onSearchChange={setSearchQuery}
 							fuelFilter={fuelFilter}
 							onFuelFilterChange={setFuelFilter}
+							statusFilter={statusFilter}
+							onStatusFilterChange={setStatusFilter}
 							sortBy={sortBy}
 							onSortChange={setSortBy}
 						/>

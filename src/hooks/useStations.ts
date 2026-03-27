@@ -61,6 +61,7 @@ async function fetchStations(): Promise<GasStation[]> {
       status: s.status as StationStatus,
       fuelType,
       pricePerLiter: prices[fuelType] ?? fallbackPricePerLiter,
+      updatedAt: s.updated_at,
       lastUpdated: formatDistanceToNow(new Date(s.updated_at), { addSuffix: true }),
       reportCount: s.report_count,
     };
