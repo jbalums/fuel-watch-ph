@@ -3,11 +3,14 @@ import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { SiteFooter } from "@/components/SiteFooter";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Profile from "./pages/Profile";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import Terms from "./pages/Terms";
 import NotFound from "./pages/NotFound";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 
@@ -24,12 +27,22 @@ const App = () => (
 						<Toaster />
 						<Sonner />
 						<BrowserRouter>
-							<Routes>
-								<Route path="/" element={<Index />} />
-								<Route path="/auth" element={<Auth />} />
-								<Route path="/profile" element={<Profile />} />
-								<Route path="*" element={<NotFound />} />
-							</Routes>
+							<div className="flex min-h-screen flex-col">
+								<div className="flex-1">
+									<Routes>
+										<Route path="/" element={<Index />} />
+										<Route path="/auth" element={<Auth />} />
+										<Route path="/profile" element={<Profile />} />
+										<Route
+											path="/privacy-policy"
+											element={<PrivacyPolicy />}
+										/>
+										<Route path="/terms" element={<Terms />} />
+										<Route path="*" element={<NotFound />} />
+									</Routes>
+								</div>
+								<SiteFooter />
+							</div>
 						</BrowserRouter>
 					</TooltipProvider>
 				</AuthProvider>

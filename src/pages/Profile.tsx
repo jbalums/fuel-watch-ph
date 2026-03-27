@@ -13,6 +13,7 @@ import {
 	FileText,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { termsDisclaimerParagraphs } from "@/lib/legal";
 
 export default function Profile() {
 	const { user, loading: authLoading, signOut } = useAuth();
@@ -228,28 +229,9 @@ export default function Profile() {
 								Terms | Fuel Information Disclaimer
 							</h2>
 							<div className="mt-3 space-y-3 text-sm leading-6 text-muted-foreground">
-								<p>
-									FuelWatch PH is an informational platform
-									that aggregates fuel prices and availability
-									from user reports and third-party sources.
-									The information displayed is provided
-									&quot;as is&quot; and may not always be
-									accurate, complete, or up to date.
-								</p>
-								<p>
-									Fuel prices, stock levels, and station
-									conditions are subject to change without
-									prior notice. FuelWatch PH does not
-									guarantee the accuracy or reliability of the
-									data presented and shall not be held liable
-									for any discrepancies, losses, or decisions
-									made based on the information provided.
-								</p>
-								<p>
-									Users are strongly encouraged to confirm
-									fuel prices and availability directly with
-									the respective fuel stations.
-								</p>
+								{termsDisclaimerParagraphs.map((paragraph) => (
+									<p key={paragraph}>{paragraph}</p>
+								))}
 							</div>
 						</div>
 					</div>
