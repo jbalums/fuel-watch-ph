@@ -1,96 +1,156 @@
-import { useEffect, useState } from "react";
-import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
-import "leaflet/dist/leaflet.css";
-import type { GasStation } from "@/types/station";
-import { toast } from "sonner";
-import L from "leaflet";
+import { useEffect, useRef, useState } from "react";
 import {
-	CARTO_LIGHT_TILE_URL,
-	createPinIcon,
+	GoogleMap,
+	InfoWindowF,
+	LoadScriptNext,
+	MarkerF,
+} from "@react-google-maps/api";
+import { Loader2, MapPinned } from "lucide-react";
+import type { GasStation, StationStatus } from "@/types/station";
+import { toast } from "sonner";
+import {
+	GOOGLE_MAPS_API_KEY,
+	GOOGLE_MAPS_CONTAINER_STYLE,
+	GOOGLE_MAPS_LIBRARIES,
+	GOOGLE_MAPS_SCRIPT_ID,
 	MANILA_CENTER,
-	OSM_ATTRIBUTION,
-} from "@/lib/leaflet";
+} from "@/lib/google-maps";
 
-const statusColors = {
+const statusColors: Record<StationStatus, string> = {
 	Available: "#22c55e",
 	Low: "#f59e0b",
 	Out: "#ef4444",
-} as const;
-
-function FitBounds({ stations }: { stations: GasStation[] }) {
-	const map = useMap();
-	useEffect(() => {
-		if (stations.length === 0) return;
-		const bounds = L.latLngBounds(stations.map((s) => [s.lat, s.lng]));
-		map.fitBounds(bounds, { padding: [40, 40], maxZoom: 14 });
-	}, [stations, map]);
-	return null;
-}
+};
 
 interface StationMapProps {
 	stations: GasStation[];
 }
 
-export function StationMap({ stations }: StationMapProps) {
-	const [center, setCenter] = useState<[number, number]>(MANILA_CENTER);
+function GoogleStationMap({ stations }: StationMapProps) {
+	const [center, setCenter] = useState(MANILA_CENTER);
+	const [selectedStationId, setSelectedStationId] = useState<string | null>(
+		null,
+	);
+	const mapRef = useRef<google.maps.Map | null>(null);
 
-	const handleDetectLocation = () => {
+	useEffect(() => {
 		if (!navigator.geolocation) {
-			toast.error("Geolocation not supported");
 			return;
 		}
+
 		navigator.geolocation.getCurrentPosition(
-			(pos) => {
-				setCenter([pos.coords.latitude, pos.coords.longitude]);
-				toast.success("Location detected!");
+			(position) => {
+				setCenter({
+					lat: position.coords.latitude,
+					lng: position.coords.longitude,
+				});
 			},
 			() => {
 				toast.error("Could not detect location");
 			},
 		);
-	};
-
-	useEffect(() => {
-		handleDetectLocation();
 	}, []);
 
+	useEffect(() => {
+		const map = mapRef.current;
+		if (!map) {
+			return;
+		}
+
+		if (stations.length === 0) {
+			map.setCenter(center);
+			map.setZoom(14);
+			return;
+		}
+
+		if (stations.length === 1) {
+			map.panTo({ lat: stations[0].lat, lng: stations[0].lng });
+			map.setZoom(16);
+			return;
+		}
+
+		const bounds = new window.google.maps.LatLngBounds();
+		for (const station of stations) {
+			bounds.extend({ lat: station.lat, lng: station.lng });
+		}
+		map.fitBounds(bounds, 80);
+	}, [center, stations]);
+
+	useEffect(() => {
+		if (!selectedStationId || !mapRef.current) {
+			return;
+		}
+
+		const selectedStation = stations.find(
+			(station) => station.id === selectedStationId,
+		);
+		if (!selectedStation) {
+			return;
+		}
+
+		mapRef.current.panTo({
+			lat: selectedStation.lat,
+			lng: selectedStation.lng,
+		});
+	}, [selectedStationId, stations]);
+
+	const createMarkerIcon = (status: StationStatus): google.maps.Symbol => ({
+		path: window.google.maps.SymbolPath.CIRCLE,
+		scale: 10,
+		fillColor: statusColors[status],
+		fillOpacity: 1,
+		strokeColor: "#ffffff",
+		strokeWeight: 2,
+	});
+
 	return (
-		<div className="overflow-hidden rounded-2xl border border-border shadow-sovereign">
-			<MapContainer
-				key={`map-center-${center[0]}`}
-				center={center}
-				zoom={14}
-				scrollWheelZoom
-				className="h-[75vh] w-full"
-				style={{ background: "hsl(222 47% 11%)" }}
-			>
-				<TileLayer
-					attribution={OSM_ATTRIBUTION}
-					url={CARTO_LIGHT_TILE_URL}
-				/>
-				<FitBounds stations={stations} />
-				{stations.map((station) => (
-					<Marker
-						key={station.id}
-						position={[station.lat, station.lng]}
-						icon={createPinIcon(statusColors[station.status])}
-					>
-						<Popup className="station-popup">
-							<div className="flex flex-col gap-1.5 text-sm min-w-[180px]">
+		<GoogleMap
+			mapContainerStyle={{
+				...GOOGLE_MAPS_CONTAINER_STYLE,
+				height: "75vh",
+			}}
+			center={center}
+			zoom={18}
+			onLoad={(map) => {
+				mapRef.current = map;
+			}}
+			onUnmount={() => {
+				mapRef.current = null;
+			}}
+			options={{
+				fullscreenControl: true,
+				mapTypeControl: false,
+				streetViewControl: false,
+				gestureHandling: "greedy",
+			}}
+		>
+			{stations.map((station) => (
+				<MarkerF
+					key={station.id}
+					position={{ lat: station.lat, lng: station.lng }}
+					icon={createMarkerIcon(station.status)}
+					onClick={() => setSelectedStationId(station.id)}
+				>
+					{selectedStationId === station.id && (
+						<InfoWindowF
+							position={{ lat: station.lat, lng: station.lng }}
+							onCloseClick={() => setSelectedStationId(null)}
+						>
+							<div className="flex min-w-[180px] flex-col gap-1.5 text-sm">
 								<span className="font-semibold">
 									{station.name}
 								</span>
 								<span className="text-xs text-gray-500">
 									{station.address}
 								</span>
-								<div className="flex items-center justify-between mt-1">
-									<span className="font-bold text-base">
+								<div className="mt-1 flex items-center justify-between">
+									<span className="text-base font-bold">
 										{station.status === "Out"
 											? "—"
 											: `₱${station.pricePerLiter.toFixed(2)}`}
 									</span>
 									<span
-										className="text-xs px-2 py-0.5 rounded-full"
+										className="rounded-full px-2 py-0.5 text-xs"
 										style={{
 											backgroundColor:
 												statusColors[station.status] +
@@ -105,10 +165,48 @@ export function StationMap({ stations }: StationMapProps) {
 									{station.fuelType} · {station.lastUpdated}
 								</span>
 							</div>
-						</Popup>
-					</Marker>
-				))}
-			</MapContainer>
+						</InfoWindowF>
+					)}
+				</MarkerF>
+			))}
+		</GoogleMap>
+	);
+}
+
+export function StationMap({ stations }: StationMapProps) {
+	if (!GOOGLE_MAPS_API_KEY) {
+		return (
+			<div className="rounded-2xl border border-border bg-card p-6 shadow-sovereign">
+				<div className="flex items-start gap-3">
+					<MapPinned className="mt-0.5 h-5 w-5 text-warning" />
+					<div>
+						<p className="text-sm font-medium text-foreground">
+							Google Maps is not configured
+						</p>
+						<p className="mt-1 text-sm text-muted-foreground">
+							Add `VITE_GOOGLE_MAPS_API_KEY` to your environment
+							to load the station map.
+						</p>
+					</div>
+				</div>
+			</div>
+		);
+	}
+
+	return (
+		<div className="overflow-hidden rounded-2xl border border-border shadow-sovereign">
+			<LoadScriptNext
+				id={GOOGLE_MAPS_SCRIPT_ID}
+				googleMapsApiKey={GOOGLE_MAPS_API_KEY}
+				libraries={GOOGLE_MAPS_LIBRARIES}
+				loadingElement={
+					<div className="flex h-[75vh] items-center justify-center bg-card">
+						<Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+					</div>
+				}
+			>
+				<GoogleStationMap stations={stations} />
+			</LoadScriptNext>
 		</div>
 	);
 }

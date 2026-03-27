@@ -1,21 +1,23 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-	MapContainer,
-	Marker,
-	Popup,
-	TileLayer,
-	useMap,
-	useMapEvents,
-} from "react-leaflet";
-import L from "leaflet";
-import "leaflet/dist/leaflet.css";
+	GoogleMap,
+	LoadScriptNext,
+	MarkerF,
+} from "@react-google-maps/api";
 import { Loader2, MapPin } from "lucide-react";
-import {
-	BASEMAP_CONFIG,
-	type BasemapOption,
-	MANILA_CENTER,
-} from "@/lib/leaflet";
 import fuelWatchLogo from "@/assets/images/Icon.png";
+import {
+	deriveCenterFromLocations,
+	formatCoordinate,
+	GOOGLE_BASEMAP_CONFIG,
+	type GoogleBasemapOption,
+	GOOGLE_MAPS_API_KEY,
+	GOOGLE_MAPS_CONTAINER_STYLE,
+	GOOGLE_MAPS_LIBRARIES,
+	GOOGLE_MAPS_SCRIPT_ID,
+	MANILA_CENTER,
+	parseCoordinateStrings,
+} from "@/lib/google-maps";
 
 type CoordinateStrings = {
 	lat: string;
@@ -34,84 +36,97 @@ interface StationLocationPickerProps {
 	existingStations?: ExistingStationLocation[];
 }
 
-type ReverseGeocodeResponse = {
-	display_name?: string;
-};
-
-function parseCoordinates(value: CoordinateStrings): [number, number] | null {
-	const lat = Number.parseFloat(value.lat);
-	const lng = Number.parseFloat(value.lng);
-
-	if (Number.isNaN(lat) || Number.isNaN(lng)) return null;
-
-	return [lat, lng];
-}
-
-function formatCoordinate(value: number) {
-	return value.toFixed(6);
-}
-
-function deriveExistingCenter(stations: ExistingStationLocation[]) {
-	if (stations.length === 0) return null;
-
-	const bounds = L.latLngBounds(
-		stations.map((station) => [station.lat, station.lng]),
-	);
-	const center = bounds.getCenter();
-	return [center.lat, center.lng] as [number, number];
-}
-
-function MapViewportController({ center }: { center: [number, number] }) {
-	const map = useMap();
-
-	useEffect(() => {
-		map.setView(center, map.getZoom(), { animate: false });
-	}, [center, map]);
-
-	return null;
-}
-
-function PickerEvents({
-	onPick,
-}: {
-	onPick: (coords: [number, number]) => void;
-}) {
-	useMapEvents({
-		click(event) {
-			onPick([event.latlng.lat, event.latlng.lng]);
-		},
-	});
-
-	return null;
-}
-
-export function StationLocationPicker({
+function GoogleStationLocationPicker({
 	value,
 	onChange,
 	onAddressResolved,
 	existingStations = [],
 }: StationLocationPickerProps) {
-	const selectedPosition = useMemo(() => parseCoordinates(value), [value]);
+	const selectedPosition = useMemo(
+		() => parseCoordinateStrings(value),
+		[value],
+	);
 	const existingCenter = useMemo(
-		() => deriveExistingCenter(existingStations),
+		() => deriveCenterFromLocations(existingStations),
 		[existingStations],
 	);
-	const [viewportCenter, setViewportCenter] = useState<[number, number]>(
+	const [viewportCenter, setViewportCenter] = useState(
 		selectedPosition ?? existingCenter ?? MANILA_CENTER,
 	);
-	const [basemap, setBasemap] = useState<BasemapOption>("standard");
+	const [basemap, setBasemap] = useState<GoogleBasemapOption>("standard");
 	const [isResolvingAddress, setIsResolvingAddress] = useState(false);
 	const [addressError, setAddressError] = useState<string | null>(null);
 	const lastResolvedCoordinates = useRef<string | null>(null);
+	const mapRef = useRef<google.maps.Map | null>(null);
+	const geocoderRef = useRef<google.maps.Geocoder | null>(null);
+
+	useEffect(() => {
+		if (selectedPosition) {
+			setViewportCenter(selectedPosition);
+		}
+	}, [selectedPosition]);
+
+	useEffect(() => {
+		if (!selectedPosition && existingCenter) {
+			setViewportCenter(existingCenter);
+		}
+	}, [existingCenter, selectedPosition]);
+
+	useEffect(() => {
+		if (selectedPosition || existingCenter || !navigator.geolocation) {
+			return;
+		}
+
+		navigator.geolocation.getCurrentPosition(
+			(position) => {
+				setViewportCenter({
+					lat: position.coords.latitude,
+					lng: position.coords.longitude,
+				});
+			},
+			() => {
+				setViewportCenter(MANILA_CENTER);
+			},
+		);
+	}, [existingCenter, selectedPosition]);
+
+	useEffect(() => {
+		const map = mapRef.current;
+		if (!map) {
+			return;
+		}
+
+		const targetCenter = selectedPosition ?? viewportCenter;
+		map.panTo(targetCenter);
+
+		if (selectedPosition) {
+			map.setZoom(18);
+		}
+	}, [selectedPosition, viewportCenter]);
+
+	const handlePick = useCallback(
+		(coordinates: { lat: number; lng: number }) => {
+			onChange({
+				lat: formatCoordinate(coordinates.lat),
+				lng: formatCoordinate(coordinates.lng),
+			});
+		},
+		[onChange],
+	);
 
 	const resolveAddress = useCallback(
 		async (
-			coordinates: [number, number],
+			coordinates: { lat: number; lng: number },
 			options?: { force?: boolean },
 		) => {
-			const coordinatesKey = coordinates
-				.map((coordinate) => coordinate.toFixed(6))
-				.join(",");
+			if (!onAddressResolved) {
+				return;
+			}
+
+			const coordinatesKey = [
+				coordinates.lat.toFixed(6),
+				coordinates.lng.toFixed(6),
+			].join(",");
 
 			if (
 				!options?.force &&
@@ -124,41 +139,26 @@ export function StationLocationPicker({
 			setAddressError(null);
 
 			try {
-				const params = new URLSearchParams({
-					format: "jsonv2",
-					lat: String(coordinates[0]),
-					lon: String(coordinates[1]),
-					zoom: "18",
-					addressdetails: "1",
+				const geocoder =
+					geocoderRef.current ??
+					new window.google.maps.Geocoder();
+				geocoderRef.current = geocoder;
+
+				const response = await geocoder.geocode({
+					location: coordinates,
 				});
+				const formattedAddress = response.results
+					.find((result) => result.formatted_address?.trim())
+					?.formatted_address?.trim();
 
-				const response = await fetch(
-					`https://nominatim.openstreetmap.org/reverse?${params.toString()}`,
-					{
-						headers: {
-							Accept: "application/json",
-							"Accept-Language": "en",
-						},
-					},
-				);
-
-				if (!response.ok) {
-					throw new Error(
-						"Could not resolve address for these coordinates",
-					);
-				}
-
-				const data = (await response.json()) as ReverseGeocodeResponse;
-				const displayAddress = data.display_name?.trim();
-
-				if (!displayAddress) {
+				if (!formattedAddress) {
 					throw new Error(
 						"No address was returned for these coordinates",
 					);
 				}
 
 				lastResolvedCoordinates.current = coordinatesKey;
-				onAddressResolved?.(displayAddress);
+				onAddressResolved(formattedAddress);
 			} catch (error) {
 				const message =
 					error instanceof Error
@@ -171,50 +171,11 @@ export function StationLocationPicker({
 		},
 		[onAddressResolved],
 	);
-	useEffect(() => {
-		if (selectedPosition) {
-			setViewportCenter(selectedPosition);
-		}
-	}, [selectedPosition]);
 
 	useEffect(() => {
-		if (!selectedPosition && existingCenter) {
-			setViewportCenter(existingCenter);
-		}
-	}, [existingCenter, resolveAddress, selectedPosition]);
-
-	useEffect(() => {
-		if (selectedPosition || existingCenter || !navigator.geolocation)
+		if (!selectedPosition || !onAddressResolved) {
 			return;
-		navigator.geolocation.getCurrentPosition(
-			(position) => {
-				setViewportCenter([
-					position.coords.latitude,
-					position.coords.longitude,
-				]);
-			},
-			() => {
-				setViewportCenter(MANILA_CENTER);
-			},
-		);
-	}, [existingCenter, selectedPosition]);
-
-	const handlePick = ([lat, lng]: [number, number]) => {
-		onChange({
-			lat: formatCoordinate(lat),
-			lng: formatCoordinate(lng),
-		});
-	};
-
-	const customIcon = new L.Icon({
-		iconUrl: fuelWatchLogo,
-		iconSize: [45, 45], // Size of the icon
-		iconAnchor: [17, 45], // Point of the icon which will correspond to marker's location
-		popupAnchor: [0, -40], // Point from which the popup should open relative to the iconAnchor
-	});
-
-	useEffect(() => {
-		if (!selectedPosition || !onAddressResolved) return;
+		}
 
 		const timeoutId = window.setTimeout(() => {
 			void resolveAddress(selectedPosition);
@@ -223,7 +184,15 @@ export function StationLocationPicker({
 		return () => window.clearTimeout(timeoutId);
 	}, [onAddressResolved, resolveAddress, selectedPosition]);
 
-	const activeBasemap = BASEMAP_CONFIG[basemap];
+	const markerIcon = useMemo<google.maps.Icon>(() => {
+		return {
+			url: fuelWatchLogo,
+			scaledSize: new window.google.maps.Size(45, 45),
+			anchor: new window.google.maps.Point(22, 45),
+		};
+	}, []);
+
+	const activeBasemap = GOOGLE_BASEMAP_CONFIG[basemap];
 
 	return (
 		<div className="rounded-xl border border-border bg-background p-3 md:col-span-2">
@@ -242,10 +211,10 @@ export function StationLocationPicker({
 				</div>
 				<div className="flex flex-wrap gap-2">
 					{(
-						Object.entries(BASEMAP_CONFIG) as Array<
+						Object.entries(GOOGLE_BASEMAP_CONFIG) as Array<
 							[
-								BasemapOption,
-								(typeof BASEMAP_CONFIG)[BasemapOption],
+								GoogleBasemapOption,
+								(typeof GOOGLE_BASEMAP_CONFIG)[GoogleBasemapOption],
 							]
 						>
 					).map(([option, config]) => (
@@ -266,65 +235,73 @@ export function StationLocationPicker({
 			</div>
 
 			<div className="overflow-hidden rounded-xl border border-border">
-				<MapContainer
-					center={viewportCenter}
-					zoom={20}
-					scrollWheelZoom
-					className="h-[500px] w-full"
-					style={{ background: "hsl(222 47% 11%)" }}
-				>
-					<TileLayer
-						attribution={activeBasemap.attribution}
-						url={activeBasemap.url}
-					/>
-					<MapViewportController
-						center={selectedPosition ?? viewportCenter}
-					/>
-					<PickerEvents onPick={handlePick} />
+				<GoogleMap
+					mapContainerStyle={{
+						...GOOGLE_MAPS_CONTAINER_STYLE,
+						height: "500px",
+					}}
+					center={selectedPosition ?? viewportCenter}
+					zoom={18}
+					onLoad={(map) => {
+						mapRef.current = map;
+					}}
+					onUnmount={() => {
+						mapRef.current = null;
+					}}
+					onClick={(event) => {
+						const latLng = event.latLng;
+						if (!latLng) {
+							return;
+						}
 
+						handlePick({
+							lat: latLng.lat(),
+							lng: latLng.lng(),
+						});
+					}}
+					options={{
+						fullscreenControl: true,
+						mapTypeControl: false,
+						streetViewControl: false,
+						gestureHandling: "greedy",
+						mapTypeId: activeBasemap.mapTypeId,
+					}}
+				>
 					{selectedPosition && (
-						<Marker
+						<MarkerF
 							position={selectedPosition}
 							draggable
-							icon={customIcon}
-							eventHandlers={{
-								dragend: (event) => {
-									const marker = event.target as L.Marker;
-									const markerPosition = marker.getLatLng();
-									handlePick([
-										markerPosition.lat,
-										markerPosition.lng,
-									]);
-								},
+							icon={markerIcon}
+							onDragEnd={(event) => {
+								const latLng = event.latLng;
+								if (!latLng) {
+									return;
+								}
+
+								handlePick({
+									lat: latLng.lat(),
+									lng: latLng.lng(),
+								});
 							}}
-						>
-							<Popup>
-								<div className="text-sm">
-									<p className="font-medium">
-										Selected coordinates
-									</p>
-									<p>
-										{selectedPosition[0].toFixed(6)},{" "}
-										{selectedPosition[1].toFixed(6)}
-									</p>
-								</div>
-							</Popup>
-						</Marker>
+						/>
 					)}
-				</MapContainer>
+				</GoogleMap>
 			</div>
 
 			<div className="flex items-center justify-between gap-5">
 				<p className="mt-2 text-xs text-muted-foreground">
 					{selectedPosition
-						? `Selected: ${selectedPosition[0].toFixed(6)}, ${selectedPosition[1].toFixed(6)}`
+						? `Selected: ${selectedPosition.lat.toFixed(6)}, ${selectedPosition.lng.toFixed(6)}`
 						: "No valid coordinates selected yet."}
 				</p>
 				<div className="mt-2 flex flex-wrap items-center gap-2">
 					<button
 						type="button"
 						onClick={() => {
-							if (!selectedPosition) return;
+							if (!selectedPosition) {
+								return;
+							}
+
 							void resolveAddress(selectedPosition, {
 								force: true,
 							});
@@ -350,5 +327,44 @@ export function StationLocationPicker({
 				</div>
 			</div>
 		</div>
+	);
+}
+
+export function StationLocationPicker(props: StationLocationPickerProps) {
+	if (!GOOGLE_MAPS_API_KEY) {
+		return (
+			<div className="rounded-xl border border-border bg-background p-4 md:col-span-2">
+				<div className="flex items-start gap-2">
+					<MapPin className="mt-0.5 h-4 w-4 text-warning" />
+					<div>
+						<p className="text-sm font-medium text-foreground">
+							Google Maps is not configured
+						</p>
+						<p className="text-xs text-muted-foreground">
+							Add `VITE_GOOGLE_MAPS_API_KEY` to enable visual
+							location picking and address lookup.
+						</p>
+					</div>
+				</div>
+			</div>
+		);
+	}
+
+	return (
+		<LoadScriptNext
+			id={GOOGLE_MAPS_SCRIPT_ID}
+			googleMapsApiKey={GOOGLE_MAPS_API_KEY}
+			libraries={GOOGLE_MAPS_LIBRARIES}
+			loadingElement={
+				<div className="rounded-xl border border-border bg-background p-4 md:col-span-2">
+					<div className="flex items-center gap-2 text-sm text-muted-foreground">
+						<Loader2 className="h-4 w-4 animate-spin" />
+						Loading Google Maps...
+					</div>
+				</div>
+			}
+		>
+			<GoogleStationLocationPicker {...props} />
+		</LoadScriptNext>
 	);
 }
