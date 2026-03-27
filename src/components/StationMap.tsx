@@ -137,17 +137,62 @@ function GoogleStationMap({ stations }: StationMapProps) {
 							onCloseClick={() => setSelectedStationId(null)}
 						>
 							<div className="flex min-w-[180px] flex-col gap-1.5 text-sm">
-								<span className="font-semibold">
+								<span className="font-semibold !text-black">
 									{station.name}
 								</span>
 								<span className="text-xs text-gray-500">
 									{station.address}
 								</span>
 								<div className="mt-1 flex items-center justify-between">
-									<span className="text-base font-bold">
+									<span className="text-base font-bold !text-green-600 w-1/3">
+										Unleaded
+									</span>
+									<span className="text-base font-bold !text-green-600 w-1/3 text-right">
 										{station.status === "Out"
 											? "—"
-											: `₱${station.pricePerLiter.toFixed(2)}`}
+											: `₱${station.prices.Unleaded.toFixed(2)}`}
+									</span>
+									<span
+										className="rounded-full px-2 py-0.5 text-xs"
+										style={{
+											backgroundColor:
+												statusColors[station.status] +
+												"22",
+											color: statusColors[station.status],
+										}}
+									>
+										{station.status}
+									</span>
+								</div>
+								<div className="mt-0 flex items-center justify-between">
+									<span className="text-base font-bold !text-red-600 w-1/3">
+										Premium
+									</span>
+									<span className="text-base font-bold !text-red-600 w-1/3 text-right">
+										{station.status === "Out"
+											? "—"
+											: `₱${station.prices.Premium.toFixed(2)}`}
+									</span>
+									<span
+										className="rounded-full px-2 py-0.5 text-xs"
+										style={{
+											backgroundColor:
+												statusColors[station.status] +
+												"22",
+											color: statusColors[station.status],
+										}}
+									>
+										{station.status}
+									</span>
+								</div>
+								<div className="mt-0 flex items-center justify-between">
+									<span className="text-base font-bold !text-amber-600 w-1/3">
+										Diesel
+									</span>
+									<span className="text-base font-bold !text-amber-600 w-1/3 text-right">
+										{station.status === "Out"
+											? "—"
+											: `₱${station.prices.Diesel.toFixed(2)}`}
 									</span>
 									<span
 										className="rounded-full px-2 py-0.5 text-xs"
@@ -162,7 +207,7 @@ function GoogleStationMap({ stations }: StationMapProps) {
 									</span>
 								</div>
 								<span className="text-xs text-gray-400">
-									{station.fuelType} · {station.lastUpdated}
+									{station.lastUpdated}
 								</span>
 							</div>
 						</InfoWindowF>

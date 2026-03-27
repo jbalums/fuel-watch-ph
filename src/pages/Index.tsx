@@ -133,6 +133,11 @@ export default function Index() {
 							onSortChange={setSortBy}
 						/>
 						<div className="flex flex-col gap-3">
+							<div>
+								⚠️ Prices and availability are based on user
+								reports and may vary. Please verify at the
+								station before refueling.
+							</div>
 							{stationsLoading ? (
 								<div className="flex items-center justify-center py-10">
 									<Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -173,6 +178,11 @@ export default function Index() {
 							onSortChange={setSortBy}
 						/>
 						<div className="flex flex-col gap-3">
+							<div>
+								⚠️ Prices and availability are based on user
+								reports and may vary. Please verify at the
+								station before refueling.
+							</div>
 							<AnimatePresence mode="popLayout">
 								{filteredStations.map((station, i) => (
 									<StationCard

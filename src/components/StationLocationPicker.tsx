@@ -1,9 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import {
-	GoogleMap,
-	LoadScriptNext,
-	MarkerF,
-} from "@react-google-maps/api";
+import { GoogleMap, LoadScriptNext, MarkerF } from "@react-google-maps/api";
 import { Loader2, MapPin } from "lucide-react";
 import fuelWatchLogo from "@/assets/images/Icon.png";
 import {
@@ -59,6 +55,32 @@ function GoogleStationLocationPicker({
 	const lastResolvedCoordinates = useRef<string | null>(null);
 	const mapRef = useRef<google.maps.Map | null>(null);
 	const geocoderRef = useRef<google.maps.Geocoder | null>(null);
+
+	const getCurrentBrowserLocation = useCallback(async () => {
+		if (!navigator.geolocation) {
+			throw new Error("Geolocation is not supported on this device");
+		}
+
+		return await new Promise<{ lat: number; lng: number }>(
+			(resolve, reject) => {
+				navigator.geolocation.getCurrentPosition(
+					(position) => {
+						resolve({
+							lat: position.coords.latitude,
+							lng: position.coords.longitude,
+						});
+					},
+					() => {
+						reject(
+							new Error(
+								"Could not get your current browser location",
+							),
+						);
+					},
+				);
+			},
+		);
+	}, []);
 
 	useEffect(() => {
 		if (selectedPosition) {
@@ -139,9 +161,18 @@ function GoogleStationLocationPicker({
 			setAddressError(null);
 
 			try {
+				const geocoderAvailable =
+					typeof window !== "undefined" &&
+					typeof window.google !== "undefined" &&
+					typeof window.google.maps !== "undefined" &&
+					typeof window.google.maps.Geocoder === "function";
+
+				if (!geocoderAvailable) {
+					throw new Error("Google geocoder is unavailable");
+				}
+
 				const geocoder =
-					geocoderRef.current ??
-					new window.google.maps.Geocoder();
+					geocoderRef.current ?? new window.google.maps.Geocoder();
 				geocoderRef.current = geocoder;
 
 				const response = await geocoder.geocode({
@@ -160,16 +191,29 @@ function GoogleStationLocationPicker({
 				lastResolvedCoordinates.current = coordinatesKey;
 				onAddressResolved(formattedAddress);
 			} catch (error) {
-				const message =
-					error instanceof Error
-						? error.message
-						: "Could not resolve address for these coordinates";
-				setAddressError(message);
+				try {
+					const currentLocation = await getCurrentBrowserLocation();
+					onChange({
+						lat: formatCoordinate(currentLocation.lat),
+						lng: formatCoordinate(currentLocation.lng),
+					});
+					setAddressError(
+						"Address lookup is unavailable right now. Used your current browser location instead.",
+					);
+				} catch (fallbackError) {
+					const message =
+						fallbackError instanceof Error
+							? fallbackError.message
+							: error instanceof Error
+								? error.message
+								: "Could not resolve address for these coordinates";
+					setAddressError(message);
+				}
 			} finally {
 				setIsResolvingAddress(false);
 			}
 		},
-		[onAddressResolved],
+		[getCurrentBrowserLocation, onAddressResolved, onChange],
 	);
 
 	useEffect(() => {
@@ -241,7 +285,7 @@ function GoogleStationLocationPicker({
 						height: "500px",
 					}}
 					center={selectedPosition ?? viewportCenter}
-					zoom={18}
+					zoom={16}
 					onLoad={(map) => {
 						mapRef.current = map;
 					}}
