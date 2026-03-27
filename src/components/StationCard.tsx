@@ -35,31 +35,36 @@ export function StationCard({ station, index }: StationCardProps) {
 			<div className={cn("w-1 shrink-0 rounded-l-xl", statusBarColor)} />
 
 			<div className="flex flex-1 flex-col gap-3 p-5">
-				<div className="flex items-start justify-between gap-3">
-					<div className="min-w-0 flex-1">
-						<h3 className="truncate font-semibold text-foreground">
-							{station.name}
-						</h3>
-						<div className="mt-1 flex items-center gap-1.5 text-muted-foreground">
-							<MapPin className="h-3.5 w-3.5 shrink-0" />
-							<span className="truncate text-sm">
+				<div className="flex items-start justify-between gap-3 flex-wrap">
+					<div className="flex flex-col w-full">
+						<div className="flex w-full justify-between flex-wrap">
+							<h3 className=" font-semibold text-foreground max-w-[calc(100%-90px)]">
+								{station.name}
+							</h3>
+							<StatusBadge
+								className="h-6"
+								status={station.status}
+							/>
+						</div>
+						<div className="mt-1 flex items-start gap-1.5 text-muted-foreground">
+							<MapPin className="h-3.5 w-3.5 mt-[3px] shrink-0" />
+							<span className=" text-sm pr-4">
 								{station.address}
 							</span>
 						</div>
 					</div>
-					<StatusBadge status={station.status} />
 				</div>
 
-				<div className="flex items-end justify-between">
-					<div className="flex flex-wrap gap-4 items-center">
+				<div className="flex flex-wrap items-end justify-between">
+					<div className="flex flex-wrap gap-2 md:gap-4 items-center pb-4">
 						<div className="">
 							<span className="text-label !text-green-600">
 								Unleaded
 							</span>
-							<p className="mt-0.5 text-2xl font-bold tabular-nums text-shadow-sm text-shadow-blue-300">
+							<p className="mt-0.5 text-xl md:text-2xl font-bold tabular-nums text-shadow-sm text-shadow-blue-300">
 								{station.status === "Out"
 									? "—"
-									: `₱${station.prices?.Unleaded > 0 ? parseFloat(station.prices?.Unleaded).toFixed(2) : "-"}`}
+									: `₱${station.prices?.Unleaded > 0 ? Number(station.prices?.Unleaded).toFixed(2) : "-"}`}
 							</p>
 						</div>
 						<div className="h-10 w-[1px] bg-slate-200 dark:bg-slate-600"></div>
@@ -67,10 +72,10 @@ export function StationCard({ station, index }: StationCardProps) {
 							<span className="text-label !text-red-600">
 								Premium
 							</span>
-							<p className="mt-0.5 text-2xl font-bold tabular-nums text-foreground">
+							<p className="mt-0.5 text-xl md:text-2xl font-bold tabular-nums text-foreground">
 								{station.status === "Out"
 									? "—"
-									: `₱${station.prices?.Premium > 0 ? parseFloat(station.prices?.Premium).toFixed(2) : "-"}`}
+									: `₱${station.prices?.Premium > 0 ? Number(station.prices?.Premium).toFixed(2) : "-"}`}
 							</p>
 						</div>
 						<div className="h-10 w-[1px] bg-slate-200 dark:bg-slate-600"></div>
@@ -78,10 +83,10 @@ export function StationCard({ station, index }: StationCardProps) {
 							<span className="text-label !text-amber-600">
 								Diesel
 							</span>
-							<p className="mt-0.5 text-2xl font-bold tabular-nums text-foreground">
+							<p className="mt-0.5 text-xl md:text-2xl font-bold tabular-nums text-foreground">
 								{station.status === "Out"
 									? "—"
-									: `₱${station.prices?.Diesel > 0 ? parseFloat(station.prices?.Diesel).toFixed(2) : "-"}`}
+									: `₱${station.prices?.Diesel > 0 ? Number(station.prices?.Diesel).toFixed(2) : "-"}`}
 							</p>
 						</div>
 					</div>
