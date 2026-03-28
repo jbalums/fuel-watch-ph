@@ -12,6 +12,7 @@ import {
 	Loader2,
 	LogOut,
 	FileText,
+	Lock,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useManagedStation } from "@/hooks/useManagedStation";
@@ -30,6 +31,12 @@ export default function Profile() {
 	const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 	const [saving, setSaving] = useState(false);
 	const [uploading, setUploading] = useState(false);
+	const [sendingPasswordReset, setSendingPasswordReset] = useState(false);
+
+	const isEmailPasswordUser =
+		user?.app_metadata?.provider === "email" ||
+		(user?.identities?.some((identity) => identity.provider === "email") ??
+			false);
 
 	useEffect(() => {
 		if (authLoading) return;
@@ -115,6 +122,29 @@ export default function Profile() {
 			toast.success("Profile updated!");
 		}
 		setSaving(false);
+	};
+
+	const handleSendPasswordResetEmail = async () => {
+		if (!user?.email) {
+			toast.error("No email address found for this account");
+			return;
+		}
+
+		setSendingPasswordReset(true);
+		const { error } = await supabase.auth.resetPasswordForEmail(
+			user.email,
+			{
+				redirectTo: `${window.location.origin}/auth?mode=reset`,
+			},
+		);
+
+		if (error) {
+			toast.error("Failed to send reset email: " + error.message);
+		} else {
+			toast.success("Check your email for the password reset link");
+		}
+
+		setSendingPasswordReset(false);
 	};
 
 	const initials = displayName
@@ -232,6 +262,41 @@ export default function Profile() {
 					>
 						Manage {managedStation.name}
 					</button>
+				)}
+
+				{isEmailPasswordUser && (
+					<div className="w-full max-w-sm rounded-2xl bg-card p-6 shadow-sovereign">
+						<div className="flex items-start gap-3">
+							<div className="mt-0.5 flex h-9 w-9 items-center justify-center rounded-xl bg-accent/10 text-accent">
+								<Lock className="h-4 w-4" />
+							</div>
+							<div className="flex-1">
+								<h2 className="text-sm font-semibold text-foreground">
+									Password
+								</h2>
+								<p className="mt-2 text-sm text-muted-foreground">
+									Signed in with email and password. Send a
+									reset link to your email to change your
+									password securely.
+								</p>
+								<motion.button
+									whileTap={{ scale: 0.97 }}
+									onClick={handleSendPasswordResetEmail}
+									disabled={sendingPasswordReset}
+									className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-3.5 font-semibold text-primary-foreground sovereign-ease hover:bg-primary-hover transition-colors disabled:opacity-50"
+								>
+									{sendingPasswordReset ? (
+										<Loader2 className="h-4 w-4 animate-spin" />
+									) : (
+										<Lock className="h-4 w-4" />
+									)}
+									{sendingPasswordReset
+										? "Sending reset link..."
+										: "Send Password Reset Email"}
+								</motion.button>
+							</div>
+						</div>
+					</div>
 				)}
 
 				<div className="w-full max-w-sm rounded-2xl bg-card p-6 shadow-sovereign">
