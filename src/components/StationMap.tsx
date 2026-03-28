@@ -6,7 +6,7 @@ import {
 	MarkerF,
 } from "@react-google-maps/api";
 import { Loader2, MapPinned } from "lucide-react";
-import type { GasStation, StationStatus } from "@/types/station";
+import type { FuelType, GasStation, StationStatus } from "@/types/station";
 import { toast } from "sonner";
 import {
 	GOOGLE_MAPS_API_KEY,
@@ -21,7 +21,12 @@ const statusColors: Record<StationStatus, string> = {
 	Low: "#f59e0b",
 	Out: "#ef4444",
 };
-
+const fuelTypes: FuelType[] = ["Unleaded", "Premium", "Diesel"];
+const fuelTypeColors: string[] = [
+	"text-green-600",
+	"text-red-600",
+	"text-amber-600",
+];
 interface StationMapProps {
 	stations: GasStation[];
 }
@@ -151,69 +156,52 @@ function GoogleStationMap({ stations }: StationMapProps) {
 								<span className="text-xs text-gray-500">
 									{station.address}
 								</span>
-								<div className="mt-1 flex items-center justify-between">
-									<span className="text-base font-bold !text-green-600 w-1/3">
-										Unleaded
-									</span>
-									<span className="text-base font-bold !text-green-600 w-1/3 text-right">
-										{station.status === "Out"
-											? "—"
-											: `₱${station.prices.Unleaded.toFixed(2)}`}
-									</span>
-									<span
-										className="rounded-full px-2 py-0.5 text-xs"
-										style={{
-											backgroundColor:
-												statusColors[station.status] +
-												"22",
-											color: statusColors[station.status],
-										}}
-									>
-										{station.status}
-									</span>
-								</div>
-								<div className="mt-0 flex items-center justify-between">
-									<span className="text-base font-bold !text-red-600 w-1/3">
-										Premium
-									</span>
-									<span className="text-base font-bold !text-red-600 w-1/3 text-right">
-										{station.status === "Out"
-											? "—"
-											: `₱${station.prices.Premium.toFixed(2)}`}
-									</span>
-									<span
-										className="rounded-full px-2 py-0.5 text-xs"
-										style={{
-											backgroundColor:
-												statusColors[station.status] +
-												"22",
-											color: statusColors[station.status],
-										}}
-									>
-										{station.status}
-									</span>
-								</div>
-								<div className="mt-0 flex items-center justify-between">
-									<span className="text-base font-bold !text-amber-600 w-1/3">
-										Diesel
-									</span>
-									<span className="text-base font-bold !text-amber-600 w-1/3 text-right">
-										{station.status === "Out"
-											? "—"
-											: `₱${station.prices.Diesel.toFixed(2)}`}
-									</span>
-									<span
-										className="rounded-full px-2 py-0.5 text-xs"
-										style={{
-											backgroundColor:
-												statusColors[station.status] +
-												"22",
-											color: statusColors[station.status],
-										}}
-									>
-										{station.status}
-									</span>
-								</div>
+								{fuelTypes.map((fueltype, index) => {
+									return (
+										<div
+											className={`mt-1 flex items-center justify-between`}
+											key={`station-map-fuel-type-${fueltype}`}
+										>
+											<span
+												className={`text-base font-bold ${fuelTypeColors[index]} w-1/3`}
+											>
+												{fueltype}
+											</span>
+											<span
+												className={`text-base font-bold ${fuelTypeColors[index]} w-1/3 text-right`}
+											>
+												{station.status === "Out"
+													? "—"
+													: `₱${station.prices[fueltype] > 0 ? station.prices[fueltype].toFixed(2) : "--.--"}`}
+											</span>
+											<span
+												className="rounded-full px-2 py-0.5 text-xs min-w-16"
+												style={{
+													backgroundColor:
+														statusColors[
+															station.prices[
+																fueltype
+															] > 0
+																? station.status
+																: "Out"
+														] + "22",
+													color: statusColors[
+														station.prices[
+															fueltype
+														] > 0
+															? station.status
+															: "Out"
+													],
+												}}
+											>
+												{station.prices[fueltype] > 0
+													? station.status
+													: ""}
+											</span>
+										</div>
+									);
+								})}
+
 								<span className="text-xs text-gray-400">
 									{station.lastUpdated}
 								</span>
