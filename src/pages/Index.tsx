@@ -238,7 +238,7 @@ export default function Index() {
 										))}
 									</AnimatePresence>
 									{filteredStations.length === 0 && (
-										<p className="py-10 text-center text-sm text-muted-foreground">
+										<p className="py-24 text-center text-sm text-muted-foreground">
 											No stations found matching your
 											criteria.
 										</p>
@@ -252,7 +252,7 @@ export default function Index() {
 				{tab === "map" && <StationMap stations={stations} />}
 
 				{tab === "search" && (
-					<>
+					<div className="h-[calc(100dvh-185px)]">
 						<SearchFilter
 							searchQuery={searchQuery}
 							onSearchChange={setSearchQuery}
@@ -279,10 +279,14 @@ export default function Index() {
 								))}
 							</AnimatePresence>
 						</div>
-					</>
+					</div>
 				)}
 
-				{tab === "report" && <ReportForm />}
+				{tab === "report" && (
+					<div className="h-[calc(100dvh-185px)]">
+						<ReportForm />
+					</div>
+				)}
 				{tab === "admin" && isAdmin && <AdminDashboard />}
 			</main>
 

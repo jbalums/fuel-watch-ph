@@ -115,7 +115,7 @@ function GoogleStationMap({ stations }: StationMapProps) {
 		<GoogleMap
 			mapContainerStyle={{
 				...GOOGLE_MAPS_CONTAINER_STYLE,
-				height: "calc(100vh - 185px)",
+				height: "calc(100dvh - 185px)",
 			}}
 			center={center}
 			zoom={18}
@@ -253,7 +253,7 @@ export function StationMap({ stations }: StationMapProps) {
 				googleMapsApiKey={GOOGLE_MAPS_API_KEY}
 				libraries={GOOGLE_MAPS_LIBRARIES}
 				loadingElement={
-					<div className="flex h-[calc(100vh-185px)] items-center justify-center bg-card">
+					<div className="flex h-[calc(100dvh-185px)] items-center justify-center bg-card">
 						<Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
 					</div>
 				}
