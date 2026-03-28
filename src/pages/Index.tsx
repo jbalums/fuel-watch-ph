@@ -118,7 +118,7 @@ export default function Index() {
 		<div className="min-h-screen bg-background pb-24">
 			<header className="sticky top-0 z-40 surface-glass px-2 md:px-5 py-4">
 				<div className="container flex items-center justify-between">
-					<div className="flex items-center gap-3">
+					<div className="flex items-center gap-0">
 						<div className="flex h-9 w-9 items-center justify-center">
 							<img src={logo} className="h-8 w-8" />
 						</div>
