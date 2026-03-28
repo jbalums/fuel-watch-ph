@@ -13,6 +13,7 @@ import SearchPage from "./pages/SearchPage";
 import ReportPage from "./pages/ReportPage";
 import AdminPage from "./pages/AdminPage";
 import Auth from "./pages/Auth";
+import AboutUs from "./pages/AboutUs";
 import Profile from "./pages/Profile";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import StationManagerDashboard from "./pages/StationManagerDashboard";
@@ -50,6 +51,10 @@ const App = () => (
 											<Route path="/admin" element={<AdminPage />} />
 										</Route>
 										<Route path="/auth" element={<Auth />} />
+										<Route
+											path="/about-us"
+											element={<AboutUs />}
+										/>
 										<Route path="/profile" element={<Profile />} />
 										<Route
 											path="/manager"

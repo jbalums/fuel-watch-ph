@@ -14,6 +14,12 @@ export function SiteFooter() {
 				</div>
 				<div className="flex flex-wrap items-center justify-center text-sm text-foreground gap-4 mb-2">
 					<Link
+						to="/about-us"
+						className="font-bold dark:text-white transition-colors hover:text-foreground"
+					>
+						About Us
+					</Link>
+					<Link
 						to="/terms"
 						className="font-bold dark:text-white transition-colors hover:text-foreground"
 					>

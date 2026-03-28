@@ -34,3 +34,71 @@ export const privacyPolicySections = [
 		],
 	},
 ];
+
+export const aboutUsSections = [
+	{
+		title: "Who We Are",
+		paragraphs: [
+			"FuelWatch PH is a community-powered platform that helps drivers across the Philippines find and share fuel prices in their area.",
+			"We built FuelWatch PH with one simple goal: help Filipinos make smarter decisions before they fill up.",
+			"We rely on real user reports to provide fuel price insights across the country. While prices may vary, every contribution helps build a more transparent and informed fueling experience.",
+		],
+	},
+	{
+		title: "Our Mission",
+		paragraphs: [
+			"To provide accessible, transparent, and community-driven fuel price information that empowers every Filipino driver to save money and plan better.",
+		],
+	},
+	{
+		title: "What We Do",
+		paragraphs: [
+			"FuelWatch PH allows users to:",
+			"All data is crowd-sourced, meaning it comes from real users on the ground.",
+		],
+		bullets: [
+			"📍 View nearby fuel stations based on location",
+			"⛽ Check reported fuel prices (Unleaded, Premium, Diesel)",
+			"📊 See average fuel prices in different areas",
+			"🧑‍🤝‍🧑 Contribute by reporting updated fuel prices",
+			"🗺️ Explore stations through an interactive map",
+		],
+	},
+	{
+		title: "Why FuelWatch PH Exists",
+		paragraphs: [
+			"Fuel prices change frequently sometimes even within the same day.",
+			"In many areas, there is no easy way to compare prices between nearby stations, know where to get the best deal, or stay updated without physically visiting each station.",
+			"FuelWatch PH solves this by turning everyday drivers into contributors.",
+		],
+	},
+	{
+		title: "Transparency & Disclaimer",
+		paragraphs: [
+			"FuelWatch PH relies on user-submitted data.",
+			"Prices may not always be real-time or fully accurate. Availability status may change without notice. Users are encouraged to verify prices at the station before refueling.",
+			"We aim to improve accuracy over time through community participation and smarter validation systems.",
+		],
+	},
+	{
+		title: "Our Vision",
+		paragraphs: [
+			"To become the most trusted fuel information platform in the Philippines, helping millions of drivers save money daily.",
+			"In the future, we aim to introduce:",
+		],
+		bullets: [
+			"👉 Smarter price validation",
+			"👉 Station owner verification tools",
+			"👉 Real-time integrations",
+			"👉 Nationwide coverage",
+		],
+	},
+	{
+		title: "Join the Community",
+		paragraphs: [
+			"FuelWatch PH is built by the community, for the community.",
+			"Every report helps another driver save.",
+			"👉 Start exploring, contribute fuel prices, and help build a smarter way to fuel up.",
+		],
+	},
+] as const;
