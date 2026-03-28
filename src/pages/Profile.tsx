@@ -165,7 +165,7 @@ export default function Profile() {
 	}
 
 	return (
-		<div className="min-h-screen bg-background px-5 pb-10">
+		<div className="min-h-screen bg-background pb-10">
 			{/* Header */}
 			<header className="sticky top-0 z-40 surface-glass py-4">
 				<div className="container flex items-center gap-3">

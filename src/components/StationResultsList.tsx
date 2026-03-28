@@ -16,10 +16,10 @@ export function StationResultsList({
 }: StationResultsListProps) {
 	return (
 		<div className="flex flex-col gap-3">
-			<div>
-				⚠️ Prices and availability are based on user reports and may
-				vary. Please verify at the station before refueling.
-			</div>
+			<p className="text-sm dark:text-amber-500 text-red-600">
+				⚠️ Fuel prices are crowd-sourced and may not reflect real-time
+				changes. Verify at the station before refueling.
+			</p>
 			{loading ? (
 				<div className="flex items-center justify-center py-24">
 					<Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />

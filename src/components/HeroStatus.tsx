@@ -44,12 +44,16 @@ export function HeroStatus({ stations }: HeroStatusProps) {
 			transition={{ duration: 0.8, ease: [0.2, 0.8, 0.2, 1] }}
 			className="gradient-hero rounded-2xl p-6 md:p-10"
 		>
-			<p className="text-label text-muted-foreground mb-2">Fuel Status</p>
+			{/* <p className="text-label text-muted-foreground mb-2">Fuel Status</p>
 			<h1 className="text-display text-foreground">
 				Fuel is <span className={statusColor}>{statusText}</span>
-			</h1>
-			<p className="text-label text-muted-foreground mt-4 mb-2">
+			</h1> */}
+			<p className="text-md font-bold text-muted-foreground mt-4 mb-1">
 				Average Fuel Price:
+			</p>
+			<p className="text-xs mb-3 dark:text-amber-500 text-red-600">
+				⚠️ Fuel prices are crowd-sourced and may not reflect real-time
+				changes. Verify at the station before refueling.
 			</p>
 			<div className="flex flex-wrap items-end gap-4 md:gap-6">
 				{fuelTypes.map((fuelType, index) => (
