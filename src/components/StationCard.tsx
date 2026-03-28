@@ -54,10 +54,10 @@ export function StationCard({ station, index }: StationCardProps) {
 								{station.address}
 							</span>
 						</div>
-						<div className="mt-3 flex flex-wrap items-center gap-2">
+						{/* <div className="mt-3 flex flex-wrap items-center gap-2">
 							{station.isVerified && <VerifiedStationBadge />}
 							<ClaimStationDialog station={station} />
-						</div>
+						</div> */}
 					</div>
 				</div>
 
