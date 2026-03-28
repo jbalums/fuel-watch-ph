@@ -37,9 +37,7 @@ function GoogleStationMap({
 	const [hasUserLocation, setHasUserLocation] = useState(false);
 	const [internalSelectedStationId, setInternalSelectedStationId] = useState<
 		string | null
-	>(
-		null,
-	);
+	>(null);
 	const mapRef = useRef<google.maps.Map | null>(null);
 	const selectedStationId =
 		focusedStationId !== undefined
@@ -126,11 +124,11 @@ function GoogleStationMap({
 
 	const createMarkerIcon = (status: StationStatus): google.maps.Symbol => ({
 		path: window.google.maps.SymbolPath.CIRCLE,
-		scale: 10,
+		scale: 12,
 		fillColor: statusColors[status],
 		fillOpacity: 1,
 		strokeColor: "#ffffff",
-		strokeWeight: 2,
+		strokeWeight: 1,
 	});
 
 	return (
