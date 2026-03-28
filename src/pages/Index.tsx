@@ -145,7 +145,7 @@ export default function Index() {
 	};
 
 	return (
-		<div className="min-h-screen bg-background pb-24">
+		<div className="min-h-screen bg-background pb-8">
 			<header className="sticky top-0 z-40 surface-glass px-1 md:px-5 py-4">
 				<div className="container flex items-center justify-between">
 					<button
@@ -250,7 +250,7 @@ export default function Index() {
 				)}
 
 				{tab === "map" && (
-					<div className="min-h-screen">
+					<div className="h-screen">
 						<StationMap stations={stations} />
 					</div>
 				)}
