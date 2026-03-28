@@ -249,7 +249,11 @@ export default function Index() {
 					</>
 				)}
 
-				{tab === "map" && <StationMap stations={stations} />}
+				{tab === "map" && (
+					<div className="min-h-screen">
+						<StationMap stations={stations} />
+					</div>
+				)}
 
 				{tab === "search" && (
 					<>
