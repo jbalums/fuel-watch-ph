@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { BottomNav } from "@/components/BottomNav";
@@ -139,6 +139,10 @@ export default function Index() {
 		setTab(t);
 	};
 
+	useEffect(() => {
+		window.scrollTo({ top: 0, behavior: "smooth" });
+	}, [tab]);
+
 	const handleLogoClick = () => {
 		navigate("/");
 		setTab("home");
@@ -252,7 +256,7 @@ export default function Index() {
 				{tab === "map" && <StationMap stations={stations} />}
 
 				{tab === "search" && (
-					<div className="h-[calc(100dvh-185px)]">
+					<div className="min-h-[calc(100dvh-185px)]">
 						<SearchFilter
 							searchQuery={searchQuery}
 							onSearchChange={setSearchQuery}
@@ -283,7 +287,7 @@ export default function Index() {
 				)}
 
 				{tab === "report" && (
-					<div className="h-[calc(100dvh-185px)]">
+					<div className="min-h-[calc(100dvh-185px)]">
 						<ReportForm />
 					</div>
 				)}
