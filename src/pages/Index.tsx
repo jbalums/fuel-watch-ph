@@ -10,6 +10,22 @@ import { ReportForm } from "@/components/ReportForm";
 import { StationMap } from "@/components/StationMap";
 import { AdminDashboard } from "@/components/AdminDashboard";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import {
+	AlertDialog,
+	AlertDialogAction,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { mockAlerts } from "@/data/mockStations";
 import {
 	FilterFuelType,
@@ -21,7 +37,7 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { useProfile } from "@/hooks/useProfile";
 import { useStations } from "@/hooks/useStations";
-import { Fuel, LogIn, Loader2 } from "lucide-react";
+import { LogIn, Loader2 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAdminRole } from "@/hooks/useAdminRole";
 import logo from "@/assets/images/Icon.png";
@@ -68,7 +84,7 @@ function getUserNameFallback(email?: string | null) {
 }
 
 export default function Index() {
-	const { user } = useAuth();
+	const { user, signOut } = useAuth();
 	const { data: profile } = useProfile();
 	const { isAdmin } = useAdminRole();
 	const navigate = useNavigate();
@@ -78,6 +94,7 @@ export default function Index() {
 	const [fuelFilter, setFuelFilter] = useState<FilterFuelType>("All");
 	const [statusFilter, setStatusFilter] = useState<StatusFilter>("All");
 	const [sortBy, setSortBy] = useState<SortOption>("price_asc");
+	const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
 	const rawHeaderName =
 		profile?.displayName ||
 		user?.user_metadata?.display_name ||
@@ -148,6 +165,13 @@ export default function Index() {
 		setTab("home");
 	};
 
+	const handleConfirmLogout = async () => {
+		await signOut();
+		setLogoutConfirmOpen(false);
+		setTab("home");
+		navigate("/");
+	};
+
 	return (
 		<div className="min-h-screen bg-background pb-8">
 			<header className="sticky top-0 z-40 surface-glass px-1 md:px-5 py-4">
@@ -173,25 +197,45 @@ export default function Index() {
 					<div className="flex items-center gap-3">
 						<ThemeToggle />
 						{user ? (
-							<button
-								onClick={() => navigate("/profile")}
-								className="sovereign-ease transition-transform hover:scale-105 flex items-center gap-1"
-							>
-								<Avatar className="h-8 w-8 ring-1 ring-border">
-									<AvatarImage
-										src={
-											profile?.avatarUrl ||
-											user.user_metadata?.avatar_url
+							<DropdownMenu>
+								<DropdownMenuTrigger asChild>
+									<button className="sovereign-ease transition-transform hover:scale-105 flex items-center gap-1 outline-none">
+										<Avatar className="h-8 w-8 ring-1 ring-border">
+											<AvatarImage
+												src={
+													profile?.avatarUrl ||
+													user.user_metadata?.avatar_url
+												}
+											/>
+											<AvatarFallback className="bg-primary text-primary-foreground text-xs font-semibold">
+												{avatarLabel
+													.slice(0, 2)
+													.toUpperCase()}
+											</AvatarFallback>
+										</Avatar>
+										<span className="text-sm font-bold text-primary">
+											{compactUserName}
+										</span>
+									</button>
+								</DropdownMenuTrigger>
+								<DropdownMenuContent
+									align="end"
+									className="w-44"
+								>
+									<DropdownMenuItem
+										onClick={() => navigate("/profile")}
+									>
+										My profile
+									</DropdownMenuItem>
+									<DropdownMenuItem
+										onSelect={() =>
+											setLogoutConfirmOpen(true)
 										}
-									/>
-									<AvatarFallback className="bg-primary text-primary-foreground text-xs font-semibold">
-										{avatarLabel.slice(0, 2).toUpperCase()}
-									</AvatarFallback>
-								</Avatar>
-								<span className="text-sm font-bold text-primary">
-									{compactUserName}
-								</span>
-							</button>
+									>
+										Logout
+									</DropdownMenuItem>
+								</DropdownMenuContent>
+							</DropdownMenu>
 						) : (
 							<button
 								onClick={() => navigate("/auth")}
@@ -204,6 +248,27 @@ export default function Index() {
 					</div>
 				</div>
 			</header>
+
+			<AlertDialog
+				open={logoutConfirmOpen}
+				onOpenChange={setLogoutConfirmOpen}
+			>
+				<AlertDialogContent>
+					<AlertDialogHeader>
+						<AlertDialogTitle>Log out?</AlertDialogTitle>
+						<AlertDialogDescription>
+							You’ll be signed out of FuelWatch PH on this
+							device.
+						</AlertDialogDescription>
+					</AlertDialogHeader>
+					<AlertDialogFooter>
+						<AlertDialogCancel>Cancel</AlertDialogCancel>
+						<AlertDialogAction onClick={() => void handleConfirmLogout()}>
+							Logout
+						</AlertDialogAction>
+					</AlertDialogFooter>
+				</AlertDialogContent>
+			</AlertDialog>
 
 			<main className="container flex flex-col gap-5 px-5 pt-5">
 				{tab === "home" && (
