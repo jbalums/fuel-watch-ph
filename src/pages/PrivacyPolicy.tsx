@@ -47,7 +47,7 @@ export default function PrivacyPolicy() {
 						<img src={logoFull} className="h-20 opacity-40" />
 					</div>
 					<div className="flex items-start gap-3 flex-col">
-						<div className="flex items-center gap-4">
+						<div className="flex items-center gap-4 max-w-[calc(100%-80px)]">
 							<div className="mt-0.5 flex h-10 w-10 min-w-10 items-center justify-center rounded-xl bg-accent/10 text-accent">
 								<ShieldCheck className="h-5 w-5" />
 							</div>

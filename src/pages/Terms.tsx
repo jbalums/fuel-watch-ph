@@ -44,10 +44,7 @@ export default function Terms() {
 				className="container mt-6"
 			>
 				<div className="mx-auto max-w-3xl rounded-2xl bg-card p-6 shadow-sovereign relative">
-					<div className="absolute right-4 top-2">
-						<img src={logoFull} className="h-20 opacity-40" />
-					</div>
-					<div className="flex items-center gap-3">
+					<div className="flex items-center gap-3 max-w-[calc(100%-80px)]">
 						<div className="mt-0.5 flex h-10 w-10 min-w-10 items-center justify-center rounded-xl bg-accent/10 text-accent">
 							<FileText className="h-5 w-5" />
 						</div>
@@ -56,6 +53,9 @@ export default function Terms() {
 								Fuel Information Disclaimer
 							</h2>
 						</div>
+					</div>
+					<div className="absolute right-4 top-2">
+						<img src={logoFull} className="w-20 opacity-40" />
 					</div>
 					<p className="mt-2 text-sm leading-6 text-muted-foreground">
 						Please review these terms before relying on any fuel
