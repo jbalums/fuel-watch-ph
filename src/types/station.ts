@@ -43,6 +43,10 @@ export interface FuelReport {
   stationName: string;
   lat: number | null;
   lng: number | null;
+  photoPath: string | null;
+  photoFilename: string | null;
+  photoUrl: string | null;
+  prices: Record<FuelType, number | null>;
   price: number;
   fuelType: FuelType;
   status: StationStatus;

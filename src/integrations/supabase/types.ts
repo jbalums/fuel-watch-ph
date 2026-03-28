@@ -22,7 +22,10 @@ export type Database = {
           id: string
           lat: number | null
           lng: number | null
+          photo_filename: string | null
+          photo_path: string | null
           price: number
+          prices: Json | null
           review_status: string
           reviewed_at: string | null
           reviewed_by: string | null
@@ -37,7 +40,10 @@ export type Database = {
           id?: string
           lat?: number | null
           lng?: number | null
+          photo_filename?: string | null
+          photo_path?: string | null
           price: number
+          prices?: Json | null
           review_status?: string
           reviewed_at?: string | null
           reviewed_by?: string | null
@@ -52,7 +58,10 @@ export type Database = {
           id?: string
           lat?: number | null
           lng?: number | null
+          photo_filename?: string | null
+          photo_path?: string | null
           price?: number
+          prices?: Json | null
           review_status?: string
           reviewed_at?: string | null
           reviewed_by?: string | null

@@ -21,6 +21,11 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAdminRole } from "@/hooks/useAdminRole";
+import { createFuelReportPhotoUrl } from "@/lib/fuel-report-photo-upload";
+import {
+	getPrimaryFuelPriceSelection,
+	normalizeFuelPrices,
+} from "@/lib/fuel-prices";
 import {
 	useAdminStationClaims,
 	useApproveStationClaim,
@@ -86,13 +91,28 @@ const claimFilters: { value: ClaimFilter; label: string }[] = [
 ];
 
 function mapFuelReport(report: FuelReportRow): FuelReport {
+	const prices = normalizeFuelPrices(
+		report.prices,
+		report.fuel_type as FuelType,
+		Number(report.price) || 0,
+	);
+	const primarySelection =
+		getPrimaryFuelPriceSelection(prices) ?? {
+			fuelType: report.fuel_type as FuelType,
+			price: Number(report.price) || 0,
+		};
+
 	return {
 		id: report.id,
 		stationName: report.station_name,
 		lat: report.lat,
 		lng: report.lng,
-		price: Number(report.price) || 0,
-		fuelType: report.fuel_type as FuelType,
+		photoPath: report.photo_path,
+		photoFilename: report.photo_filename,
+		photoUrl: null,
+		prices,
+		price: primarySelection.price,
+		fuelType: primarySelection.fuelType,
 		status: report.status as StationStatus,
 		reportedAt: report.created_at,
 		reportedBy: report.user_id,
@@ -102,6 +122,16 @@ function mapFuelReport(report: FuelReportRow): FuelReport {
 		reviewedBy: report.reviewed_by,
 		appliedStationId: report.applied_station_id,
 	};
+}
+
+function formatReportedPrices(prices: Record<FuelType, number | null>) {
+	return fuelTypes
+		.filter((fuelType) => {
+			const price = prices[fuelType];
+			return typeof price === "number" && Number.isFinite(price) && price > 0;
+		})
+		.map((fuelType) => `${fuelType}: P${prices[fuelType]!.toFixed(2)}`)
+		.join(" • ");
 }
 
 function formatReviewStatusLabel(status: FuelReportReviewStatus) {
@@ -237,6 +267,9 @@ export function AdminDashboard() {
 	const [reportSearch, setReportSearch] = useState("");
 	const [reportFilter, setReportFilter] = useState<ReportFilter>("pending");
 	const [claimSearch, setClaimSearch] = useState("");
+	const [openingReportPhotoId, setOpeningReportPhotoId] = useState<
+		string | null
+	>(null);
 	const [claimFilter, setClaimFilter] = useState<ClaimFilter>("pending");
 
 	const { data: stations = [], isLoading: stationsLoading } = useQuery({
@@ -442,6 +475,26 @@ export function AdminDashboard() {
 		},
 		onError: (error) => toast.error(error.message),
 	});
+
+	const openReportPhoto = async (report: FuelReport) => {
+		if (!report.photoPath) {
+			return;
+		}
+
+		try {
+			setOpeningReportPhotoId(report.id);
+			const signedUrl = await createFuelReportPhotoUrl(report.photoPath);
+			window.open(signedUrl, "_blank", "noopener,noreferrer");
+		} catch (error) {
+			toast.error(
+				error instanceof Error
+					? error.message
+					: "Failed to open report photo",
+			);
+		} finally {
+			setOpeningReportPhotoId(null);
+		}
+	};
 
 	const beginCreateStation = () => {
 		setEditingStationId(null);
@@ -1004,8 +1057,10 @@ export function AdminDashboard() {
 												</div>
 
 												<p className="mt-1 text-sm text-muted-foreground">
-													{report.fuelType} • ₱
-													{report.price.toFixed(2)} •{" "}
+													{formatReportedPrices(
+														report.prices,
+													) || "No valid prices"}{" "}
+													•{" "}
 													{new Date(
 														report.reportedAt,
 													).toLocaleString()}
@@ -1024,6 +1079,33 @@ export function AdminDashboard() {
 															)}
 														</p>
 													)}
+
+												{report.photoPath && (
+													<p className="mt-2 text-xs">
+														<button
+															type="button"
+															onClick={() =>
+																void openReportPhoto(
+																	report,
+																)
+															}
+															disabled={
+																openingReportPhotoId ===
+																report.id
+															}
+															className="font-medium text-accent hover:underline disabled:opacity-60"
+														>
+															{openingReportPhotoId ===
+															report.id
+																? "Opening photo..."
+																: `View report photo${
+																		report.photoFilename
+																			? ` (${report.photoFilename})`
+																			: ""
+																  }`}
+														</button>
+													</p>
+												)}
 
 												<p className="mt-2 text-xs text-muted-foreground">
 													Submitted by{" "}
