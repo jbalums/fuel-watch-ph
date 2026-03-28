@@ -26,9 +26,11 @@ export type Database = {
           photo_path: string | null
           price: number
           prices: Json | null
+          reported_address: string | null
           review_status: string
           reviewed_at: string | null
           reviewed_by: string | null
+          station_id: string | null
           station_name: string
           status: string
           user_id: string
@@ -44,9 +46,11 @@ export type Database = {
           photo_path?: string | null
           price: number
           prices?: Json | null
+          reported_address?: string | null
           review_status?: string
           reviewed_at?: string | null
           reviewed_by?: string | null
+          station_id?: string | null
           station_name: string
           status?: string
           user_id: string
@@ -62,14 +66,23 @@ export type Database = {
           photo_path?: string | null
           price?: number
           prices?: Json | null
+          reported_address?: string | null
           review_status?: string
           reviewed_at?: string | null
           reviewed_by?: string | null
+          station_id?: string | null
           station_name?: string
           status?: string
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "fuel_reports_station_id_fkey"
+            columns: ["station_id"]
+            isOneToOne: false
+            referencedRelation: "gas_stations"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "fuel_reports_applied_station_id_fkey"
             columns: ["applied_station_id"]

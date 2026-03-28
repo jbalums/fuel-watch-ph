@@ -104,7 +104,9 @@ function mapFuelReport(report: FuelReportRow): FuelReport {
 
 	return {
 		id: report.id,
+		stationId: report.station_id,
 		stationName: report.station_name,
+		reportedAddress: report.reported_address,
 		lat: report.lat,
 		lng: report.lng,
 		photoPath: report.photo_path,
@@ -327,15 +329,21 @@ export function AdminDashboard() {
 		return reports.filter((report) => {
 			const matchesFilter =
 				reportFilter === "all" || report.reviewStatus === reportFilter;
+			const linkedStationName = report.stationId
+				? stationLookup.get(report.stationId)?.name ?? ""
+				: "";
+			const reportedAddress = report.reportedAddress ?? "";
 			const matchesSearch =
 				!query ||
 				report.stationName.toLowerCase().includes(query) ||
+				linkedStationName.toLowerCase().includes(query) ||
+				reportedAddress.toLowerCase().includes(query) ||
 				report.fuelType.toLowerCase().includes(query) ||
 				report.status.toLowerCase().includes(query);
 
 			return matchesFilter && matchesSearch;
 		});
-	}, [reportFilter, reportSearch, reports]);
+	}, [reportFilter, reportSearch, reports, stationLookup]);
 	const filteredClaims = useMemo(() => {
 		const query = claimSearch.trim().toLowerCase();
 
@@ -1032,6 +1040,9 @@ export function AdminDashboard() {
 								const appliedStation = report.appliedStationId
 									? stationLookup.get(report.appliedStationId)
 									: null;
+								const linkedStation = report.stationId
+									? stationLookup.get(report.stationId)
+									: null;
 								const isPending =
 									report.reviewStatus === "pending";
 
@@ -1065,6 +1076,23 @@ export function AdminDashboard() {
 														report.reportedAt,
 													).toLocaleString()}
 												</p>
+
+												<p className="mt-2 text-xs font-medium text-foreground">
+													{report.stationId
+														? `Existing station update${
+																linkedStation
+																	? `: ${linkedStation.name}`
+																	: ""
+														  }`
+														: "New station candidate"}
+												</p>
+
+												{report.reportedAddress && (
+													<p className="text-xs text-muted-foreground">
+														Address:{" "}
+														{report.reportedAddress}
+													</p>
+												)}
 
 												{report.lat !== null &&
 													report.lng !== null && (

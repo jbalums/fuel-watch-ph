@@ -40,7 +40,9 @@ export interface StationClaimRequest {
 
 export interface FuelReport {
   id: string;
+  stationId: string | null;
   stationName: string;
+  reportedAddress: string | null;
   lat: number | null;
   lng: number | null;
   photoPath: string | null;

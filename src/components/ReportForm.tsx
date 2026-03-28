@@ -6,19 +6,20 @@ import {
   CheckCircle,
   ImagePlus,
   Loader2,
-  MapPin,
   Send,
   X,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import { useStations } from "@/hooks/useStations";
 import {
   FUEL_REPORT_FILE_INPUT_ACCEPT,
   removeFuelReportPhoto,
   uploadFuelReportPhoto,
   validateFuelReportPhoto,
 } from "@/lib/fuel-report-photo-upload";
+import { ReportLocationPicker } from "@/components/ReportLocationPicker";
 import {
   createEmptyFuelPriceFormMap,
   getPrimaryFuelPriceSelection,
@@ -36,14 +37,18 @@ type UploadedPhoto = {
 
 export function ReportForm() {
   const { user } = useAuth();
+  const { data: stations = [] } = useStations();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [stationName, setStationName] = useState("");
   const [prices, setPrices] = useState<FuelPriceFormMap>(
     createEmptyFuelPriceFormMap(),
   );
   const [status, setStatus] = useState<StationStatus>("Available");
+  const [selectedStationId, setSelectedStationId] = useState<string | null>(
+    null,
+  );
+  const [reportedAddress, setReportedAddress] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
-  const [detecting, setDetecting] = useState(false);
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
@@ -82,6 +87,8 @@ export function ReportForm() {
     setStationName("");
     setPrices(createEmptyFuelPriceFormMap());
     setStatus("Available");
+    setSelectedStationId(null);
+    setReportedAddress(null);
     setCoords(null);
     resetPhotoState();
   };
@@ -161,28 +168,19 @@ export function ReportForm() {
     resetPhotoState();
   };
 
-  const handleDetectLocation = () => {
-    if (!navigator.geolocation) {
-      toast.error("Geolocation not supported");
-      return;
-    }
-    setDetecting(true);
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        setCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude });
-        setDetecting(false);
-        toast.success("Location detected!");
-      },
-      () => {
-        setDetecting(false);
-        toast.error("Could not detect location");
-      }
-    );
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!stationName || !user) return;
+    if (!user) return;
+
+    if (!coords) {
+      toast.error("Pick a location from the map");
+      return;
+    }
+
+    if (!stationName.trim()) {
+      toast.error("Station name is required");
+      return;
+    }
 
     let normalizedPrices;
     try {
@@ -215,13 +213,17 @@ export function ReportForm() {
 
     const { error } = await supabase.from("fuel_reports").insert({
       user_id: user.id,
-      station_name: stationName,
+      station_name: stationName.trim(),
       price: primarySelection.price,
       fuel_type: primarySelection.fuelType,
       prices: normalizedPrices,
       status,
-      lat: coords?.lat ?? null,
-      lng: coords?.lng ?? null,
+      station_id: selectedStationId,
+      reported_address:
+        reportedAddress ??
+        `Pinned location (${coords.lat.toFixed(6)}, ${coords.lng.toFixed(6)})`,
+      lat: coords.lat,
+      lng: coords.lng,
       photo_path: photoAttachment?.path ?? null,
       photo_filename: photoAttachment?.filename ?? null,
     });
@@ -277,22 +279,54 @@ export function ReportForm() {
           type="text"
           value={stationName}
           onChange={(e) => setStationName(e.target.value)}
+          readOnly={selectedStationId !== null}
           placeholder="e.g. Petron EDSA Cubao"
           className="rounded-xl bg-surface-alt px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:bg-card focus:ring-2 focus:ring-primary/20 sovereign-ease transition-all"
         />
+        <p className="text-xs text-muted-foreground">
+          {selectedStationId
+            ? "Station name is locked because you selected an existing station marker."
+            : "Select an existing station on the map or enter a new station name for a pinned location."}
+        </p>
       </div>
 
       {/* Location */}
       <div className="flex flex-col gap-1.5">
         <label className="text-label text-muted-foreground">Location</label>
-        <button
-          type="button"
-          onClick={handleDetectLocation}
-          className="flex items-center gap-2 rounded-xl bg-surface-alt px-4 py-3 text-sm text-muted-foreground hover:text-foreground sovereign-ease transition-colors"
-        >
-          <MapPin className={cn("h-4 w-4", detecting && "animate-pulse text-accent", coords && "text-success")} />
-          {detecting ? "Detecting..." : coords ? `${coords.lat.toFixed(4)}, ${coords.lng.toFixed(4)}` : "Auto-detect GPS location"}
-        </button>
+        <ReportLocationPicker
+          stations={stations}
+          selectedStationId={selectedStationId}
+          selectedPosition={coords}
+          selectedAddress={reportedAddress}
+          onSelectExistingStation={(station) => {
+            setSelectedStationId(station.id);
+            setStationName(station.name);
+            setReportedAddress(station.address);
+            setCoords({
+              lat: station.lat,
+              lng: station.lng,
+            });
+          }}
+          onSelectNewLocation={(selection) => {
+            setCoords({
+              lat: selection.lat,
+              lng: selection.lng,
+            });
+            setReportedAddress(selection.reportedAddress);
+            setSelectedStationId(null);
+            setStationName((current) =>
+              selectedStationId ? "" : current,
+            );
+          }}
+          onClearSelection={() => {
+            setCoords(null);
+            setReportedAddress(null);
+            setStationName((current) =>
+              selectedStationId ? "" : current,
+            );
+            setSelectedStationId(null);
+          }}
+        />
       </div>
 
       {/* Price */}
