@@ -67,6 +67,10 @@ export default function Auth() {
 		});
 	};
 
+	const handleLogoClick = () => {
+		navigate("/");
+	};
+
 	return (
 		<div className="flex min-h-screen items-center justify-center bg-background px-5">
 			<motion.div
@@ -76,7 +80,10 @@ export default function Auth() {
 				className="w-full max-w-sm"
 			>
 				{/* Logo */}
-				<div className="mb-8 flex flex-col items-center gap-3">
+				<div
+					className="mb-8 flex flex-col items-center gap-3 cursor-pointer"
+					onClick={handleLogoClick}
+				>
 					<div className="flex h-28 w-32 items-center justify-center rounded-2xl bg-white shadow-sm">
 						{/* <Fuel className="h-7 w-7 text-primary-foreground" /> */}
 						<img src={logo} className="h-24 w-24" />

@@ -139,11 +139,20 @@ export default function Index() {
 		setTab(t);
 	};
 
+	const handleLogoClick = () => {
+		navigate("/");
+		setTab("home");
+	};
+
 	return (
 		<div className="min-h-screen bg-background pb-24">
 			<header className="sticky top-0 z-40 surface-glass px-1 md:px-5 py-4">
 				<div className="container flex items-center justify-between">
-					<div className="flex items-center gap-0">
+					<button
+						type="button"
+						onClick={handleLogoClick}
+						className="flex items-center gap-0 rounded-xl text-left sovereign-ease transition-opacity hover:opacity-90"
+					>
 						<div className="flex h-9 w-9 items-center justify-center">
 							<img src={logo} className="h-9 w-12" />
 						</div>
@@ -156,7 +165,7 @@ export default function Index() {
 								Know before you fill up
 							</p>
 						</div>
-					</div>
+					</button>
 					<div className="flex items-center gap-3">
 						<ThemeToggle />
 						{user ? (
