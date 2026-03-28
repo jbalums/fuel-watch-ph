@@ -10,6 +10,7 @@ import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Profile from "./pages/Profile";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
+import StationManagerDashboard from "./pages/StationManagerDashboard";
 import Terms from "./pages/Terms";
 import NotFound from "./pages/NotFound";
 import { GoogleOAuthProvider } from "@react-oauth/google";
@@ -33,6 +34,10 @@ const App = () => (
 										<Route path="/" element={<Index />} />
 										<Route path="/auth" element={<Auth />} />
 										<Route path="/profile" element={<Profile />} />
+										<Route
+											path="/manager"
+											element={<StationManagerDashboard />}
+										/>
 										<Route
 											path="/privacy-policy"
 											element={<PrivacyPolicy />}

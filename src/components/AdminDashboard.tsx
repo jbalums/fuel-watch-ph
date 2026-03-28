@@ -22,18 +22,27 @@ import type { Tables } from "@/integrations/supabase/types";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAdminRole } from "@/hooks/useAdminRole";
 import {
+	useAdminStationClaims,
+	useApproveStationClaim,
+	useRejectStationClaim,
+} from "@/hooks/useStationClaims";
+import {
 	FuelReport,
 	FuelReportReviewStatus,
 	FuelType,
+	StationClaimRequest,
+	StationClaimReviewStatus,
 	StationStatus,
 } from "@/types/station";
 import { StatusBadge } from "./StatusBadge";
 import { StationLocationPicker } from "./StationLocationPicker";
+import { VerifiedStationBadge } from "./VerifiedStationBadge";
 
 type GasStationRow = Tables<"gas_stations">;
 type FuelReportRow = Tables<"fuel_reports">;
-type AdminSection = "stations" | "reports";
+type AdminSection = "stations" | "reports" | "claims";
 type ReportFilter = FuelReportReviewStatus | "all";
+type ClaimFilter = StationClaimReviewStatus | "all";
 type StationPricesFormState = Record<FuelType, string>;
 
 const fuelTypes: FuelType[] = ["Unleaded", "Premium", "Diesel"];
@@ -63,6 +72,13 @@ const initialStationForm: StationFormState = {
 };
 
 const reportFilters: { value: ReportFilter; label: string }[] = [
+	{ value: "pending", label: "Pending" },
+	{ value: "approved", label: "Approved" },
+	{ value: "rejected", label: "Rejected" },
+	{ value: "all", label: "All" },
+];
+
+const claimFilters: { value: ClaimFilter; label: string }[] = [
 	{ value: "pending", label: "Pending" },
 	{ value: "approved", label: "Approved" },
 	{ value: "rejected", label: "Rejected" },
@@ -220,6 +236,8 @@ export function AdminDashboard() {
 	const [stationSearch, setStationSearch] = useState("");
 	const [reportSearch, setReportSearch] = useState("");
 	const [reportFilter, setReportFilter] = useState<ReportFilter>("pending");
+	const [claimSearch, setClaimSearch] = useState("");
+	const [claimFilter, setClaimFilter] = useState<ClaimFilter>("pending");
 
 	const { data: stations = [], isLoading: stationsLoading } = useQuery({
 		queryKey: ["admin", "gas_stations"],
@@ -248,6 +266,10 @@ export function AdminDashboard() {
 		},
 		enabled: isAdmin,
 	});
+	const { data: claimRequests = [], isLoading: claimsLoading } =
+		useAdminStationClaims(isAdmin);
+	const approveClaim = useApproveStationClaim();
+	const rejectClaim = useRejectStationClaim();
 
 	const stationLookup = useMemo(
 		() => new Map(stations.map((station) => [station.id, station])),
@@ -281,9 +303,29 @@ export function AdminDashboard() {
 			return matchesFilter && matchesSearch;
 		});
 	}, [reportFilter, reportSearch, reports]);
+	const filteredClaims = useMemo(() => {
+		const query = claimSearch.trim().toLowerCase();
+
+		return claimRequests.filter((claim) => {
+			const station = stationLookup.get(claim.stationId);
+			const matchesFilter =
+				claimFilter === "all" || claim.reviewStatus === claimFilter;
+			const matchesSearch =
+				!query ||
+				station?.name.toLowerCase().includes(query) ||
+				claim.businessName.toLowerCase().includes(query) ||
+				claim.contactName.toLowerCase().includes(query) ||
+				claim.contactPhone.toLowerCase().includes(query);
+
+			return matchesFilter && matchesSearch;
+		});
+	}, [claimFilter, claimRequests, claimSearch, stationLookup]);
 
 	const pendingReports = reports.filter(
 		(report) => report.reviewStatus === "pending",
+	).length;
+	const pendingClaims = claimRequests.filter(
+		(claim) => claim.reviewStatus === "pending",
 	).length;
 	const reviewedReports = reports.filter(
 		(report) => report.reviewStatus !== "pending",
@@ -308,6 +350,9 @@ export function AdminDashboard() {
 			}),
 			queryClient.invalidateQueries({
 				queryKey: ["admin", "fuel_reports"],
+			}),
+			queryClient.invalidateQueries({
+				queryKey: ["admin", "station_claim_requests"],
 			}),
 			queryClient.invalidateQueries({ queryKey: ["gas_stations"] }),
 		]);
@@ -487,6 +532,16 @@ export function AdminDashboard() {
 					>
 						Reports
 					</button>
+					<button
+						onClick={() => setActiveSection("claims")}
+						className={`rounded-full px-4 py-2 text-sm font-medium ${
+							activeSection === "claims"
+								? "bg-primary text-primary-foreground"
+								: "bg-secondary text-muted-foreground hover:text-foreground"
+						}`}
+					>
+						Claims
+					</button>
 				</div>
 			</div>
 
@@ -497,6 +552,11 @@ export function AdminDashboard() {
 						label: "Pending Reports",
 						value: pendingReports,
 						icon: FileText,
+					},
+					{
+						label: "Pending Claims",
+						value: pendingClaims,
+						icon: ShieldAlert,
 					},
 					{
 						label: "Reviewed Reports",
@@ -799,6 +859,9 @@ export function AdminDashboard() {
 												<p className="font-semibold text-foreground">
 													{station.name}
 												</p>
+												{station.is_verified && (
+													<VerifiedStationBadge className="py-0.5" />
+												)}
 												<StatusBadge
 													status={
 														station.status as StationStatus
@@ -1021,6 +1084,204 @@ export function AdminDashboard() {
 															report.reviewStatus,
 														)}{" "}
 														report
+													</p>
+												)}
+											</div>
+										</div>
+									</div>
+								);
+							})
+						)}
+					</div>
+				</div>
+			)}
+
+			{activeSection === "claims" && (
+				<div className="rounded-2xl bg-card p-5 shadow-sovereign">
+					<div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+						<div>
+							<h3 className="text-ui font-semibold text-foreground">
+								Station Claims
+							</h3>
+							<p className="text-sm text-muted-foreground">
+								Review station ownership requests and verify
+								approved business managers.
+							</p>
+						</div>
+						<div className="relative">
+							<Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+							<input
+								type="text"
+								placeholder="Search claims"
+								value={claimSearch}
+								onChange={(event) =>
+									setClaimSearch(event.target.value)
+								}
+								className="w-full rounded-xl bg-surface-alt py-2.5 pl-9 pr-3 text-sm text-foreground outline-none focus:ring-2 focus:ring-primary/20 md:w-64"
+							/>
+						</div>
+					</div>
+
+					<div className="mb-4 flex flex-wrap gap-2">
+						{claimFilters.map((filter) => (
+							<button
+								key={filter.value}
+								onClick={() => setClaimFilter(filter.value)}
+								className={`rounded-full px-4 py-1.5 text-sm font-medium ${
+									claimFilter === filter.value
+										? "bg-accent text-accent-foreground"
+										: "bg-surface-alt text-muted-foreground hover:text-foreground"
+								}`}
+							>
+								{filter.label}
+							</button>
+						))}
+					</div>
+
+					<div className="flex flex-col gap-3">
+						{claimsLoading ? (
+							<div className="flex items-center justify-center py-10">
+								<Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+							</div>
+						) : filteredClaims.length === 0 ? (
+							<p className="py-8 text-center text-sm text-muted-foreground">
+								No station claims match the current filter.
+							</p>
+						) : (
+							filteredClaims.map((claim) => {
+								const station = stationLookup.get(claim.stationId);
+								const isPending =
+									claim.reviewStatus === "pending";
+
+								return (
+									<div
+										key={claim.id}
+										className="rounded-xl border border-border bg-secondary/40 p-4"
+									>
+										<div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+											<div className="min-w-0 flex-1">
+												<div className="flex flex-wrap items-center gap-2">
+													<p className="font-semibold text-foreground">
+														{station?.name ??
+															"Unknown Station"}
+													</p>
+													<ReviewStatusBadge
+														status={claim.reviewStatus}
+													/>
+													{station?.is_verified && (
+														<VerifiedStationBadge className="py-0.5" />
+													)}
+												</div>
+												<p className="mt-1 text-sm text-muted-foreground">
+													{station?.address ??
+														"Station address unavailable"}
+												</p>
+												<p className="mt-2 text-sm text-foreground">
+													{claim.businessName}
+												</p>
+												<p className="text-xs text-muted-foreground">
+													Contact: {claim.contactName} •{" "}
+													{claim.contactPhone}
+												</p>
+												{claim.notes && (
+													<p className="mt-2 text-xs text-muted-foreground">
+														Notes: {claim.notes}
+													</p>
+												)}
+												{claim.proofDocumentUrl && (
+													<p className="mt-2 text-xs">
+														<a
+															href={claim.proofDocumentUrl}
+															target="_blank"
+															rel="noreferrer"
+															className="font-medium text-accent hover:underline"
+														>
+															View proof document
+															{claim.proofDocumentFilename
+																? ` (${claim.proofDocumentFilename})`
+																: ""}
+														</a>
+													</p>
+												)}
+												<p className="mt-2 text-xs text-muted-foreground">
+													Submitted{" "}
+													{new Date(
+														claim.createdAt,
+													).toLocaleString()}
+													{claim.reviewedAt
+														? ` • Reviewed ${new Date(claim.reviewedAt).toLocaleString()}`
+														: ""}
+												</p>
+											</div>
+
+											<div className="flex gap-2">
+												{isPending ? (
+													<>
+														<button
+															onClick={() =>
+																approveClaim.mutate(
+																	claim.id,
+																	{
+																		onSuccess:
+																			() => {
+																			toast.success(
+																				`Claim approved for ${station?.name ?? "station"}`,
+																			);
+																		},
+																		onError:
+																			(error) => {
+																			toast.error(
+																				error.message,
+																			);
+																		},
+																	},
+																)
+															}
+															disabled={
+																approveClaim.isPending ||
+																rejectClaim.isPending
+															}
+															className="flex items-center gap-1.5 rounded-lg bg-success/15 px-3 py-2 text-sm font-medium text-success transition-colors hover:bg-success/20 disabled:opacity-50"
+														>
+															<CheckCircle2 className="h-4 w-4" />
+															Approve
+														</button>
+														<button
+															onClick={() =>
+																rejectClaim.mutate(
+																	claim.id,
+																	{
+																		onSuccess:
+																			() => {
+																			toast.success(
+																				"Claim rejected",
+																			);
+																		},
+																		onError:
+																			(error) => {
+																			toast.error(
+																				error.message,
+																			);
+																		},
+																	},
+																)
+															}
+															disabled={
+																approveClaim.isPending ||
+																rejectClaim.isPending
+															}
+															className="flex items-center gap-1.5 rounded-lg bg-destructive/10 px-3 py-2 text-sm font-medium text-destructive transition-colors hover:bg-destructive/15 disabled:opacity-50"
+														>
+															<XCircle className="h-4 w-4" />
+															Reject
+														</button>
+													</>
+												) : (
+													<p className="text-sm text-muted-foreground">
+														{formatReviewStatusLabel(
+															claim.reviewStatus,
+														)}{" "}
+														claim
 													</p>
 												)}
 											</div>

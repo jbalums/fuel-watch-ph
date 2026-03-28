@@ -76,42 +76,51 @@ export type Database = {
           created_at: string
           fuel_type: string
           id: string
+          is_verified: boolean
           lat: number
           lng: number
+          manager_user_id: string | null
           name: string
           price_per_liter: number
           prices: Json
           report_count: number
           status: string
           updated_at: string
+          verified_at: string | null
         }
         Insert: {
           address: string
           created_at?: string
           fuel_type?: string
           id?: string
+          is_verified?: boolean
           lat: number
           lng: number
+          manager_user_id?: string | null
           name: string
           price_per_liter?: number
           prices?: Json
           report_count?: number
           status?: string
           updated_at?: string
+          verified_at?: string | null
         }
         Update: {
           address?: string
           created_at?: string
           fuel_type?: string
           id?: string
+          is_verified?: boolean
           lat?: number
           lng?: number
+          manager_user_id?: string | null
           name?: string
           price_per_liter?: number
           prices?: Json
           report_count?: number
           status?: string
           updated_at?: string
+          verified_at?: string | null
         }
         Relationships: []
       }
@@ -142,6 +151,65 @@ export type Database = {
         }
         Relationships: []
       }
+      station_claim_requests: {
+        Row: {
+          business_name: string
+          contact_name: string
+          contact_phone: string
+          created_at: string
+          id: string
+          notes: string | null
+          proof_document_filename: string | null
+          proof_document_path: string | null
+          review_status: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          station_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          business_name: string
+          contact_name: string
+          contact_phone: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          proof_document_filename?: string | null
+          proof_document_path?: string | null
+          review_status?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          station_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          business_name?: string
+          contact_name?: string
+          contact_phone?: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          proof_document_filename?: string | null
+          proof_document_path?: string | null
+          review_status?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          station_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "station_claim_requests_station_id_fkey"
+            columns: ["station_id"]
+            isOneToOne: false
+            referencedRelation: "gas_stations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           id: string
@@ -165,6 +233,12 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      approve_station_claim: {
+        Args: {
+          _claim_id: string
+        }
+        Returns: string
+      }
       approve_fuel_report: {
         Args: {
           _report_id: string
@@ -181,6 +255,22 @@ export type Database = {
       reject_fuel_report: {
         Args: {
           _report_id: string
+        }
+        Returns: string
+      }
+      reject_station_claim: {
+        Args: {
+          _claim_id: string
+        }
+        Returns: string
+      }
+      update_managed_station: {
+        Args: {
+          _address: string
+          _fuel_type: string
+          _prices: Json
+          _station_id: string
+          _status: string
         }
         Returns: string
       }

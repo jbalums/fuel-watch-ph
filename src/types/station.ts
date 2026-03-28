@@ -1,6 +1,7 @@
 export type FuelType = "Unleaded" | "Premium" | "Diesel";
 export type StationStatus = "Available" | "Low" | "Out";
 export type FuelReportReviewStatus = "pending" | "approved" | "rejected";
+export type StationClaimReviewStatus = "pending" | "approved" | "rejected";
 
 export interface GasStation {
   id: string;
@@ -9,12 +10,32 @@ export interface GasStation {
   lat: number;
   lng: number;
   prices: Record<FuelType, number | null>;
+  isVerified: boolean;
+  verifiedAt: string | null;
+  managerUserId: string | null;
   status: StationStatus;
   fuelType: FuelType;
   pricePerLiter: number;
   updatedAt: string;
   lastUpdated: string;
   reportCount: number;
+}
+
+export interface StationClaimRequest {
+  id: string;
+  stationId: string;
+  userId: string;
+  businessName: string;
+  contactName: string;
+  contactPhone: string;
+  notes: string | null;
+  proofDocumentPath: string | null;
+  proofDocumentFilename: string | null;
+  proofDocumentUrl: string | null;
+  reviewStatus: StationClaimReviewStatus;
+  reviewedAt: string | null;
+  reviewedBy: string | null;
+  createdAt: string;
 }
 
 export interface FuelReport {

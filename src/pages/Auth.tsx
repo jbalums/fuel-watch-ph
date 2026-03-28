@@ -24,17 +24,6 @@ export default function Auth() {
 		}
 	}, [user, navigate]);
 
-	const handleGoogleSignIn = async () => {
-		setGoogleLoading(true);
-		const { error } = await lovable.auth.signInWithOAuth("google", {
-			redirect_uri: window.location.origin,
-		});
-		if (error) {
-			toast.error(error.message);
-			setGoogleLoading(false);
-		}
-	};
-
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
 		setLoading(true);

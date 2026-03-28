@@ -124,7 +124,8 @@ export default function Index() {
 						</div>
 						<div>
 							<h1 className="text-base font-bold text-foreground tracking-tight">
-								FuelWatch PH
+								<span className="text-primary">FuelWatch</span>{" "}
+								<span className="text-amber-600">PH</span>
 							</h1>
 							<p className="text-xs text-muted-foreground">
 								Real-time fuel tracking

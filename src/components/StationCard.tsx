@@ -3,6 +3,8 @@ import { StatusBadge } from "./StatusBadge";
 import { motion } from "framer-motion";
 import { MapPin, Clock, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { ClaimStationDialog } from "./ClaimStationDialog";
+import { VerifiedStationBadge } from "./VerifiedStationBadge";
 
 interface StationCardProps {
 	station: GasStation;
@@ -51,6 +53,10 @@ export function StationCard({ station, index }: StationCardProps) {
 							<span className=" text-sm pr-4">
 								{station.address}
 							</span>
+						</div>
+						<div className="mt-3 flex flex-wrap items-center gap-2">
+							{station.isVerified && <VerifiedStationBadge />}
+							<ClaimStationDialog station={station} />
 						</div>
 					</div>
 				</div>

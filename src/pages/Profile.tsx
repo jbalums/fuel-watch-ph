@@ -13,12 +13,14 @@ import {
 	FileText,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useManagedStation } from "@/hooks/useManagedStation";
 import { termsDisclaimerParagraphs } from "@/lib/legal";
 
 export default function Profile() {
 	const { user, loading: authLoading, signOut } = useAuth();
 	const navigate = useNavigate();
 	const fileInputRef = useRef<HTMLInputElement>(null);
+	const { data: managedStation } = useManagedStation();
 
 	const [displayName, setDisplayName] = useState("");
 	const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
@@ -218,6 +220,15 @@ export default function Profile() {
 						{saving ? "Saving..." : "Save Changes"}
 					</motion.button>
 				</div>
+
+				{managedStation && (
+					<button
+						onClick={() => navigate("/manager")}
+						className="flex w-full max-w-sm items-center justify-center gap-2 rounded-xl bg-accent px-4 py-3.5 font-semibold text-accent-foreground transition-colors hover:bg-accent/90"
+					>
+						Manage {managedStation.name}
+					</button>
+				)}
 
 				<div className="w-full max-w-sm rounded-2xl bg-card p-6 shadow-sovereign">
 					<div className="flex items-start gap-3">
