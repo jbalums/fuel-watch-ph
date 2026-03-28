@@ -62,7 +62,7 @@ export default function Auth() {
 				redirectTo:
 					window.location.hostname === "localhost"
 						? "http://localhost:8080/"
-						: "https://fuel-watch-ph.pages.dev/",
+						: "https://fuelwatchph.com/",
 			},
 		});
 	};
