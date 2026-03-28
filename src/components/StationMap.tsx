@@ -24,15 +24,36 @@ const statusColors: Record<StationStatus, string> = {
 };
 interface StationMapProps {
 	stations: GasStation[];
+	focusedStationId?: string | null;
+	onFocusedStationChange?: (stationId: string | null) => void;
 }
 
-function GoogleStationMap({ stations }: StationMapProps) {
+function GoogleStationMap({
+	stations,
+	focusedStationId,
+	onFocusedStationChange,
+}: StationMapProps) {
 	const [center, setCenter] = useState(MANILA_CENTER);
 	const [hasUserLocation, setHasUserLocation] = useState(false);
-	const [selectedStationId, setSelectedStationId] = useState<string | null>(
+	const [internalSelectedStationId, setInternalSelectedStationId] = useState<
+		string | null
+	>(
 		null,
 	);
 	const mapRef = useRef<google.maps.Map | null>(null);
+	const selectedStationId =
+		focusedStationId !== undefined
+			? focusedStationId
+			: internalSelectedStationId;
+
+	const setSelectedStationId = (stationId: string | null) => {
+		if (onFocusedStationChange) {
+			onFocusedStationChange(stationId);
+			return;
+		}
+
+		setInternalSelectedStationId(stationId);
+	};
 
 	useEffect(() => {
 		if (!navigator.geolocation) {
@@ -100,6 +121,7 @@ function GoogleStationMap({ stations }: StationMapProps) {
 			lat: selectedStation.lat,
 			lng: selectedStation.lng,
 		});
+		mapRef.current.setZoom(17);
 	}, [selectedStationId, stations]);
 
 	const createMarkerIcon = (status: StationStatus): google.maps.Symbol => ({
@@ -153,7 +175,11 @@ function GoogleStationMap({ stations }: StationMapProps) {
 	);
 }
 
-export function StationMap({ stations }: StationMapProps) {
+export function StationMap({
+	stations,
+	focusedStationId,
+	onFocusedStationChange,
+}: StationMapProps) {
 	if (!GOOGLE_MAPS_API_KEY) {
 		return (
 			<div className="rounded-2xl border border-border bg-card p-6 shadow-sovereign">
@@ -185,7 +211,11 @@ export function StationMap({ stations }: StationMapProps) {
 					</div>
 				}
 			>
-				<GoogleStationMap stations={stations} />
+				<GoogleStationMap
+					stations={stations}
+					focusedStationId={focusedStationId}
+					onFocusedStationChange={onFocusedStationChange}
+				/>
 			</LoadScriptNext>
 		</div>
 	);

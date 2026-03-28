@@ -5,6 +5,7 @@ import { MapPin, Clock, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ClaimStationDialog } from "./ClaimStationDialog";
 import { VerifiedStationBadge } from "./VerifiedStationBadge";
+import { useLocation, useNavigate } from "react-router-dom";
 
 interface StationCardProps {
 	station: GasStation;
@@ -12,12 +13,24 @@ interface StationCardProps {
 }
 
 export function StationCard({ station, index }: StationCardProps) {
+	const navigate = useNavigate();
+	const location = useLocation();
 	const statusBarColor =
 		station.status === "Available"
 			? "status-bar-available"
 			: station.status === "Low"
 				? "status-bar-low"
 				: "status-bar-out";
+
+	const handleOpenOnMap = () => {
+		const searchParams = new URLSearchParams(location.search);
+		searchParams.set("station", station.id);
+
+		navigate({
+			pathname: "/map",
+			search: searchParams.toString(),
+		});
+	};
 
 	return (
 		<motion.div
@@ -31,6 +44,15 @@ export function StationCard({ station, index }: StationCardProps) {
 				ease: [0.2, 0.8, 0.2, 1],
 			}}
 			whileTap={{ scale: 0.97 }}
+			onClick={handleOpenOnMap}
+			onKeyDown={(event) => {
+				if (event.key === "Enter" || event.key === " ") {
+					event.preventDefault();
+					handleOpenOnMap();
+				}
+			}}
+			role="button"
+			tabIndex={0}
 			className="group relative flex overflow-hidden rounded-xl bg-card shadow-sovereign cursor-pointer sovereign-ease"
 		>
 			{/* Status bar */}
