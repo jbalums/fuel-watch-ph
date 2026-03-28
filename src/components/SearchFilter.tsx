@@ -40,7 +40,7 @@ export function SearchFilter({
 				placeholder="Search stations..."
 				value={searchQuery}
 				onChange={(e) => onSearchChange(e.target.value)}
-				className="w-full rounded-xl bg-surface-alt px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:bg-card focus:ring-2 focus:ring-primary/20 sovereign-ease transition-all"
+				className="w-full rounded-sm bg-surface-alt px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:bg-card focus:ring-2 focus:ring-primary/20 sovereign-ease transition-all border"
 			/>
 
 			<div className="flex items-center gap-2 overflow-x-auto pb-1 flex-wrap justify-center">
@@ -50,10 +50,10 @@ export function SearchFilter({
 						key={type}
 						onClick={() => onFuelFilterChange(type)}
 						className={cn(
-							"shrink-0 rounded-full px-4 py-1.5 text-ui sovereign-ease transition-colors",
+							"shrink-0 rounded-full px-3 py-1.5 text-sm sovereign-ease transition-colors",
 							fuelFilter === type
-								? "bg-primary text-primary-foreground text-ui "
-								: "bg-surface-alt text-muted-foreground hover:text-foreground text-ui ",
+								? "bg-primary text-primary-foreground"
+								: "bg-surface-alt text-muted-foreground hover:text-foreground",
 						)}
 					>
 						{type}
@@ -66,7 +66,7 @@ export function SearchFilter({
 						onChange={(e) =>
 							onStatusFilterChange(e.target.value as StatusFilter)
 						}
-						className="rounded-full bg-surface-alt px-3 py-1.5 text-ui text-foreground outline-none focus:ring-2 focus:ring-primary/20 sovereign-ease transition-all"
+						className="rounded-full bg-surface-alt px-3 py-1.5 text-sm text-foreground outline-none focus:ring-2 focus:ring-primary/20 sovereign-ease transition-all"
 					>
 						{statusOptions.map((status) => (
 							<option key={status} value={status}>
@@ -90,12 +90,12 @@ export function SearchFilter({
 								onClick={() => onSortChange(opt.value)}
 								disabled={!priceSortEnabled}
 								className={cn(
-									"rounded-full px-3 py-1.5 text-ui sovereign-ease transition-colors",
+									"rounded-full px-3 py-1.5 text-sm sovereign-ease transition-colors",
 									priceSortEnabled && sortBy === opt.value
-										? "bg-accent text-accent-foreground text-ui"
+										? "bg-accent text-accent-foreground"
 										: priceSortEnabled
-											? "text-muted-foreground hover:text-foreground text-ui"
-											: "cursor-not-allowed text-muted-foreground/50 text-ui",
+											? "text-muted-foreground hover:text-foreground"
+											: "cursor-not-allowed text-muted-foreground/50",
 								)}
 							>
 								{opt.label}
