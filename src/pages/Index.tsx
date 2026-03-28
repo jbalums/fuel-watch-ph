@@ -19,6 +19,7 @@ import {
 	StatusFilter,
 } from "@/types/station";
 import { useAuth } from "@/contexts/AuthContext";
+import { useProfile } from "@/hooks/useProfile";
 import { useStations } from "@/hooks/useStations";
 import { Fuel, LogIn, Loader2 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -50,8 +51,25 @@ function formatCompactUserName(rawName: string) {
 	return `${parts[0]} ${parts[1][0].toUpperCase()}.`;
 }
 
+function capHeaderName(name: string, maxLength = 10) {
+	if (name.length <= maxLength) {
+		return name;
+	}
+
+	return `${name.slice(0, maxLength - 1).trimEnd()}…`;
+}
+
+function getUserNameFallback(email?: string | null) {
+	if (!email) {
+		return "";
+	}
+
+	return email.split("@")[0] || email;
+}
+
 export default function Index() {
 	const { user } = useAuth();
+	const { data: profile } = useProfile();
 	const { isAdmin } = useAdminRole();
 	const navigate = useNavigate();
 	const { data: stations = [], isLoading: stationsLoading } = useStations();
@@ -60,12 +78,19 @@ export default function Index() {
 	const [fuelFilter, setFuelFilter] = useState<FilterFuelType>("All");
 	const [statusFilter, setStatusFilter] = useState<StatusFilter>("All");
 	const [sortBy, setSortBy] = useState<SortOption>("price_asc");
-	const compactUserName = formatCompactUserName(
+	const rawHeaderName =
+		profile?.displayName ||
+		user?.user_metadata?.display_name ||
 		user?.user_metadata?.name ||
-			user?.user_metadata?.display_name ||
-			user?.email ||
-			"",
-	);
+		getUserNameFallback(user?.email) ||
+		"";
+	const compactUserName = capHeaderName(formatCompactUserName(rawHeaderName));
+	const avatarLabel =
+		profile?.displayName ||
+		user?.user_metadata?.display_name ||
+		user?.user_metadata?.name ||
+		getUserNameFallback(user?.email) ||
+		"?";
 
 	const filteredStations = useMemo(() => {
 		let list = [...stations];
@@ -116,19 +141,19 @@ export default function Index() {
 
 	return (
 		<div className="min-h-screen bg-background pb-24">
-			<header className="sticky top-0 z-40 surface-glass px-2 md:px-5 py-4">
+			<header className="sticky top-0 z-40 surface-glass px-1 md:px-5 py-4">
 				<div className="container flex items-center justify-between">
 					<div className="flex items-center gap-0">
 						<div className="flex h-9 w-9 items-center justify-center">
-							<img src={logo} className="h-8 w-8" />
+							<img src={logo} className="h-9 w-12" />
 						</div>
 						<div>
 							<h1 className="text-base font-bold text-foreground tracking-tight">
 								<span className="text-primary">FuelWatch</span>{" "}
 								<span className="text-amber-600">PH</span>
 							</h1>
-							<p className="text-xs text-muted-foreground">
-								Real-time fuel tracking
+							<p className="text-[10px] text-muted-foreground">
+								Know before you fill up
 							</p>
 						</div>
 					</div>
@@ -141,16 +166,13 @@ export default function Index() {
 							>
 								<Avatar className="h-8 w-8 ring-1 ring-border">
 									<AvatarImage
-										src={user.user_metadata?.avatar_url}
+										src={
+											profile?.avatarUrl ||
+											user.user_metadata?.avatar_url
+										}
 									/>
 									<AvatarFallback className="bg-primary text-primary-foreground text-xs font-semibold">
-										{(
-											user.user_metadata?.display_name ||
-											user.email ||
-											"?"
-										)
-											.slice(0, 2)
-											.toUpperCase()}
+										{avatarLabel.slice(0, 2).toUpperCase()}
 									</AvatarFallback>
 								</Avatar>
 								<span className="text-sm font-bold text-primary">

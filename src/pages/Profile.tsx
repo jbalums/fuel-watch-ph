@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { motion } from "framer-motion";
@@ -14,17 +15,19 @@ import {
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useManagedStation } from "@/hooks/useManagedStation";
+import { useProfile } from "@/hooks/useProfile";
 import { termsDisclaimerParagraphs } from "@/lib/legal";
 
 export default function Profile() {
 	const { user, loading: authLoading, signOut } = useAuth();
 	const navigate = useNavigate();
+	const queryClient = useQueryClient();
 	const fileInputRef = useRef<HTMLInputElement>(null);
 	const { data: managedStation } = useManagedStation();
+	const { data: profile, isLoading: profileLoading } = useProfile();
 
 	const [displayName, setDisplayName] = useState("");
 	const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
-	const [loading, setLoading] = useState(true);
 	const [saving, setSaving] = useState(false);
 	const [uploading, setUploading] = useState(false);
 
@@ -34,23 +37,13 @@ export default function Profile() {
 			navigate("/auth");
 			return;
 		}
-
-		const fetchProfile = async () => {
-			const { data } = await supabase
-				.from("profiles")
-				.select("display_name, avatar_url")
-				.eq("user_id", user.id)
-				.single();
-
-			if (data) {
-				setDisplayName(data.display_name ?? "");
-				setAvatarUrl(data.avatar_url);
-			}
-			setLoading(false);
-		};
-
-		fetchProfile();
 	}, [user, authLoading, navigate]);
+
+	useEffect(() => {
+		if (!profile) return;
+		setDisplayName(profile.displayName ?? "");
+		setAvatarUrl(profile.avatarUrl);
+	}, [profile]);
 
 	const handleAvatarUpload = async (
 		e: React.ChangeEvent<HTMLInputElement>,
@@ -96,6 +89,9 @@ export default function Profile() {
 			toast.error("Failed to save avatar");
 		} else {
 			setAvatarUrl(url);
+			await queryClient.invalidateQueries({
+				queryKey: ["profile", user.id],
+			});
 			toast.success("Avatar updated!");
 		}
 		setUploading(false);
@@ -113,6 +109,9 @@ export default function Profile() {
 		if (error) {
 			toast.error("Failed to save: " + error.message);
 		} else {
+			await queryClient.invalidateQueries({
+				queryKey: ["profile", user.id],
+			});
 			toast.success("Profile updated!");
 		}
 		setSaving(false);
@@ -127,7 +126,7 @@ export default function Profile() {
 				.slice(0, 2)
 		: "?";
 
-	if (authLoading || loading) {
+	if (authLoading || (user ? profileLoading : false)) {
 		return (
 			<div className="flex min-h-screen items-center justify-center bg-background">
 				<Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -202,8 +201,13 @@ export default function Profile() {
 							value={displayName}
 							onChange={(e) => setDisplayName(e.target.value)}
 							placeholder="Your display name"
+							maxLength={30}
 							className="w-full rounded-xl bg-surface-alt py-3 px-4 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-primary/20 sovereign-ease transition-all"
 						/>
+						<p className="text-xs text-muted-foreground">
+							Keep it short, like Jose R. This is how your name
+							appears in the app header.
+						</p>
 					</div>
 
 					<motion.button
