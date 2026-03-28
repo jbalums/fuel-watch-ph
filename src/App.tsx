@@ -4,9 +4,14 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { SiteFooter } from "@/components/SiteFooter";
+import { AppShellLayout } from "@/components/AppShellLayout";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import Index from "./pages/Index";
+import MapPage from "./pages/MapPage";
+import SearchPage from "./pages/SearchPage";
+import ReportPage from "./pages/ReportPage";
+import AdminPage from "./pages/AdminPage";
 import Auth from "./pages/Auth";
 import Profile from "./pages/Profile";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
@@ -31,7 +36,19 @@ const App = () => (
 							<div className="flex min-h-screen flex-col">
 								<div className="flex-1">
 									<Routes>
-										<Route path="/" element={<Index />} />
+										<Route element={<AppShellLayout />}>
+											<Route path="/" element={<Index />} />
+											<Route path="/map" element={<MapPage />} />
+											<Route
+												path="/search"
+												element={<SearchPage />}
+											/>
+											<Route
+												path="/report"
+												element={<ReportPage />}
+											/>
+											<Route path="/admin" element={<AdminPage />} />
+										</Route>
 										<Route path="/auth" element={<Auth />} />
 										<Route path="/profile" element={<Profile />} />
 										<Route

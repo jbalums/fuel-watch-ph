@@ -1,13 +1,9 @@
-import { AlertBanner } from "@/components/AlertBanner";
-import { HeroStatus } from "@/components/HeroStatus";
 import { SearchFilter } from "@/components/SearchFilter";
 import { StationResultsList } from "@/components/StationResultsList";
-import { mockAlerts } from "@/data/mockStations";
 import { useStationBrowse } from "@/hooks/useStationBrowse";
 
-export default function Index() {
+export default function SearchPage() {
 	const {
-		stations,
 		stationsLoading,
 		filteredStations,
 		searchQuery,
@@ -21,9 +17,7 @@ export default function Index() {
 	} = useStationBrowse();
 
 	return (
-		<>
-			<HeroStatus stations={stations} />
-			<AlertBanner alerts={mockAlerts} />
+		<div className="min-h-[calc(100dvh-185px)]">
 			<SearchFilter
 				searchQuery={searchQuery}
 				onSearchChange={setSearchQuery}
@@ -34,10 +28,12 @@ export default function Index() {
 				sortBy={sortBy}
 				onSortChange={setSortBy}
 			/>
-			<StationResultsList
-				stations={filteredStations}
-				loading={stationsLoading}
-			/>
-		</>
+			<div className="mt-5">
+				<StationResultsList
+					stations={filteredStations}
+					loading={stationsLoading}
+				/>
+			</div>
+		</div>
 	);
 }
