@@ -49,14 +49,15 @@ function GoogleStationMap({
 	const focusedStation = useMemo(
 		() =>
 			selectedStationId
-				? stations.find((station) => station.id === selectedStationId) ??
-					null
+				? (stations.find(
+						(station) => station.id === selectedStationId,
+					) ?? null)
 				: null,
 		[selectedStationId, stations],
 	);
 	const mapCenter = focusedStation
 		? { lat: focusedStation.lat, lng: focusedStation.lng }
-		: highlightLocation ?? currentLocation ?? MANILA_CENTER;
+		: (highlightLocation ?? currentLocation ?? MANILA_CENTER);
 
 	const setSelectedStationId = (stationId: string | null) => {
 		if (onFocusedStationChange) {
@@ -130,11 +131,11 @@ function GoogleStationMap({
 
 	const createCurrentLocationIcon = (): google.maps.Symbol => ({
 		path: window.google.maps.SymbolPath.CIRCLE,
-		scale: 10,
-		fillColor: "#2563eb",
+		scale: 12,
+		fillColor: "#1d4fd7",
 		fillOpacity: 1,
-		strokeColor: "#ffffff",
-		strokeWeight: 3,
+		strokeColor: "#d97706",
+		strokeWeight: 2,
 	});
 
 	const createHighlightedLocationIcon = (): google.maps.Symbol => ({
@@ -199,7 +200,7 @@ function GoogleStationMap({
 						mapPaneName="overlayMouseTarget"
 						zIndex={10_001}
 					>
-						<div className="pointer-events-none -translate-x-1/2 -translate-y-full pb-3">
+						<div className="pointer-events-none -translate-x-1/2 -translate-y-full pb-4">
 							<div className="rounded-full bg-blue-600 px-3 py-1 text-xs font-semibold text-white shadow-lg">
 								You are here
 							</div>

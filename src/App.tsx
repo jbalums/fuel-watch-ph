@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { SiteFooter } from "@/components/SiteFooter";
 import { AppShellLayout } from "@/components/AppShellLayout";
+import { AdminLayout } from "@/components/admin/AdminLayout";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import Index from "./pages/Index";
@@ -12,6 +13,9 @@ import MapPage from "./pages/MapPage";
 import SearchPage from "./pages/SearchPage";
 import ReportPage from "./pages/ReportPage";
 import AdminPage from "./pages/AdminPage";
+import AdminStationsPage from "./pages/AdminStationsPage";
+import AdminReportsPage from "./pages/AdminReportsPage";
+import AdminClaimsPage from "./pages/AdminClaimsPage";
 import Auth from "./pages/Auth";
 import AboutUs from "./pages/AboutUs";
 import Profile from "./pages/Profile";
@@ -44,11 +48,31 @@ const App = () => (
 												path="/search"
 												element={<SearchPage />}
 											/>
+										<Route
+											path="/report"
+											element={<ReportPage />}
+										/>
+										<Route
+											path="/admin"
+											element={<AdminLayout />}
+										>
 											<Route
-												path="/report"
-												element={<ReportPage />}
+												index
+												element={<AdminPage />}
 											/>
-											<Route path="/admin" element={<AdminPage />} />
+											<Route
+												path="stations"
+												element={<AdminStationsPage />}
+											/>
+											<Route
+												path="reports"
+												element={<AdminReportsPage />}
+											/>
+											<Route
+												path="claims"
+												element={<AdminClaimsPage />}
+											/>
+										</Route>
 										</Route>
 										<Route path="/auth" element={<Auth />} />
 										<Route

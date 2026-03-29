@@ -1,0 +1,282 @@
+import { useQuery, type QueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import type { Tables } from "@/integrations/supabase/types";
+import {
+	getPrimaryFuelPriceSelection,
+	normalizeFuelPrices,
+} from "@/lib/fuel-prices";
+import type {
+	FuelReport,
+	FuelReportReviewStatus,
+	FuelType,
+	StationClaimReviewStatus,
+	StationStatus,
+} from "@/types/station";
+
+export type GasStationRow = Tables<"gas_stations">;
+type FuelReportRow = Tables<"fuel_reports">;
+
+export type ReportFilter = FuelReportReviewStatus | "all";
+export type ClaimFilter = StationClaimReviewStatus | "all";
+export type StationPricesFormState = Record<FuelType, string>;
+
+export type StationFormState = {
+	name: string;
+	address: string;
+	lat: string;
+	lng: string;
+	prices: StationPricesFormState;
+	fuelType: FuelType;
+	status: StationStatus;
+};
+
+export const fuelTypes: FuelType[] = ["Unleaded", "Premium", "Diesel"];
+
+export const reportFilters: { value: ReportFilter; label: string }[] = [
+	{ value: "pending", label: "Pending" },
+	{ value: "approved", label: "Approved" },
+	{ value: "rejected", label: "Rejected" },
+	{ value: "all", label: "All" },
+];
+
+export const claimFilters: { value: ClaimFilter; label: string }[] = [
+	{ value: "pending", label: "Pending" },
+	{ value: "approved", label: "Approved" },
+	{ value: "rejected", label: "Rejected" },
+	{ value: "all", label: "All" },
+];
+
+export const initialStationForm: StationFormState = {
+	name: "",
+	address: "",
+	lat: "",
+	lng: "",
+	prices: {
+		Unleaded: "",
+		Premium: "",
+		Diesel: "",
+	},
+	fuelType: "Diesel",
+	status: "Available",
+};
+
+function mapFuelReport(report: FuelReportRow): FuelReport {
+	const prices = normalizeFuelPrices(
+		report.prices,
+		report.fuel_type as FuelType,
+		Number(report.price) || 0,
+	);
+	const primarySelection = getPrimaryFuelPriceSelection(prices) ?? {
+		fuelType: report.fuel_type as FuelType,
+		price: Number(report.price) || 0,
+	};
+
+	return {
+		id: report.id,
+		stationId: report.station_id,
+		stationName: report.station_name,
+		reportedAddress: report.reported_address,
+		lat: report.lat,
+		lng: report.lng,
+		photoPath: report.photo_path,
+		photoFilename: report.photo_filename,
+		photoUrl: null,
+		prices,
+		price: primarySelection.price,
+		fuelType: primarySelection.fuelType,
+		status: report.status as StationStatus,
+		reportedAt: report.created_at,
+		reportedBy: report.user_id,
+		reviewStatus: (report.review_status ??
+			"pending") as FuelReportReviewStatus,
+		reviewedAt: report.reviewed_at,
+		reviewedBy: report.reviewed_by,
+		appliedStationId: report.applied_station_id,
+	};
+}
+
+export function useAdminStations(enabled = true) {
+	return useQuery({
+		queryKey: ["admin", "gas_stations"],
+		enabled,
+		queryFn: async () => {
+			const { data, error } = await supabase
+				.from("gas_stations")
+				.select("*")
+				.order("updated_at", { ascending: false });
+
+			if (error) {
+				throw error;
+			}
+
+			return data ?? [];
+		},
+	});
+}
+
+export function useAdminReports(enabled = true) {
+	return useQuery({
+		queryKey: ["admin", "fuel_reports"],
+		enabled,
+		queryFn: async () => {
+			const { data, error } = await supabase
+				.from("fuel_reports")
+				.select("*")
+				.order("created_at", { ascending: false });
+
+			if (error) {
+				throw error;
+			}
+
+			return (data ?? []).map(mapFuelReport);
+		},
+	});
+}
+
+export async function refreshAdminData(queryClient: QueryClient) {
+	await Promise.all([
+		queryClient.invalidateQueries({
+			queryKey: ["admin", "gas_stations"],
+		}),
+		queryClient.invalidateQueries({
+			queryKey: ["admin", "fuel_reports"],
+		}),
+		queryClient.invalidateQueries({
+			queryKey: ["admin", "station_claim_requests"],
+		}),
+		queryClient.invalidateQueries({ queryKey: ["gas_stations"] }),
+	]);
+}
+
+export function formatReportedPrices(prices: Record<FuelType, number | null>) {
+	return fuelTypes
+		.filter((fuelType) => {
+			const price = prices[fuelType];
+			return (
+				typeof price === "number" && Number.isFinite(price) && price > 0
+			);
+		})
+		.map((fuelType) => `${fuelType}: P${prices[fuelType]!.toFixed(2)}`)
+		.join(" • ");
+}
+
+export function formatReviewStatusLabel(status: FuelReportReviewStatus) {
+	if (status === "pending") return "Pending";
+	if (status === "approved") return "Approved";
+	return "Rejected";
+}
+
+export function ReviewStatusBadge({
+	status,
+}: {
+	status: FuelReportReviewStatus | StationClaimReviewStatus;
+}) {
+	const styles =
+		status === "approved"
+			? "bg-success/15 text-success"
+			: status === "rejected"
+				? "bg-destructive/15 text-destructive"
+				: "bg-warning/15 text-warning";
+
+	return (
+		<span
+			className={`inline-flex rounded-full px-3 py-1 text-xs font-medium ${styles}`}
+		>
+			{formatReviewStatusLabel(status as FuelReportReviewStatus)}
+		</span>
+	);
+}
+
+export function buildStationPayload(stationForm: StationFormState) {
+	const lat = Number.parseFloat(stationForm.lat);
+	const lng = Number.parseFloat(stationForm.lng);
+
+	if (!stationForm.name.trim()) throw new Error("Station name is required");
+	if (!stationForm.address.trim())
+		throw new Error("Station address is required");
+	if (Number.isNaN(lat)) throw new Error("Latitude must be a valid number");
+	if (Number.isNaN(lng)) throw new Error("Longitude must be a valid number");
+
+	const prices = fuelTypes.reduce<Record<FuelType, number | null>>(
+		(accumulator, fuelType) => {
+			const rawValue = stationForm.prices[fuelType].trim();
+			if (!rawValue) {
+				accumulator[fuelType] = null;
+				return accumulator;
+			}
+
+			const parsedValue = Number.parseFloat(rawValue);
+			if (Number.isNaN(parsedValue)) {
+				throw new Error(`${fuelType} price must be a valid number`);
+			}
+
+			accumulator[fuelType] = parsedValue;
+			return accumulator;
+		},
+		{
+			Unleaded: null,
+			Premium: null,
+			Diesel: null,
+		},
+	);
+
+	const pricePerLiter = prices[stationForm.fuelType];
+	if (pricePerLiter === null) {
+		throw new Error(
+			`Add a ${stationForm.fuelType} price to match the selected fuel type`,
+		);
+	}
+
+	return {
+		name: stationForm.name.trim(),
+		address: stationForm.address.trim(),
+		lat,
+		lng,
+		prices,
+		fuel_type: stationForm.fuelType,
+		price_per_liter: pricePerLiter,
+		status: stationForm.status,
+	};
+}
+
+export function normalizeStationPricesForForm(
+	rawPrices: unknown,
+	fuelType: FuelType,
+	fallbackPricePerLiter: number,
+): StationPricesFormState {
+	const prices: StationPricesFormState = {
+		Unleaded: "",
+		Premium: "",
+		Diesel: "",
+	};
+
+	if (
+		rawPrices &&
+		typeof rawPrices === "object" &&
+		!Array.isArray(rawPrices)
+	) {
+		const pricesRecord = rawPrices as Record<string, unknown>;
+		for (const key of fuelTypes) {
+			const value = pricesRecord[key];
+			if (typeof value === "number" && Number.isFinite(value)) {
+				prices[key] = value.toFixed(2);
+			} else if (
+				typeof value === "string" &&
+				value.trim() !== "" &&
+				!Number.isNaN(Number(value))
+			) {
+				prices[key] = Number(value).toFixed(2);
+			}
+		}
+	}
+
+	if (
+		!prices[fuelType] &&
+		Number.isFinite(fallbackPricePerLiter) &&
+		fallbackPricePerLiter > 0
+	) {
+		prices[fuelType] = fallbackPricePerLiter.toFixed(2);
+	}
+
+	return prices;
+}

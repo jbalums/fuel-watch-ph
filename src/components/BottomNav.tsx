@@ -31,6 +31,16 @@ export function BottomNav({ isAdmin, isAuthenticated }: BottomNavProps) {
 	const location = useLocation();
 	const navigate = useNavigate();
 	const tabs = baseTabs.filter((t) => !t.adminOnly || isAdmin);
+	const isActivePath = (path: string) => {
+		if (path === "/") {
+			return location.pathname === "/";
+		}
+
+		return (
+			location.pathname === path ||
+			location.pathname.startsWith(`${path}/`)
+		);
+	};
 
 	return (
 		<div className="sticky bottom-4 flex items-center justify-center pt-4">
@@ -51,7 +61,7 @@ export function BottomNav({ isAdmin, isAuthenticated }: BottomNavProps) {
 						}}
 						className={cn(
 							"flex flex-col items-center gap-0.5 rounded-md px-4 md:px-5 py-2 text-xs font-medium sovereign-ease transition-colors duration-300",
-							location.pathname === path
+							isActivePath(path)
 								? "bg-primary text-primary-foreground"
 								: "text-muted-foreground hover:text-foreground",
 						)}

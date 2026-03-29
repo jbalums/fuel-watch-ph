@@ -1,0 +1,87 @@
+import { motion } from "framer-motion";
+import { Loader2, ShieldAlert } from "lucide-react";
+import { NavLink, Outlet } from "react-router-dom";
+import { cn } from "@/lib/utils";
+import { useAuth } from "@/contexts/AuthContext";
+import { useAdminRole } from "@/hooks/useAdminRole";
+
+const adminNavItems = [
+	{ label: "Overview", to: "/admin", end: true },
+	{ label: "Stations", to: "/admin/stations" },
+	{ label: "Reports", to: "/admin/reports" },
+	{ label: "Claims", to: "/admin/claims" },
+];
+
+export function AdminLayout() {
+	const { user } = useAuth();
+	const { isAdmin, isLoading: roleLoading } = useAdminRole();
+
+	if (roleLoading) {
+		return (
+			<div className="flex items-center justify-center rounded-2xl bg-card p-10 shadow-sovereign">
+				<Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+			</div>
+		);
+	}
+
+	if (!user || !isAdmin) {
+		return (
+			<div className="rounded-2xl bg-card p-6 shadow-sovereign">
+				<div className="flex items-start gap-3">
+					<ShieldAlert className="mt-0.5 h-5 w-5 text-warning" />
+					<div>
+						<h2 className="text-headline text-foreground">
+							Admin access required
+						</h2>
+						<p className="mt-1 text-sm text-muted-foreground">
+							This dashboard is only available to users with the
+							admin role.
+						</p>
+					</div>
+				</div>
+			</div>
+		);
+	}
+
+	return (
+		<motion.div
+			initial={{ opacity: 0 }}
+			animate={{ opacity: 1 }}
+			transition={{ ease: [0.2, 0.8, 0.2, 1] }}
+			className="flex flex-col gap-6"
+		>
+			<div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+				<div>
+					<h2 className="text-headline text-foreground">
+						Admin Dashboard
+					</h2>
+					<p className="mt-1 text-sm text-muted-foreground">
+						Manage fuel stations and review community-submitted
+						reports.
+					</p>
+				</div>
+				<div className="flex flex-wrap gap-2">
+					{adminNavItems.map((item) => (
+						<NavLink
+							key={item.to}
+							to={item.to}
+							end={item.end}
+							className={({ isActive }) =>
+								cn(
+									"rounded-full px-4 py-2 text-sm font-medium sovereign-ease transition-colors",
+									isActive
+										? "bg-primary text-primary-foreground"
+										: "bg-secondary text-muted-foreground hover:text-foreground",
+								)
+							}
+						>
+							{item.label}
+						</NavLink>
+					))}
+				</div>
+			</div>
+
+			<Outlet />
+		</motion.div>
+	);
+}
