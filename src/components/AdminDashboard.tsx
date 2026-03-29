@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
 import {
 	Activity,
 	CheckCircle2,
@@ -96,11 +97,10 @@ function mapFuelReport(report: FuelReportRow): FuelReport {
 		report.fuel_type as FuelType,
 		Number(report.price) || 0,
 	);
-	const primarySelection =
-		getPrimaryFuelPriceSelection(prices) ?? {
-			fuelType: report.fuel_type as FuelType,
-			price: Number(report.price) || 0,
-		};
+	const primarySelection = getPrimaryFuelPriceSelection(prices) ?? {
+		fuelType: report.fuel_type as FuelType,
+		price: Number(report.price) || 0,
+	};
 
 	return {
 		id: report.id,
@@ -130,7 +130,9 @@ function formatReportedPrices(prices: Record<FuelType, number | null>) {
 	return fuelTypes
 		.filter((fuelType) => {
 			const price = prices[fuelType];
-			return typeof price === "number" && Number.isFinite(price) && price > 0;
+			return (
+				typeof price === "number" && Number.isFinite(price) && price > 0
+			);
 		})
 		.map((fuelType) => `${fuelType}: P${prices[fuelType]!.toFixed(2)}`)
 		.join(" • ");
@@ -256,6 +258,7 @@ export function AdminDashboard() {
 	const { user } = useAuth();
 	const { isAdmin, isLoading: roleLoading } = useAdminRole();
 	const queryClient = useQueryClient();
+	const navigate = useNavigate();
 
 	const [activeSection, setActiveSection] =
 		useState<AdminSection>("stations");
@@ -330,7 +333,7 @@ export function AdminDashboard() {
 			const matchesFilter =
 				reportFilter === "all" || report.reviewStatus === reportFilter;
 			const linkedStationName = report.stationId
-				? stationLookup.get(report.stationId)?.name ?? ""
+				? (stationLookup.get(report.stationId)?.name ?? "")
 				: "";
 			const reportedAddress = report.reportedAddress ?? "";
 			const matchesSearch =
@@ -504,6 +507,22 @@ export function AdminDashboard() {
 		}
 	};
 
+	const openReportLocationOnMap = (report: FuelReport) => {
+		if (report.lat === null || report.lng === null) {
+			return;
+		}
+
+		navigate("/map", {
+			state: {
+				reportLocation: {
+					lat: report.lat,
+					lng: report.lng,
+					label: "Reported location",
+				},
+			},
+		});
+	};
+
 	const beginCreateStation = () => {
 		setEditingStationId(null);
 		setStationForm(initialStationForm);
@@ -653,9 +672,9 @@ export function AdminDashboard() {
 
 			{activeSection === "stations" && (
 				<div className="rounded-2xl bg-card p-5 shadow-sovereign">
-					<div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+					<div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between border-b-2 pb-4">
 						<div>
-							<h3 className="text-ui font-semibold text-foreground">
+							<h3 className="text-xl font-semibold text-foreground">
 								Fuel Stations
 							</h3>
 							<p className="text-sm text-muted-foreground">
@@ -986,9 +1005,9 @@ export function AdminDashboard() {
 
 			{activeSection === "reports" && (
 				<div className="rounded-2xl bg-card p-5 shadow-sovereign">
-					<div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+					<div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between border-b-2 pb-4">
 						<div>
-							<h3 className="text-ui font-semibold text-foreground">
+							<h3 className="text-xl font-semibold text-foreground">
 								Report Review
 							</h3>
 							<p className="text-sm text-muted-foreground">
@@ -1083,7 +1102,7 @@ export function AdminDashboard() {
 																linkedStation
 																	? `: ${linkedStation.name}`
 																	: ""
-														  }`
+															}`
 														: "New station candidate"}
 												</p>
 
@@ -1096,15 +1115,25 @@ export function AdminDashboard() {
 
 												{report.lat !== null &&
 													report.lng !== null && (
-														<p className="text-xs text-muted-foreground">
-															GPS:{" "}
-															{report.lat.toFixed(
-																5,
-															)}
-															,{" "}
-															{report.lng.toFixed(
-																5,
-															)}
+														<p className="text-xs">
+															<button
+																type="button"
+																onClick={() =>
+																	openReportLocationOnMap(
+																		report,
+																	)
+																}
+																className="text-muted-foreground underline-offset-2 transition-colors hover:text-accent hover:underline"
+															>
+																GPS:{" "}
+																{report.lat.toFixed(
+																	5,
+																)}
+																,{" "}
+																{report.lng.toFixed(
+																	5,
+																)}
+															</button>
 														</p>
 													)}
 
@@ -1130,7 +1159,7 @@ export function AdminDashboard() {
 																		report.photoFilename
 																			? ` (${report.photoFilename})`
 																			: ""
-																  }`}
+																	}`}
 														</button>
 													</p>
 												)}
@@ -1208,9 +1237,9 @@ export function AdminDashboard() {
 
 			{activeSection === "claims" && (
 				<div className="rounded-2xl bg-card p-5 shadow-sovereign">
-					<div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+					<div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between border-b-2 pb-4">
 						<div>
-							<h3 className="text-ui font-semibold text-foreground">
+							<h3 className="text-xl font-semibold text-foreground">
 								Station Claims
 							</h3>
 							<p className="text-sm text-muted-foreground">
@@ -1259,7 +1288,9 @@ export function AdminDashboard() {
 							</p>
 						) : (
 							filteredClaims.map((claim) => {
-								const station = stationLookup.get(claim.stationId);
+								const station = stationLookup.get(
+									claim.stationId,
+								);
 								const isPending =
 									claim.reviewStatus === "pending";
 
@@ -1276,7 +1307,9 @@ export function AdminDashboard() {
 															"Unknown Station"}
 													</p>
 													<ReviewStatusBadge
-														status={claim.reviewStatus}
+														status={
+															claim.reviewStatus
+														}
 													/>
 													{station?.is_verified && (
 														<VerifiedStationBadge className="py-0.5" />
@@ -1290,8 +1323,8 @@ export function AdminDashboard() {
 													{claim.businessName}
 												</p>
 												<p className="text-xs text-muted-foreground">
-													Contact: {claim.contactName} •{" "}
-													{claim.contactPhone}
+													Contact: {claim.contactName}{" "}
+													• {claim.contactPhone}
 												</p>
 												{claim.notes && (
 													<p className="mt-2 text-xs text-muted-foreground">
@@ -1301,7 +1334,9 @@ export function AdminDashboard() {
 												{claim.proofDocumentUrl && (
 													<p className="mt-2 text-xs">
 														<a
-															href={claim.proofDocumentUrl}
+															href={
+																claim.proofDocumentUrl
+															}
 															target="_blank"
 															rel="noreferrer"
 															className="font-medium text-accent hover:underline"
@@ -1334,16 +1369,18 @@ export function AdminDashboard() {
 																	{
 																		onSuccess:
 																			() => {
-																			toast.success(
-																				`Claim approved for ${station?.name ?? "station"}`,
-																			);
-																		},
+																				toast.success(
+																					`Claim approved for ${station?.name ?? "station"}`,
+																				);
+																			},
 																		onError:
-																			(error) => {
-																			toast.error(
-																				error.message,
-																			);
-																		},
+																			(
+																				error,
+																			) => {
+																				toast.error(
+																					error.message,
+																				);
+																			},
 																	},
 																)
 															}
@@ -1363,16 +1400,18 @@ export function AdminDashboard() {
 																	{
 																		onSuccess:
 																			() => {
-																			toast.success(
-																				"Claim rejected",
-																			);
-																		},
+																				toast.success(
+																					"Claim rejected",
+																				);
+																			},
 																		onError:
-																			(error) => {
-																			toast.error(
-																				error.message,
-																			);
-																		},
+																			(
+																				error,
+																			) => {
+																				toast.error(
+																					error.message,
+																				);
+																			},
 																	},
 																)
 															}

@@ -14,6 +14,7 @@ import {
 	GOOGLE_MAPS_LIBRARIES,
 	GOOGLE_MAPS_SCRIPT_ID,
 	MANILA_CENTER,
+	type CoordinatePair,
 } from "@/lib/google-maps";
 import { useCurrentLocation } from "@/hooks/useCurrentLocation";
 import { StationMarkerInfoWindow } from "./StationMarkerInfoWindow";
@@ -26,12 +27,14 @@ const statusColors: Record<StationStatus, string> = {
 interface StationMapProps {
 	stations: GasStation[];
 	focusedStationId?: string | null;
+	highlightLocation?: (CoordinatePair & { label?: string }) | null;
 	onFocusedStationChange?: (stationId: string | null) => void;
 }
 
 function GoogleStationMap({
 	stations,
 	focusedStationId,
+	highlightLocation,
 	onFocusedStationChange,
 }: StationMapProps) {
 	const [internalSelectedStationId, setInternalSelectedStationId] = useState<
@@ -53,7 +56,7 @@ function GoogleStationMap({
 	);
 	const mapCenter = focusedStation
 		? { lat: focusedStation.lat, lng: focusedStation.lng }
-		: currentLocation ?? MANILA_CENTER;
+		: highlightLocation ?? currentLocation ?? MANILA_CENTER;
 
 	const setSelectedStationId = (stationId: string | null) => {
 		if (onFocusedStationChange) {
@@ -70,6 +73,12 @@ function GoogleStationMap({
 		}
 
 		if (focusedStation) {
+			return;
+		}
+
+		if (highlightLocation) {
+			map.setCenter(highlightLocation);
+			map.setZoom(17);
 			return;
 		}
 
@@ -96,7 +105,7 @@ function GoogleStationMap({
 			bounds.extend({ lat: station.lat, lng: station.lng });
 		}
 		map.fitBounds(bounds, 80);
-	}, [currentLocation, focusedStation, map, stations]);
+	}, [currentLocation, focusedStation, highlightLocation, map, stations]);
 
 	useEffect(() => {
 		if (!focusedStation || !map) {
@@ -128,6 +137,15 @@ function GoogleStationMap({
 		strokeWeight: 3,
 	});
 
+	const createHighlightedLocationIcon = (): google.maps.Symbol => ({
+		path: window.google.maps.SymbolPath.CIRCLE,
+		scale: 10,
+		fillColor: "#f97316",
+		fillOpacity: 1,
+		strokeColor: "#ffffff",
+		strokeWeight: 3,
+	});
+
 	return (
 		<GoogleMap
 			mapContainerStyle={{
@@ -149,6 +167,26 @@ function GoogleStationMap({
 				gestureHandling: "greedy",
 			}}
 		>
+			{highlightLocation && (
+				<>
+					<MarkerF
+						position={highlightLocation}
+						icon={createHighlightedLocationIcon()}
+						zIndex={9_000}
+					/>
+					<OverlayViewF
+						position={highlightLocation}
+						mapPaneName="overlayMouseTarget"
+						zIndex={9_001}
+					>
+						<div className="pointer-events-none -translate-x-1/2 -translate-y-full pb-3">
+							<div className="rounded-full bg-orange-500 px-3 py-1 text-xs font-semibold text-white shadow-lg">
+								{highlightLocation.label ?? "Reported location"}
+							</div>
+						</div>
+					</OverlayViewF>
+				</>
+			)}
 			{currentLocation && (
 				<>
 					<MarkerF
@@ -193,6 +231,7 @@ function GoogleStationMap({
 export function StationMap({
 	stations,
 	focusedStationId,
+	highlightLocation,
 	onFocusedStationChange,
 }: StationMapProps) {
 	if (!GOOGLE_MAPS_API_KEY) {
@@ -229,6 +268,7 @@ export function StationMap({
 				<GoogleStationMap
 					stations={stations}
 					focusedStationId={focusedStationId}
+					highlightLocation={highlightLocation}
 					onFocusedStationChange={onFocusedStationChange}
 				/>
 			</LoadScriptNext>
