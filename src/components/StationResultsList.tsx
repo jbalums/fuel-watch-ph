@@ -1,18 +1,9 @@
-import { Fragment, useMemo } from "react";
-import { AnimatePresence } from "framer-motion";
-import { Loader2 } from "lucide-react";
+import { useMemo } from "react";
+import { ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import type { GasStation } from "@/types/station";
 import { StationCard } from "@/components/StationCard";
 import { useUserLocation } from "@/hooks/useUserLocation";
-import {
-	Pagination,
-	PaginationContent,
-	PaginationEllipsis,
-	PaginationItem,
-	PaginationLink,
-	PaginationNext,
-	PaginationPrevious,
-} from "@/components/ui/pagination";
+import { Button } from "@/components/ui/button";
 
 interface StationResultsListProps {
 	stations: GasStation[];
@@ -21,22 +12,6 @@ interface StationResultsListProps {
 	currentPage?: number;
 	totalPages?: number;
 	onPageChange?: (page: number) => void;
-}
-
-function getVisiblePages(currentPage: number, totalPages: number) {
-	if (totalPages <= 5) {
-		return Array.from({ length: totalPages }, (_, index) => index + 1);
-	}
-
-	if (currentPage <= 3) {
-		return [1, 2, 3, 4, totalPages];
-	}
-
-	if (currentPage >= totalPages - 2) {
-		return [1, totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
-	}
-
-	return [1, currentPage - 1, currentPage, currentPage + 1, totalPages];
 }
 
 export function StationResultsList({
@@ -58,81 +33,51 @@ export function StationResultsList({
 				: null,
 		[latitude, longitude],
 	);
-	const visiblePages = useMemo(
-		() => getVisiblePages(currentPage, totalPages),
-		[currentPage, totalPages],
-	);
 	const showPagination = !loading && totalPages > 1;
-
-	const renderPaginationLink = (page: number) => (
-		<PaginationItem key={`pagination-link-${page}`}>
-			<PaginationLink
-				href="#"
-				isActive={page === currentPage}
-				onClick={(event) => {
-					event.preventDefault();
-					onPageChange?.(page);
-				}}
-			>
-				{page}
-			</PaginationLink>
-		</PaginationItem>
-	);
 	const renderPagination = () => (
-		<Pagination>
-			<PaginationContent>
-				<PaginationItem>
-					<PaginationPrevious
-						href="#"
-						onClick={(event) => {
-							event.preventDefault();
-							if (currentPage > 1) {
-								onPageChange?.(currentPage - 1);
-							}
-						}}
-						className={
-							currentPage === 1
-								? "pointer-events-none opacity-50"
-								: undefined
-						}
-					/>
-				</PaginationItem>
-				{visiblePages.map((page, index) => {
-					const previousPage = visiblePages[index - 1];
-					const shouldShowLeadingEllipsis =
-						index > 0 &&
-						previousPage !== undefined &&
-						page - previousPage > 1;
-
-					return (
-						<Fragment key={page}>
-							{shouldShowLeadingEllipsis && (
-								<PaginationItem>
-									<PaginationEllipsis />
-								</PaginationItem>
-							)}
-							{renderPaginationLink(page)}
-						</Fragment>
-					);
-				})}
-				<PaginationItem>
-					<PaginationNext
-						href="#"
-						onClick={(event) => {
-							event.preventDefault();
-							if (currentPage < totalPages) {
-								onPageChange?.(currentPage + 1);
-							}
-						}}
-						className={
-							currentPage === totalPages
-								? "pointer-events-none opacity-50"
-								: undefined
-						}
-					/>
-				</PaginationItem>
-			</PaginationContent>
-		</Pagination>
+		<div className="flex items-center justify-center gap-3 text-sm text-muted-foreground">
+			<Button
+				type="button"
+				variant="ghost"
+				size="sm"
+				onClick={() => {
+					if (currentPage > 1) {
+						onPageChange?.(currentPage - 1);
+					}
+				}}
+				disabled={currentPage === 1}
+				className="h-8 px-2 text-sm"
+			>
+				<ChevronLeft className="h-4 w-4" />
+				Prev&nbsp;
+			</Button>
+			<span className="text-center text-xs flex items-center gap-2">
+				Page{" "}
+				<span className="font-bold text-sm dark:text-white">
+					{currentPage}
+				</span>{" "}
+				of{" "}
+				<span className="dark:text-white font-bold text-sm">
+					{totalPages}
+				</span>{" "}
+				pages
+			</span>
+			<Button
+				type="button"
+				variant="ghost"
+				size="sm"
+				onClick={() => {
+					if (currentPage < totalPages) {
+						onPageChange?.(currentPage + 1);
+					}
+				}}
+				disabled={currentPage === totalPages}
+				className="h-8 px-2 text-sm"
+			>
+				Next
+				<ChevronRight className="h-4 w-4" />
+			</Button>
+		</div>
 	);
 	return (
 		<div className="flex flex-col gap-3">
