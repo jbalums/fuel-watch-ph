@@ -4,10 +4,10 @@ import {
 	InfoWindowF,
 	LoadScriptNext,
 	MarkerF,
+	OverlayViewF,
 } from "@react-google-maps/api";
 import { Loader2, MapPinned } from "lucide-react";
 import type { GasStation, StationStatus } from "@/types/station";
-import { toast } from "sonner";
 import {
 	GOOGLE_MAPS_API_KEY,
 	GOOGLE_MAPS_CONTAINER_STYLE,
@@ -15,6 +15,7 @@ import {
 	GOOGLE_MAPS_SCRIPT_ID,
 	MANILA_CENTER,
 } from "@/lib/google-maps";
+import { useCurrentLocation } from "@/hooks/useCurrentLocation";
 import { StationMarkerInfoWindow } from "./StationMarkerInfoWindow";
 
 const statusColors: Record<StationStatus, string> = {
@@ -33,12 +34,11 @@ function GoogleStationMap({
 	focusedStationId,
 	onFocusedStationChange,
 }: StationMapProps) {
-	const [center, setCenter] = useState(MANILA_CENTER);
-	const [hasUserLocation, setHasUserLocation] = useState(false);
 	const [internalSelectedStationId, setInternalSelectedStationId] = useState<
 		string | null
 	>(null);
 	const [map, setMap] = useState<google.maps.Map | null>(null);
+	const { coordinates: currentLocation } = useCurrentLocation();
 	const selectedStationId =
 		focusedStationId !== undefined
 			? focusedStationId
@@ -53,7 +53,7 @@ function GoogleStationMap({
 	);
 	const mapCenter = focusedStation
 		? { lat: focusedStation.lat, lng: focusedStation.lng }
-		: center;
+		: currentLocation ?? MANILA_CENTER;
 
 	const setSelectedStationId = (stationId: string | null) => {
 		if (onFocusedStationChange) {
@@ -65,25 +65,6 @@ function GoogleStationMap({
 	};
 
 	useEffect(() => {
-		if (!navigator.geolocation) {
-			return;
-		}
-
-		navigator.geolocation.getCurrentPosition(
-			(position) => {
-				setCenter({
-					lat: position.coords.latitude,
-					lng: position.coords.longitude,
-				});
-				setHasUserLocation(true);
-			},
-			() => {
-				toast.error("Could not detect location");
-			},
-		);
-	}, []);
-
-	useEffect(() => {
 		if (!map) {
 			return;
 		}
@@ -92,14 +73,14 @@ function GoogleStationMap({
 			return;
 		}
 
-		if (hasUserLocation) {
-			map.setCenter(center);
+		if (currentLocation) {
+			map.setCenter(currentLocation);
 			map.setZoom(15);
 			return;
 		}
 
 		if (stations.length === 0) {
-			map.setCenter(center);
+			map.setCenter(MANILA_CENTER);
 			map.setZoom(14);
 			return;
 		}
@@ -115,7 +96,7 @@ function GoogleStationMap({
 			bounds.extend({ lat: station.lat, lng: station.lng });
 		}
 		map.fitBounds(bounds, 80);
-	}, [center, focusedStation, hasUserLocation, map, stations]);
+	}, [currentLocation, focusedStation, map, stations]);
 
 	useEffect(() => {
 		if (!focusedStation || !map) {
@@ -136,6 +117,15 @@ function GoogleStationMap({
 		fillOpacity: 1,
 		strokeColor: "#ffffff",
 		strokeWeight: 1,
+	});
+
+	const createCurrentLocationIcon = (): google.maps.Symbol => ({
+		path: window.google.maps.SymbolPath.CIRCLE,
+		scale: 10,
+		fillColor: "#2563eb",
+		fillOpacity: 1,
+		strokeColor: "#ffffff",
+		strokeWeight: 3,
 	});
 
 	return (
@@ -159,6 +149,26 @@ function GoogleStationMap({
 				gestureHandling: "greedy",
 			}}
 		>
+			{currentLocation && (
+				<>
+					<MarkerF
+						position={currentLocation}
+						icon={createCurrentLocationIcon()}
+						zIndex={10_000}
+					/>
+					<OverlayViewF
+						position={currentLocation}
+						mapPaneName="overlayMouseTarget"
+						zIndex={10_001}
+					>
+						<div className="pointer-events-none -translate-x-1/2 -translate-y-full pb-3">
+							<div className="rounded-full bg-blue-600 px-3 py-1 text-xs font-semibold text-white shadow-lg">
+								You are here
+							</div>
+						</div>
+					</OverlayViewF>
+				</>
+			)}
 			{stations.map((station) => (
 				<MarkerF
 					key={station.id}
