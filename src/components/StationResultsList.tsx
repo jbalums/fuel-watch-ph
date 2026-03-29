@@ -1,7 +1,9 @@
+import { useMemo } from "react";
 import { AnimatePresence } from "framer-motion";
 import { Loader2 } from "lucide-react";
 import type { GasStation } from "@/types/station";
 import { StationCard } from "@/components/StationCard";
+import { useUserLocation } from "@/hooks/useUserLocation";
 
 interface StationResultsListProps {
 	stations: GasStation[];
@@ -14,6 +16,18 @@ export function StationResultsList({
 	loading,
 	emptyMessage = "No stations found matching your criteria.",
 }: StationResultsListProps) {
+	const { latitude, longitude } = useUserLocation();
+	const userLocation = useMemo(
+		() =>
+			latitude !== null && longitude !== null
+				? {
+						lat: latitude,
+						lng: longitude,
+					}
+				: null,
+		[latitude, longitude],
+	);
+
 	return (
 		<div className="flex flex-col gap-3">
 			{loading ? (
@@ -28,6 +42,7 @@ export function StationResultsList({
 								key={station.id}
 								station={station}
 								index={index}
+								userLocation={userLocation}
 							/>
 						))}
 					</AnimatePresence>

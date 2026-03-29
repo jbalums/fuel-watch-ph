@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useCurrentLocation } from "@/hooks/useCurrentLocation";
 import { useStations } from "@/hooks/useStations";
-import { getDistanceBetweenCoordinates } from "@/lib/location";
+import { calculateDistanceKm } from "@/utils/distance";
 import type {
 	FilterFuelType,
 	FuelType,
@@ -91,15 +91,35 @@ export function useStationBrowse() {
 		if (fuelFilter === "All") {
 			if (currentLocation) {
 				list.sort((a, b) => {
-					const distanceDelta =
-						getDistanceBetweenCoordinates(currentLocation, {
-							lat: a.lat,
-							lng: a.lng,
-						}) -
-						getDistanceBetweenCoordinates(currentLocation, {
-							lat: b.lat,
-							lng: b.lng,
-						});
+					const distanceA = calculateDistanceKm(
+						currentLocation.lat,
+						currentLocation.lng,
+						a.lat,
+						a.lng,
+					);
+					const distanceB = calculateDistanceKm(
+						currentLocation.lat,
+						currentLocation.lng,
+						b.lat,
+						b.lng,
+					);
+
+					if (Number.isNaN(distanceA) && Number.isNaN(distanceB)) {
+						return (
+							new Date(b.updatedAt).getTime() -
+							new Date(a.updatedAt).getTime()
+						);
+					}
+
+					if (Number.isNaN(distanceA)) {
+						return 1;
+					}
+
+					if (Number.isNaN(distanceB)) {
+						return -1;
+					}
+
+					const distanceDelta = distanceA - distanceB;
 
 					if (distanceDelta !== 0) {
 						return distanceDelta;

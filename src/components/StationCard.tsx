@@ -1,18 +1,22 @@
+import { useMemo } from "react";
 import { GasStation } from "@/types/station";
 import { StatusBadge } from "./StatusBadge";
 import { motion } from "framer-motion";
 import { MapPin, Clock, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { ClaimStationDialog } from "./ClaimStationDialog";
-import { VerifiedStationBadge } from "./VerifiedStationBadge";
 import { useLocation, useNavigate } from "react-router-dom";
+import { calculateDistanceKm } from "@/utils/distance";
 
 interface StationCardProps {
 	station: GasStation;
 	index: number;
+	userLocation: {
+		lat: number;
+		lng: number;
+	} | null;
 }
 
-export function StationCard({ station, index }: StationCardProps) {
+export function StationCard({ station, index, userLocation }: StationCardProps) {
 	const navigate = useNavigate();
 	const location = useLocation();
 	const statusBarColor =
@@ -21,6 +25,24 @@ export function StationCard({ station, index }: StationCardProps) {
 			: station.status === "Low"
 				? "status-bar-low"
 				: "status-bar-out";
+	const distanceLabel = useMemo(() => {
+		if (!userLocation) {
+			return "Distance unavailable";
+		}
+
+		const distanceKm = calculateDistanceKm(
+			userLocation.lat,
+			userLocation.lng,
+			station.lat,
+			station.lng,
+		);
+
+		if (!Number.isFinite(distanceKm)) {
+			return "Distance unavailable";
+		}
+
+		return `${distanceKm.toFixed(1)} km away`;
+	}, [station.lat, station.lng, userLocation]);
 
 	const handleOpenOnMap = () => {
 		const searchParams = new URLSearchParams(location.search);
@@ -118,7 +140,11 @@ export function StationCard({ station, index }: StationCardProps) {
 							</p>
 						</div>
 					</div>
-					<div className="flex items-center gap-3 text-xs text-muted-foreground">
+					<div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+						<span className="flex items-center gap-1">
+							<MapPin className="h-3 w-3" />
+							{distanceLabel}
+						</span>
 						<span className="flex items-center gap-1">
 							<Clock className="h-3 w-3" />
 							{station.lastUpdated}
