@@ -16,6 +16,7 @@ import AdminPage from "./pages/AdminPage";
 import AdminStationsPage from "./pages/AdminStationsPage";
 import AdminReportsPage from "./pages/AdminReportsPage";
 import AdminClaimsPage from "./pages/AdminClaimsPage";
+import AdminUsersPage from "./pages/AdminUsersPage";
 import Auth from "./pages/Auth";
 import AboutUs from "./pages/AboutUs";
 import Profile from "./pages/Profile";
@@ -71,6 +72,10 @@ const App = () => (
 											<Route
 												path="claims"
 												element={<AdminClaimsPage />}
+											/>
+											<Route
+												path="users"
+												element={<AdminUsersPage />}
 											/>
 										</Route>
 										</Route>

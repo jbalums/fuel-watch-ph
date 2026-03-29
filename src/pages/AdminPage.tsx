@@ -5,16 +5,26 @@ import {
 	Fuel,
 	Loader2,
 	ShieldAlert,
+	Users,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAdminStationClaims } from "@/hooks/useStationClaims";
+import { useUserAccess } from "@/hooks/useUserAccess";
 import {
 	useAdminReports,
 	useAdminStations,
 } from "@/components/admin/admin-shared";
 
+type AdminSection = {
+	label: string;
+	description: string;
+	path: string;
+	icon?: typeof Users;
+};
+
 export default function AdminPage() {
 	const navigate = useNavigate();
+	const { isSuperAdmin } = useUserAccess();
 	const { data: stations = [], isLoading: stationsLoading } =
 		useAdminStations();
 	const { data: reports = [], isLoading: reportsLoading } = useAdminReports();
@@ -58,7 +68,7 @@ export default function AdminPage() {
 		},
 	];
 
-	const sections = [
+	const sections: AdminSection[] = [
 		{
 			label: "Stations",
 			description: "Create, edit, and remove gas station records.",
@@ -74,6 +84,17 @@ export default function AdminPage() {
 			description: "Approve or reject station ownership requests.",
 			path: "/admin/claims",
 		},
+		...(isSuperAdmin
+			? [
+					{
+						label: "Users",
+						description:
+							"Manage admin and super-admin access for platform users.",
+						path: "/admin/users",
+						icon: Users,
+					},
+				]
+			: []),
 	];
 
 	return (
@@ -117,6 +138,9 @@ export default function AdminPage() {
 							onClick={() => navigate(section.path)}
 							className="rounded-xl border border-border bg-secondary/40 p-4 text-left sovereign-ease transition-colors hover:bg-secondary"
 						>
+							{section.icon ? (
+								<section.icon className="mb-3 h-5 w-5 text-accent" />
+							) : null}
 							<p className="font-semibold text-foreground">
 								{section.label}
 							</p>

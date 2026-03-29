@@ -5,16 +5,18 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAdminRole } from "@/hooks/useAdminRole";
 
-const adminNavItems = [
-	{ label: "Overview", to: "/admin", end: true },
-	{ label: "Stations", to: "/admin/stations" },
-	{ label: "Reports", to: "/admin/reports" },
-	{ label: "Claims", to: "/admin/claims" },
-];
-
 export function AdminLayout() {
 	const { user } = useAuth();
-	const { isAdmin, isLoading: roleLoading } = useAdminRole();
+	const { isAdmin, isSuperAdmin, isLoading: roleLoading } = useAdminRole();
+	const adminNavItems = [
+		{ label: "Overview", to: "/admin", end: true },
+		{ label: "Stations", to: "/admin/stations" },
+		{ label: "Reports", to: "/admin/reports" },
+		{ label: "Claims", to: "/admin/claims" },
+		...(isSuperAdmin
+			? [{ label: "Users", to: "/admin/users" }]
+			: []),
+	];
 
 	if (roleLoading) {
 		return (
@@ -56,8 +58,9 @@ export function AdminLayout() {
 						Admin Dashboard
 					</h2>
 					<p className="mt-1 text-sm text-muted-foreground">
-						Manage fuel stations and review community-submitted
-						reports.
+						{isSuperAdmin
+							? "Manage fuel stations, review community submissions, and control platform access."
+							: "Manage fuel stations and review community submissions."}
 					</p>
 				</div>
 				<div className="flex flex-wrap gap-2">

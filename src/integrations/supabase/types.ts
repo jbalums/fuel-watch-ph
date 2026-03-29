@@ -274,6 +274,22 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_super_admin: {
+        Args: {
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      list_manageable_users: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          access_level: Database["public"]["Enums"]["app_role"]
+          avatar_url: string | null
+          display_name: string | null
+          email: string | null
+          user_id: string
+        }[]
+      }
       reject_fuel_report: {
         Args: {
           _report_id: string
@@ -285,6 +301,13 @@ export type Database = {
           _claim_id: string
         }
         Returns: string
+      }
+      set_user_access_level: {
+        Args: {
+          _access_level: Database["public"]["Enums"]["app_role"]
+          _target_user_id: string
+        }
+        Returns: Database["public"]["Enums"]["app_role"]
       }
       update_managed_station: {
         Args: {
@@ -298,7 +321,7 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "admin" | "moderator" | "user"
+      app_role: "admin" | "moderator" | "user" | "super_admin"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -426,7 +449,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "moderator", "user"],
+      app_role: ["admin", "moderator", "user", "super_admin"],
     },
   },
 } as const
