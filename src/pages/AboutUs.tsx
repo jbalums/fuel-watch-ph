@@ -73,7 +73,7 @@ export default function AboutUs() {
 					<div className="mt-6 space-y-8">
 						{aboutUsSections.map((section) => (
 							<section key={section.title}>
-								<h3 className="text-lg font-semibold text-primary">
+								<h3 className="text-lg font-semibold text-primary dark:text-blue-500">
 									{section.title}
 								</h3>
 								<div className="mt-2 space-y-4 text-sm leading-6 text-muted-foreground">
