@@ -1,6 +1,8 @@
 import { useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
+import { useCurrentLocation } from "@/hooks/useCurrentLocation";
 import { useStations } from "@/hooks/useStations";
+import { getDistanceBetweenCoordinates } from "@/lib/location";
 import type {
 	FilterFuelType,
 	FuelType,
@@ -36,6 +38,7 @@ function isSortOption(value: string | null): value is SortOption {
 
 export function useStationBrowse() {
 	const { data: stations = [], isLoading: stationsLoading } = useStations();
+	const { coordinates: currentLocation } = useCurrentLocation();
 	const [searchParams, setSearchParams] = useSearchParams();
 
 	const searchQuery = searchParams.get("q") ?? "";
@@ -86,11 +89,35 @@ export function useStationBrowse() {
 		}
 
 		if (fuelFilter === "All") {
-			list.sort(
-				(a, b) =>
-					new Date(b.updatedAt).getTime() -
-					new Date(a.updatedAt).getTime(),
-			);
+			if (currentLocation) {
+				list.sort((a, b) => {
+					const distanceDelta =
+						getDistanceBetweenCoordinates(currentLocation, {
+							lat: a.lat,
+							lng: a.lng,
+						}) -
+						getDistanceBetweenCoordinates(currentLocation, {
+							lat: b.lat,
+							lng: b.lng,
+						});
+
+					if (distanceDelta !== 0) {
+						return distanceDelta;
+					}
+
+					return (
+						new Date(b.updatedAt).getTime() -
+						new Date(a.updatedAt).getTime()
+					);
+				});
+			} else {
+				list.sort(
+					(a, b) =>
+						new Date(b.updatedAt).getTime() -
+						new Date(a.updatedAt).getTime(),
+				);
+			}
+
 			return list;
 		}
 
@@ -106,7 +133,14 @@ export function useStationBrowse() {
 		});
 
 		return list;
-	}, [fuelFilter, searchQuery, sortBy, stations, statusFilter]);
+	}, [
+		currentLocation,
+		fuelFilter,
+		searchQuery,
+		sortBy,
+		stations,
+		statusFilter,
+	]);
 
 	return {
 		stations,
