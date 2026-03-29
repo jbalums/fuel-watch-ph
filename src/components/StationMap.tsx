@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
 	GoogleMap,
 	InfoWindowF,
@@ -38,11 +38,22 @@ function GoogleStationMap({
 	const [internalSelectedStationId, setInternalSelectedStationId] = useState<
 		string | null
 	>(null);
-	const mapRef = useRef<google.maps.Map | null>(null);
+	const [map, setMap] = useState<google.maps.Map | null>(null);
 	const selectedStationId =
 		focusedStationId !== undefined
 			? focusedStationId
 			: internalSelectedStationId;
+	const focusedStation = useMemo(
+		() =>
+			selectedStationId
+				? stations.find((station) => station.id === selectedStationId) ??
+					null
+				: null,
+		[selectedStationId, stations],
+	);
+	const mapCenter = focusedStation
+		? { lat: focusedStation.lat, lng: focusedStation.lng }
+		: center;
 
 	const setSelectedStationId = (stationId: string | null) => {
 		if (onFocusedStationChange) {
@@ -73,8 +84,11 @@ function GoogleStationMap({
 	}, []);
 
 	useEffect(() => {
-		const map = mapRef.current;
 		if (!map) {
+			return;
+		}
+
+		if (focusedStation) {
 			return;
 		}
 
@@ -101,26 +115,19 @@ function GoogleStationMap({
 			bounds.extend({ lat: station.lat, lng: station.lng });
 		}
 		map.fitBounds(bounds, 80);
-	}, [center, hasUserLocation, stations]);
+	}, [center, focusedStation, hasUserLocation, map, stations]);
 
 	useEffect(() => {
-		if (!selectedStationId || !mapRef.current) {
+		if (!focusedStation || !map) {
 			return;
 		}
 
-		const selectedStation = stations.find(
-			(station) => station.id === selectedStationId,
-		);
-		if (!selectedStation) {
-			return;
-		}
-
-		mapRef.current.panTo({
-			lat: selectedStation.lat,
-			lng: selectedStation.lng,
+		map.panTo({
+			lat: focusedStation.lat,
+			lng: focusedStation.lng,
 		});
-		mapRef.current.setZoom(17);
-	}, [selectedStationId, stations]);
+		map.setZoom(17);
+	}, [focusedStation, map]);
 
 	const createMarkerIcon = (status: StationStatus): google.maps.Symbol => ({
 		path: window.google.maps.SymbolPath.CIRCLE,
@@ -137,13 +144,13 @@ function GoogleStationMap({
 				...GOOGLE_MAPS_CONTAINER_STYLE,
 				height: "calc(100dvh - 185px)",
 			}}
-			center={center}
-			zoom={18}
+			center={mapCenter}
+			zoom={focusedStation ? 17 : 18}
 			onLoad={(map) => {
-				mapRef.current = map;
+				setMap(map);
 			}}
 			onUnmount={() => {
-				mapRef.current = null;
+				setMap(null);
 			}}
 			options={{
 				fullscreenControl: true,
