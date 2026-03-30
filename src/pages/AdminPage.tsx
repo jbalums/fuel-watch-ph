@@ -1,11 +1,15 @@
 import { motion } from "framer-motion";
 import {
+	BadgeCheck,
 	CheckCircle2,
 	FileText,
 	Fuel,
 	Loader2,
+	MapPinned,
 	ShieldAlert,
+	UserPlus,
 	Users,
+	type LucideIcon,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAdminStationClaims } from "@/hooks/useStationClaims";
@@ -20,7 +24,7 @@ type AdminSection = {
 	label: string;
 	description: string;
 	path: string;
-	icon?: typeof Users;
+	icon: LucideIcon;
 };
 
 export default function AdminPage() {
@@ -103,16 +107,19 @@ export default function AdminPage() {
 			label: "Stations",
 			description: "Create, edit, and remove gas station records.",
 			path: "/admin/stations",
+			icon: Fuel,
 		},
 		{
 			label: "Reports",
 			description: "Review submitted fuel updates and verification photos.",
 			path: "/admin/reports",
+			icon: FileText,
 		},
 		{
 			label: "Claims",
 			description: "Approve or reject station ownership requests.",
 			path: "/admin/claims",
+			icon: BadgeCheck,
 		},
 		...(isSuperAdmin
 			? [
@@ -128,18 +135,21 @@ export default function AdminPage() {
 						description:
 							"Review official LGU access requests and generate invite links.",
 						path: "/admin/access-requests",
+						icon: ShieldAlert,
 					},
 					{
 						label: "Invites",
 						description:
 							"Track issued LGU admin and staff invites with usage status.",
 						path: "/admin/invites",
+						icon: UserPlus,
 					},
 					{
 						label: "Geo Backfill",
 						description:
 							"Assign province and city scope to older stations and fuel reports.",
 						path: "/admin/geo-backfill",
+						icon: MapPinned,
 					},
 				]
 			: []),
@@ -186,9 +196,9 @@ export default function AdminPage() {
 							onClick={() => navigate(section.path)}
 							className="rounded-xl border border-border bg-secondary/40 p-4 text-left sovereign-ease transition-colors hover:bg-secondary"
 						>
-							{section.icon ? (
-								<section.icon className="mb-3 h-5 w-5 text-accent" />
-							) : null}
+							<div className="mb-3 inline-flex h-10 w-10 items-center justify-center rounded-xl bg-accent/10 text-accent">
+								<section.icon className="h-5 w-5" />
+							</div>
 							<p className="font-semibold text-foreground">
 								{section.label}
 							</p>

@@ -1,5 +1,13 @@
 import { motion } from "framer-motion";
-import { CheckCircle2, FileText, Fuel, Loader2, MapPinned } from "lucide-react";
+import {
+	CheckCircle2,
+	FileText,
+	Fuel,
+	Loader2,
+	MapPinned,
+	UserPlus,
+	type LucideIcon,
+} from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import {
 	useScopedDashboardStats,
@@ -18,6 +26,13 @@ function formatScopeLabel(
 
 	return provinceName;
 }
+
+type LguSection = {
+	label: string;
+	description: string;
+	path: string;
+	icon: LucideIcon;
+};
 
 export default function LguPage() {
 	const navigate = useNavigate();
@@ -56,18 +71,20 @@ export default function LguPage() {
 			icon: MapPinned,
 		},
 	];
-	const sections = [
+	const sections: LguSection[] = [
 		{
 			label: "Scoped Stations",
 			description:
 				"Create and update stations inside your assigned province or city.",
 			path: "/lgu/stations",
+			icon: Fuel,
 		},
 		{
 			label: "Scoped Reports",
 			description:
 				"Approve or reject community fuel reports inside your assigned area.",
 			path: "/lgu/reports",
+			icon: FileText,
 		},
 		...((isProvinceAdmin || isCityAdmin)
 			? [
@@ -76,6 +93,7 @@ export default function LguPage() {
 						description:
 							"Invite and manage LGU staff members inside your assigned scope.",
 						path: "/lgu/team",
+						icon: UserPlus,
 					},
 				]
 			: []),
@@ -129,6 +147,9 @@ export default function LguPage() {
 							onClick={() => navigate(section.path)}
 							className="rounded-xl border border-border bg-secondary/40 p-4 text-left sovereign-ease transition-colors hover:bg-secondary"
 						>
+							<div className="mb-3 inline-flex h-10 w-10 items-center justify-center rounded-xl bg-accent/10 text-accent">
+								<section.icon className="h-5 w-5" />
+							</div>
 							<p className="font-semibold text-foreground">
 								{section.label}
 							</p>
