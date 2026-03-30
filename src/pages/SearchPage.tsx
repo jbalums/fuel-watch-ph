@@ -30,10 +30,14 @@ export default function SearchPage() {
 	}, [searchQuery, fuelFilter, statusFilter, sortBy]);
 
 	useEffect(() => {
+		if (stationsLoading) {
+			return;
+		}
+
 		if (currentPage > totalPages) {
 			setCurrentPage(totalPages);
 		}
-	}, [currentPage, totalPages]);
+	}, [currentPage, stationsLoading, totalPages]);
 
 	return (
 		<div className="min-h-[calc(100dvh-185px)]">

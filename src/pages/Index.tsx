@@ -71,10 +71,14 @@ export default function Index() {
 	]);
 
 	useEffect(() => {
+		if (stationsLoading) {
+			return;
+		}
+
 		if (currentPage > totalPages) {
 			setCurrentPage(totalPages);
 		}
-	}, [currentPage, totalPages]);
+	}, [currentPage, stationsLoading, totalPages]);
 
 	return (
 		<>
