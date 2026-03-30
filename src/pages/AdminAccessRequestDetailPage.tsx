@@ -44,7 +44,8 @@ export default function AdminAccessRequestDetailPage() {
 		() => (provinceCode ? citiesByProvince.get(provinceCode) ?? [] : []),
 		[citiesByProvince, provinceCode],
 	);
-	const isRequestLocked = request.status !== "pending" || !!generatedInviteLink;
+	const isRequestLocked =
+		(request?.status ?? "pending") !== "pending" || !!generatedInviteLink;
 
 	const approveRequest = useMutation({
 		mutationFn: async () => {

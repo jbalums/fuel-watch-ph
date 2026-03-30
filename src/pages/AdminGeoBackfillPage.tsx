@@ -30,8 +30,11 @@ type UnscopedReport = {
 export default function AdminGeoBackfillPage() {
 	const queryClient = useQueryClient();
 	const { isSuperAdmin, isLoading: accessLoading } = useUserAccess();
-	const { provinces, citiesByProvince, isLoading: geoLoading } =
-		useGeoReferences();
+	const {
+		provinces,
+		citiesByProvince,
+		isLoading: geoLoading,
+	} = useGeoReferences();
 	const [stationSelections, setStationSelections] = useState<
 		Record<string, BackfillSelection>
 	>({});
@@ -206,7 +209,8 @@ export default function AdminGeoBackfillPage() {
 							Super-admin access required
 						</h2>
 						<p className="mt-1 text-sm text-muted-foreground">
-							Only super admins can backfill geographic scope data.
+							Only super admins can backfill geographic scope
+							data.
 						</p>
 					</div>
 				</div>
@@ -229,7 +233,7 @@ export default function AdminGeoBackfillPage() {
 			cityMunicipalityCode: "",
 		};
 		const cities = selection.provinceCode
-			? citiesByProvince.get(selection.provinceCode) ?? []
+			? (citiesByProvince.get(selection.provinceCode) ?? [])
 			: [];
 
 		return (
@@ -303,7 +307,10 @@ export default function AdminGeoBackfillPage() {
 					<button
 						type="button"
 						onClick={() => {
-							if (!selection.provinceCode || !selection.cityMunicipalityCode) {
+							if (
+								!selection.provinceCode ||
+								!selection.cityMunicipalityCode
+							) {
 								toast.error("Select both province and city");
 								return;
 							}
@@ -334,7 +341,7 @@ export default function AdminGeoBackfillPage() {
 
 			<div className="rounded-2xl bg-card p-5 shadow-sovereign">
 				<h4 className="text-lg font-semibold text-foreground">
-					Unscoped Stations
+					Unscoped Stations ({unscopedStations.length} stations)
 				</h4>
 				{stationsLoading ? (
 					<div className="flex items-center justify-center py-10">
