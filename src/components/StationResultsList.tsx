@@ -81,7 +81,6 @@ export function StationResultsList({
 	);
 	return (
 		<div className="flex flex-col gap-3">
-			{showPagination && renderPagination()}
 			{loading ? (
 				<div className="flex items-center justify-center py-24">
 					<Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
