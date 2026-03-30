@@ -1,3 +1,5 @@
+CREATE EXTENSION IF NOT EXISTS pgcrypto WITH SCHEMA extensions;
+
 CREATE TABLE IF NOT EXISTS public.geo_provinces (
   code text PRIMARY KEY,
   name text NOT NULL UNIQUE,
@@ -616,15 +618,15 @@ BEGIN
     RAISE EXCEPTION 'Only approved requests can receive invites';
   END IF;
 
-  UPDATE public.admin_invites
+  UPDATE public.admin_invites AS invites
   SET expires_at = now(),
       updated_at = now()
-  WHERE access_request_id = _request.id
-    AND used_at IS NULL
-    AND expires_at > now();
+  WHERE invites.access_request_id = _request.id
+    AND invites.used_at IS NULL
+    AND invites.expires_at > now();
 
-  _raw_token := encode(gen_random_bytes(32), 'hex');
-  _token_hash := encode(digest(_raw_token, 'sha256'), 'hex');
+  _raw_token := encode(extensions.gen_random_bytes(32), 'hex');
+  _token_hash := encode(extensions.digest(_raw_token, 'sha256'), 'hex');
   _expires_at := now() + make_interval(days => _expires_in_days);
 
   INSERT INTO public.admin_invites (
@@ -866,7 +868,7 @@ SECURITY DEFINER
 SET search_path = public
 AS $$
 DECLARE
-  _token_hash text := encode(digest(btrim(COALESCE(_token, '')), 'sha256'), 'hex');
+  _token_hash text := encode(extensions.digest(btrim(COALESCE(_token, '')), 'sha256'), 'hex');
 BEGIN
   IF btrim(COALESCE(_token, '')) = '' THEN
     RAISE EXCEPTION 'Invite token is required';
@@ -924,7 +926,7 @@ BEGIN
   SELECT *
   INTO _invite
   FROM public.admin_invites
-  WHERE token_hash = encode(digest(btrim(COALESCE(_token, '')), 'sha256'), 'hex')
+  WHERE token_hash = encode(extensions.digest(btrim(COALESCE(_token, '')), 'sha256'), 'hex')
   FOR UPDATE;
 
   IF NOT FOUND THEN
