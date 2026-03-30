@@ -1,4 +1,6 @@
 import type { FuelType, GasStation, StationStatus } from "@/types/station";
+import { LguVerifiedBadge } from "@/components/LguVerifiedBadge";
+import { VerifiedStationBadge } from "@/components/VerifiedStationBadge";
 
 const fuelTypes: FuelType[] = ["Unleaded", "Premium", "Diesel"];
 const fuelTypeColors = ["text-green-600", "text-red-600", "text-amber-600"];
@@ -17,6 +19,16 @@ export function StationMarkerInfoWindow({
 		<div className="flex min-w-[180px] flex-col gap-1.5 text-sm">
 			<span className="font-semibold !text-black">{station.name}</span>
 			<span className="text-xs text-gray-500">{station.address}</span>
+			{(station.isLguVerified || station.isVerified) && (
+				<div className="mt-1 flex flex-wrap items-center gap-1.5">
+					{station.isLguVerified && (
+						<LguVerifiedBadge className="bg-sky-500/10 px-2 py-0.5 text-[11px] text-sky-700" />
+					)}
+					{station.isVerified && (
+						<VerifiedStationBadge className="px-2 py-0.5 text-[11px]" />
+					)}
+				</div>
+			)}
 			{fuelTypes.map((fuelType, index) => {
 				const price = station.prices[fuelType];
 				const hasPrice =

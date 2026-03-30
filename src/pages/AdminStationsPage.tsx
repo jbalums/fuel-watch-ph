@@ -16,11 +16,15 @@ import { supabase } from "@/integrations/supabase/client";
 import { AdminStationEditor } from "@/components/admin/AdminStationEditor";
 import { AdminListPagination } from "@/components/admin/AdminListPagination";
 import { StatusBadge } from "@/components/StatusBadge";
+import { LguVerifiedBadge } from "@/components/LguVerifiedBadge";
 import { VerifiedStationBadge } from "@/components/VerifiedStationBadge";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { usePaginatedList } from "@/hooks/usePaginatedList";
+import { useAuth } from "@/contexts/AuthContext";
+import { useUserAccess } from "@/hooks/useUserAccess";
 import type { FuelType, StationStatus } from "@/types/station";
 import {
+	buildStationLguVerificationPayload,
 	buildStationPayload,
 	type GasStationRow,
 	initialStationForm,
@@ -33,6 +37,8 @@ import {
 export default function AdminStationsPage() {
 	const queryClient = useQueryClient();
 	const isMobile = useIsMobile();
+	const { user } = useAuth();
+	const { accessLevel } = useUserAccess();
 	const { data: stations = [], isLoading: stationsLoading } =
 		useAdminStations();
 	const [editorOpen, setEditorOpen] = useState(false);
@@ -74,7 +80,10 @@ export default function AdminStationsPage() {
 
 	const saveStation = useMutation({
 		mutationFn: async () => {
-			const payload = buildStationPayload(stationForm);
+			const payload = {
+				...buildStationPayload(stationForm),
+				...buildStationLguVerificationPayload(accessLevel, user?.id),
+			};
 
 			if (editingStationId) {
 				const { error } = await supabase
@@ -244,6 +253,9 @@ export default function AdminStationsPage() {
 											<p className="font-semibold text-foreground">
 												{station.name}
 											</p>
+											{station.is_lgu_verified && (
+												<LguVerifiedBadge className="py-0.5" />
+											)}
 											{station.is_verified && (
 												<VerifiedStationBadge className="py-0.5" />
 											)}

@@ -12,6 +12,7 @@ import type {
 	StationClaimReviewStatus,
 	StationStatus,
 } from "@/types/station";
+import type { ManagedAccessLevel } from "@/lib/access-control";
 
 export type GasStationRow = Tables<"gas_stations">;
 type FuelReportRow = Tables<"fuel_reports">;
@@ -97,6 +98,14 @@ function mapFuelReport(report: FuelReportRow): FuelReport {
 			"pending") as FuelReportReviewStatus,
 		reviewedAt: report.reviewed_at,
 		reviewedBy: report.reviewed_by,
+		isLguVerified: report.is_lgu_verified,
+		lguVerifiedAt: report.lgu_verified_at,
+		lguVerifiedBy: report.lgu_verified_by,
+		lguVerifiedRole:
+			(report.lgu_verified_role as
+				| "province_admin"
+				| "city_admin"
+				| null) ?? null,
 		appliedStationId: report.applied_station_id,
 	};
 }
@@ -320,6 +329,23 @@ export function buildStationPayload(stationForm: StationFormState) {
 		fuel_type: stationForm.fuelType,
 		price_per_liter: pricePerLiter,
 		status: stationForm.status,
+	};
+}
+
+export function buildStationLguVerificationPayload(
+	accessLevel: ManagedAccessLevel,
+	userId: string | null | undefined,
+) {
+	const isLguRole =
+		accessLevel === "city_admin" || accessLevel === "province_admin";
+
+	return {
+		is_lgu_verified: isLguRole,
+		lgu_verified_at:
+			isLguRole && userId ? new Date().toISOString() : null,
+		lgu_verified_by: isLguRole && userId ? userId : null,
+		lgu_verified_role:
+			isLguRole && userId ? accessLevel : null,
 	};
 }
 

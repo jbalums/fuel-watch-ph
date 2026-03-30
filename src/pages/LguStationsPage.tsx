@@ -10,19 +10,29 @@ import {
 	AlertDialogHeader,
 	AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Loader2, Pencil, Plus, Search, Trash2 } from "lucide-react";
+import {
+	BadgeCheck,
+	Loader2,
+	Pencil,
+	Plus,
+	Search,
+	Trash2,
+} from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { AdminStationEditor } from "@/components/admin/AdminStationEditor";
 import { AdminListPagination } from "@/components/admin/AdminListPagination";
 import { StatusBadge } from "@/components/StatusBadge";
+import { LguVerifiedBadge } from "@/components/LguVerifiedBadge";
 import { VerifiedStationBadge } from "@/components/VerifiedStationBadge";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { usePaginatedList } from "@/hooks/usePaginatedList";
+import { useAuth } from "@/contexts/AuthContext";
 import { useCurrentUserScope } from "@/hooks/useCurrentUserScope";
 import { useUserAccess } from "@/hooks/useUserAccess";
 import type { FuelType, StationStatus } from "@/types/station";
 import {
+	buildStationLguVerificationPayload,
 	buildStationPayload,
 	type GasStationRow,
 	initialStationForm,
@@ -35,7 +45,8 @@ import {
 export default function LguStationsPage() {
 	const queryClient = useQueryClient();
 	const isMobile = useIsMobile();
-	const { isCityAdmin } = useUserAccess();
+	const { user } = useAuth();
+	const { isCityAdmin, accessLevel } = useUserAccess();
 	const { data: scope } = useCurrentUserScope();
 	const { data: stations = [], isLoading: stationsLoading } =
 		useScopedAdminStations();
@@ -48,6 +59,8 @@ export default function LguStationsPage() {
 	const initialEditorFormRef = useRef<StationFormState>(initialStationForm);
 	const [stationSearch, setStationSearch] = useState("");
 	const [discardConfirmOpen, setDiscardConfirmOpen] = useState(false);
+	const [verificationTarget, setVerificationTarget] =
+		useState<GasStationRow | null>(null);
 	const pendingActionRef = useRef<(() => void) | null>(null);
 
 	const filteredStations = useMemo(() => {
@@ -78,7 +91,10 @@ export default function LguStationsPage() {
 
 	const saveStation = useMutation({
 		mutationFn: async () => {
-			const payload = buildStationPayload(stationForm);
+			const payload = {
+				...buildStationPayload(stationForm),
+				...buildStationLguVerificationPayload(accessLevel, user?.id),
+			};
 
 			if (editingStationId) {
 				const { error } = await supabase
@@ -122,6 +138,23 @@ export default function LguStationsPage() {
 		onSuccess: async () => {
 			await refreshAdminData(queryClient);
 			toast.success("Station deleted");
+		},
+		onError: (error) => toast.error(error.message),
+	});
+
+	const verifyStation = useMutation({
+		mutationFn: async (stationId: string) => {
+			const { error } = await supabase
+				.from("gas_stations")
+				.update(buildStationLguVerificationPayload(accessLevel, user?.id))
+				.eq("id", stationId);
+
+			if (error) throw error;
+		},
+		onSuccess: async () => {
+			await refreshAdminData(queryClient);
+			toast.success("Station marked as LGU verified");
+			setVerificationTarget(null);
 		},
 		onError: (error) => toast.error(error.message),
 	});
@@ -203,6 +236,26 @@ export default function LguStationsPage() {
 		pendingActionRef.current = null;
 	};
 
+	const requestVerifyStation = (station: GasStationRow) => {
+		setVerificationTarget(station);
+	};
+
+	const confirmVerifyStation = () => {
+		if (!verificationTarget || verifyStation.isPending) {
+			return;
+		}
+
+		verifyStation.mutate(verificationTarget.id);
+	};
+
+	const cancelVerifyStation = () => {
+		if (verifyStation.isPending) {
+			return;
+		}
+
+		setVerificationTarget(null);
+	};
+
 	return (
 		<>
 			<div className="rounded-2xl bg-card p-5 shadow-sovereign">
@@ -259,6 +312,9 @@ export default function LguStationsPage() {
 											<p className="font-semibold text-foreground">
 												{station.name}
 											</p>
+											{station.is_lgu_verified && (
+												<LguVerifiedBadge className="py-0.5" />
+											)}
 											{station.is_verified && (
 												<VerifiedStationBadge className="py-0.5" />
 											)}
@@ -278,6 +334,21 @@ export default function LguStationsPage() {
 										</p>
 									</div>
 									<div className="flex gap-2">
+										<button
+											onClick={() =>
+												requestVerifyStation(station)
+											}
+											disabled={
+												verifyStation.isPending ||
+												station.is_lgu_verified
+											}
+											className="flex items-center gap-1.5 rounded-lg bg-emerald-500/10 px-3 py-2 text-sm font-medium text-emerald-700 transition-colors hover:bg-emerald-500/15 disabled:cursor-not-allowed disabled:opacity-50 dark:text-emerald-300"
+										>
+											<BadgeCheck className="h-4 w-4" />
+											{station.is_lgu_verified
+												? "LGU verified"
+												: "Mark as verified"}
+										</button>
 										<button
 											onClick={() =>
 												runWithUnsavedGuard(() =>
@@ -367,6 +438,44 @@ export default function LguStationsPage() {
 						</AlertDialogCancel>
 						<AlertDialogAction onClick={confirmDiscardChanges}>
 							Discard changes
+						</AlertDialogAction>
+					</AlertDialogFooter>
+				</AlertDialogContent>
+			</AlertDialog>
+
+			<AlertDialog
+				open={!!verificationTarget}
+				onOpenChange={(nextOpen) => {
+					if (!nextOpen) {
+						cancelVerifyStation();
+					}
+				}}
+			>
+				<AlertDialogContent>
+					<AlertDialogHeader>
+						<AlertDialogTitle>Mark station as LGU verified?</AlertDialogTitle>
+						<AlertDialogDescription>
+							This confirms that the LGU has reviewed the station
+							location and the currently shown prices for{" "}
+							<strong>{verificationTarget?.name ?? "this station"}</strong>.
+							The public station views will show the LGU verified
+							badge after confirmation.
+						</AlertDialogDescription>
+					</AlertDialogHeader>
+					<AlertDialogFooter>
+						<AlertDialogCancel
+							onClick={cancelVerifyStation}
+							disabled={verifyStation.isPending}
+						>
+							Cancel
+						</AlertDialogCancel>
+						<AlertDialogAction
+							onClick={confirmVerifyStation}
+							disabled={verifyStation.isPending}
+						>
+							{verifyStation.isPending
+								? "Marking..."
+								: "Confirm verification"}
 						</AlertDialogAction>
 					</AlertDialogFooter>
 				</AlertDialogContent>

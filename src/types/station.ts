@@ -13,6 +13,10 @@ export interface GasStation {
   cityMunicipalityCode: string | null;
   prices: Record<FuelType, number | null>;
   isVerified: boolean;
+  isLguVerified: boolean;
+  lguVerifiedAt: string | null;
+  lguVerifiedBy: string | null;
+  lguVerifiedRole: "province_admin" | "city_admin" | null;
   verifiedAt: string | null;
   managerUserId: string | null;
   status: StationStatus;
@@ -61,6 +65,10 @@ export interface FuelReport {
   reviewStatus: FuelReportReviewStatus;
   reviewedAt: string | null;
   reviewedBy: string | null;
+  isLguVerified: boolean;
+  lguVerifiedAt: string | null;
+  lguVerifiedBy: string | null;
+  lguVerifiedRole: "province_admin" | "city_admin" | null;
   appliedStationId: string | null;
 }
 

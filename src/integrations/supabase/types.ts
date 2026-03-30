@@ -22,6 +22,9 @@ export type Database = {
           fuel_type: string
           id: string
           lat: number | null
+          lgu_verified_at: string | null
+          lgu_verified_by: string | null
+          lgu_verified_role: Database["public"]["Enums"]["app_role"] | null
           lng: number | null
           photo_filename: string | null
           photo_path: string | null
@@ -29,6 +32,7 @@ export type Database = {
           prices: Json | null
           province_code: string | null
           reported_address: string | null
+          is_lgu_verified: boolean
           review_status: string
           reviewed_at: string | null
           reviewed_by: string | null
@@ -44,6 +48,9 @@ export type Database = {
           fuel_type: string
           id?: string
           lat?: number | null
+          lgu_verified_at?: string | null
+          lgu_verified_by?: string | null
+          lgu_verified_role?: Database["public"]["Enums"]["app_role"] | null
           lng?: number | null
           photo_filename?: string | null
           photo_path?: string | null
@@ -51,6 +58,7 @@ export type Database = {
           prices?: Json | null
           province_code?: string | null
           reported_address?: string | null
+          is_lgu_verified?: boolean
           review_status?: string
           reviewed_at?: string | null
           reviewed_by?: string | null
@@ -66,6 +74,9 @@ export type Database = {
           fuel_type?: string
           id?: string
           lat?: number | null
+          lgu_verified_at?: string | null
+          lgu_verified_by?: string | null
+          lgu_verified_role?: Database["public"]["Enums"]["app_role"] | null
           lng?: number | null
           photo_filename?: string | null
           photo_path?: string | null
@@ -73,6 +84,7 @@ export type Database = {
           prices?: Json | null
           province_code?: string | null
           reported_address?: string | null
+          is_lgu_verified?: boolean
           review_status?: string
           reviewed_at?: string | null
           reviewed_by?: string | null
@@ -105,8 +117,12 @@ export type Database = {
           created_at: string
           fuel_type: string
           id: string
+          is_lgu_verified: boolean
           is_verified: boolean
           lat: number
+          lgu_verified_at: string | null
+          lgu_verified_by: string | null
+          lgu_verified_role: Database["public"]["Enums"]["app_role"] | null
           lng: number
           manager_user_id: string | null
           name: string
@@ -124,8 +140,12 @@ export type Database = {
           created_at?: string
           fuel_type?: string
           id?: string
+          is_lgu_verified?: boolean
           is_verified?: boolean
           lat: number
+          lgu_verified_at?: string | null
+          lgu_verified_by?: string | null
+          lgu_verified_role?: Database["public"]["Enums"]["app_role"] | null
           lng: number
           manager_user_id?: string | null
           name: string
@@ -143,8 +163,12 @@ export type Database = {
           created_at?: string
           fuel_type?: string
           id?: string
+          is_lgu_verified?: boolean
           is_verified?: boolean
           lat?: number
+          lgu_verified_at?: string | null
+          lgu_verified_by?: string | null
+          lgu_verified_role?: Database["public"]["Enums"]["app_role"] | null
           lng?: number
           manager_user_id?: string | null
           name?: string

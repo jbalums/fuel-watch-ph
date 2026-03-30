@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { AdminListPagination } from "@/components/admin/AdminListPagination";
 import { createFuelReportPhotoUrl } from "@/lib/fuel-report-photo-upload";
 import { usePaginatedList } from "@/hooks/usePaginatedList";
+import { LguVerifiedBadge } from "@/components/LguVerifiedBadge";
 import { StatusBadge } from "@/components/StatusBadge";
 import {
 	formatReportedPrices,
@@ -181,6 +182,9 @@ export default function LguReportsPage() {
 											<p className="font-semibold text-foreground">
 												{report.stationName}
 											</p>
+											{report.isLguVerified && (
+												<LguVerifiedBadge className="py-0.5" />
+											)}
 											<ReviewStatusBadge
 												status={report.reviewStatus}
 											/>

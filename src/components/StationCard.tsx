@@ -6,6 +6,8 @@ import { MapPin, Clock, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useLocation, useNavigate } from "react-router-dom";
 import { calculateDistanceKm } from "@/utils/distance";
+import { LguVerifiedBadge } from "./LguVerifiedBadge";
+import { VerifiedStationBadge } from "./VerifiedStationBadge";
 
 interface StationCardProps {
 	station: GasStation;
@@ -98,10 +100,12 @@ export function StationCard({ station, index, userLocation }: StationCardProps) 
 								{station.address}
 							</span>
 						</div>
-						{/* <div className="mt-3 flex flex-wrap items-center gap-2">
-							{station.isVerified && <VerifiedStationBadge />}
-							<ClaimStationDialog station={station} />
-						</div> */}
+						{(station.isLguVerified || station.isVerified) && (
+							<div className="mt-3 flex flex-wrap items-center gap-2">
+								{station.isLguVerified && <LguVerifiedBadge />}
+								{station.isVerified && <VerifiedStationBadge />}
+							</div>
+						)}
 					</div>
 				</div>
 
