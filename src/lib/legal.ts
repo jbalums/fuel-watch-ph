@@ -102,3 +102,38 @@ export const aboutUsSections = [
 		],
 	},
 ] as const;
+
+export const contactUsIntro =
+	"Need help, have feedback, or want to reach the FuelWatch PH team? You can contact us through the channels below and we’ll do our best to respond.";
+
+export const contactUsChannels = [
+	{
+		title: "Email",
+		description:
+			"Send questions, feedback, bug reports, or account concerns through email.",
+		label: "jbalums@gmail.com",
+		href: "mailto:jbalums@gmail.com",
+	},
+	{
+		title: "Facebook",
+		description:
+			"Follow updates or send us a message through the official FuelWatch PH Facebook page.",
+		label: "facebook.com/fuelwatchph",
+		href: "https://www.facebook.com/fuelwatchph",
+	},
+] as const;
+
+export const contactUsSections = [
+	{
+		title: "When to Contact Us",
+		paragraphs: [
+			"Reach out if you have questions about FuelWatch PH, need help using the platform, want to report inaccurate information, or have suggestions that can improve the experience for other drivers.",
+		],
+	},
+	{
+		title: "Response Expectations",
+		paragraphs: [
+			"We may not always be able to respond immediately, but we review messages and community feedback to help improve FuelWatch PH over time.",
+		],
+	},
+] as const;

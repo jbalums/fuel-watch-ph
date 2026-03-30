@@ -19,6 +19,7 @@ import AdminClaimsPage from "./pages/AdminClaimsPage";
 import AdminUsersPage from "./pages/AdminUsersPage";
 import Auth from "./pages/Auth";
 import AboutUs from "./pages/AboutUs";
+import ContactUs from "./pages/ContactUs";
 import Profile from "./pages/Profile";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import StationManagerDashboard from "./pages/StationManagerDashboard";
@@ -83,6 +84,10 @@ const App = () => (
 										<Route
 											path="/about-us"
 											element={<AboutUs />}
+										/>
+										<Route
+											path="/contact-us"
+											element={<ContactUs />}
 										/>
 										<Route path="/profile" element={<Profile />} />
 										<Route
