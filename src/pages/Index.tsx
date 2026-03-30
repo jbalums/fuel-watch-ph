@@ -1,15 +1,19 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { AlertBanner } from "@/components/AlertBanner";
 import { HeroStatus } from "@/components/HeroStatus";
 import { SearchFilter } from "@/components/SearchFilter";
 import { StationResultsList } from "@/components/StationResultsList";
 import { mockAlerts } from "@/data/mockStations";
 import { useGeoReferences } from "@/hooks/useGeoReferences";
+import { useCurrentUserScope } from "@/hooks/useCurrentUserScope";
 import { useStationBrowse } from "@/hooks/useStationBrowse";
+import { useUserAccess } from "@/hooks/useUserAccess";
 
 const STATIONS_PER_PAGE = 10;
 
 export default function Index() {
+	const { isLguOperator } = useUserAccess();
+	const { data: currentUserScope } = useCurrentUserScope(isLguOperator);
 	const {
 		stations,
 		stationsLoading,
@@ -28,6 +32,7 @@ export default function Index() {
 	const [selectedProvinceCode, setSelectedProvinceCode] = useState("");
 	const [selectedCityMunicipalityCode, setSelectedCityMunicipalityCode] =
 		useState("");
+	const hasInitializedScopeFilters = useRef(false);
 	const availableCities = useMemo(
 		() =>
 			selectedProvinceCode
@@ -70,6 +75,20 @@ export default function Index() {
 			startIndex + STATIONS_PER_PAGE,
 		);
 	}, [activePage, geoFilteredStations]);
+
+	useEffect(() => {
+		if (!isLguOperator || !currentUserScope || hasInitializedScopeFilters.current) {
+			return;
+		}
+
+		setSelectedProvinceCode(currentUserScope.provinceCode);
+		setSelectedCityMunicipalityCode(
+			currentUserScope.scopeType === "city"
+				? currentUserScope.cityMunicipalityCode ?? ""
+				: "",
+		);
+		hasInitializedScopeFilters.current = true;
+	}, [currentUserScope, isLguOperator]);
 
 	useEffect(() => {
 		setCurrentPage(1);
