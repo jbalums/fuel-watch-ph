@@ -287,39 +287,54 @@ export default function LguTeamPage() {
 						}}
 						className="grid gap-3 md:grid-cols-[2fr,2fr,140px,auto]"
 					>
-						<input
-							type="email"
-							placeholder="Email address"
-							value={inviteEmail}
-							onChange={(event) =>
-								setInviteEmail(event.target.value)
-							}
-							className="rounded-xl bg-surface-alt px-4 py-3 text-sm text-foreground outline-none focus:ring-2 focus:ring-primary/20"
-						/>
-						<input
-							type="text"
-							placeholder="Full name (optional)"
-							value={inviteFullName}
-							onChange={(event) =>
-								setInviteFullName(event.target.value)
-							}
-							className="rounded-xl bg-surface-alt px-4 py-3 text-sm text-foreground outline-none focus:ring-2 focus:ring-primary/20"
-						/>
-						<input
-							type="number"
-							min="1"
-							max="30"
-							placeholder="7"
-							value={expiresInDays}
-							onChange={(event) =>
-								setExpiresInDays(event.target.value)
-							}
-							className="rounded-xl bg-surface-alt px-4 py-3 text-sm text-foreground outline-none focus:ring-2 focus:ring-primary/20"
-						/>
+						<div className="flex flex-col gap-1.5">
+							<label className="text-label text-muted-foreground">
+								Email Address
+							</label>
+							<input
+								type="email"
+								placeholder="Email address"
+								value={inviteEmail}
+								onChange={(event) =>
+									setInviteEmail(event.target.value)
+								}
+								className="rounded-xl bg-surface-alt px-4 py-3 text-sm text-foreground outline-none focus:ring-2 focus:ring-primary/20"
+							/>
+						</div>
+						<div className="flex flex-col gap-1.5">
+							<label className="text-label text-muted-foreground">
+								Full Name
+							</label>
+							<input
+								type="text"
+								placeholder="Full name (optional)"
+								value={inviteFullName}
+								onChange={(event) =>
+									setInviteFullName(event.target.value)
+								}
+								className="rounded-xl bg-surface-alt px-4 py-3 text-sm text-foreground outline-none focus:ring-2 focus:ring-primary/20"
+							/>
+						</div>
+						<div className="flex flex-col gap-1.5">
+							<label className="text-label text-muted-foreground">
+								Expires In Days
+							</label>
+							<input
+								type="number"
+								min="1"
+								max="30"
+								placeholder="7"
+								value={expiresInDays}
+								onChange={(event) =>
+									setExpiresInDays(event.target.value)
+								}
+								className="rounded-xl bg-surface-alt px-4 py-3 text-sm text-foreground outline-none focus:ring-2 focus:ring-primary/20"
+							/>
+						</div>
 						<button
 							type="submit"
 							disabled={issueInvite.isPending}
-							className="flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary-hover disabled:opacity-50"
+							className="mt-[22px] flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary-hover disabled:opacity-50"
 						>
 							{issueInvite.isPending ? (
 								<Loader2 className="h-4 w-4 animate-spin" />

@@ -12,7 +12,18 @@ import { formatAccessLevelLabel, getDashboardPathForAccessLevel } from "@/lib/ac
 type PendingInviteRegistration = {
 	fullName: string;
 	username: string;
+	source: "sign_up" | "sign_in";
 };
+
+function isExistingAccountError(message: string | undefined) {
+	const normalizedMessage = message?.trim().toLowerCase() ?? "";
+
+	return (
+		normalizedMessage.includes("already registered") ||
+		normalizedMessage.includes("already been registered") ||
+		normalizedMessage.includes("already exists")
+	);
+}
 
 export default function AdminInviteRegistrationPage() {
 	const navigate = useNavigate();
@@ -31,12 +42,97 @@ export default function AdminInviteRegistrationPage() {
 		() => `pending-admin-invite:${token}`,
 		[token],
 	);
+	const isMatchingSignedInUser =
+		!!invite &&
+		!!user &&
+		user.email?.toLowerCase() === invite.email.toLowerCase();
+	const isMismatchedSignedInUser =
+		!!invite &&
+		!!user &&
+		user.email?.toLowerCase() !== invite.email.toLowerCase();
+	const isUpdateMode = isMatchingSignedInUser;
+
+	const storePendingInviteData = (source: PendingInviteRegistration["source"]) => {
+		localStorage.setItem(
+			pendingStorageKey,
+			JSON.stringify({
+				fullName: fullName.trim(),
+				username: username.trim(),
+				source,
+			} satisfies PendingInviteRegistration),
+		);
+	};
+
+	const navigateToSignIn = () => {
+		storePendingInviteData("sign_in");
+		const nextSearchParams = new URLSearchParams({
+			redirect: `/admin-invite/${token}`,
+		});
+
+		if (invite?.email) {
+			nextSearchParams.set("email", invite.email);
+		}
+
+		navigate(`/auth?${nextSearchParams.toString()}`);
+	};
 
 	useEffect(() => {
 		if (invite?.fullName && !fullName.trim()) {
 			setFullName(invite.fullName);
 		}
 	}, [fullName, invite?.fullName]);
+
+	useEffect(() => {
+		const storedValue = localStorage.getItem(pendingStorageKey);
+		if (!storedValue) {
+			return;
+		}
+
+		try {
+			const parsed = JSON.parse(storedValue) as Partial<PendingInviteRegistration>;
+
+			if (!username.trim() && typeof parsed.username === "string") {
+				setUsername(parsed.username);
+			}
+
+			if (!fullName.trim() && typeof parsed.fullName === "string") {
+				setFullName(parsed.fullName);
+			}
+		} catch {
+			localStorage.removeItem(pendingStorageKey);
+		}
+	}, [fullName, pendingStorageKey, username]);
+
+	useEffect(() => {
+		if (!isMatchingSignedInUser) {
+			return;
+		}
+
+		if (!username.trim()) {
+			const nextUsername =
+				typeof user.user_metadata?.username === "string"
+					? user.user_metadata.username
+					: "";
+
+			if (nextUsername) {
+				setUsername(nextUsername);
+			}
+		}
+
+		if (!fullName.trim()) {
+			const nextFullName =
+				(typeof user.user_metadata?.display_name === "string" &&
+					user.user_metadata.display_name) ||
+				(typeof user.user_metadata?.name === "string" &&
+					user.user_metadata.name) ||
+				invite?.fullName ||
+				"";
+
+			if (nextFullName) {
+				setFullName(nextFullName);
+			}
+		}
+	}, [fullName, invite?.fullName, isMatchingSignedInUser, user, username]);
 
 	const consumeInvite = async (
 		nextFullName: string,
@@ -105,7 +201,11 @@ export default function AdminInviteRegistrationPage() {
 			invite.fullName ||
 			"";
 
-		if (!fallbackUsername || !fallbackFullName) {
+		if (
+			parsed?.source !== "sign_up" ||
+			!fallbackUsername ||
+			!fallbackFullName
+		) {
 			return;
 		}
 
@@ -140,32 +240,15 @@ export default function AdminInviteRegistrationPage() {
 			return;
 		}
 
-		if (password.length < 6) {
-			toast.error("Password must be at least 6 characters");
-			return;
-		}
-
-		if (password !== confirmPassword) {
-			toast.error("Passwords do not match");
-			return;
-		}
-
-		if (user && user.email?.toLowerCase() !== invite.email.toLowerCase()) {
+		if (isMismatchedSignedInUser) {
 			toast.error(
 				`Please sign out first. This invite is only valid for ${invite.email}.`,
 			);
 			return;
 		}
 
-		localStorage.setItem(
-			pendingStorageKey,
-			JSON.stringify({
-				fullName: normalizedFullName,
-				username: normalizedUsername,
-			} satisfies PendingInviteRegistration),
-		);
-
-		if (user && user.email?.toLowerCase() === invite.email.toLowerCase()) {
+		if (isUpdateMode) {
+			storePendingInviteData("sign_in");
 			try {
 				await consumeInvite(normalizedFullName, normalizedUsername);
 			} catch (consumeError) {
@@ -177,6 +260,18 @@ export default function AdminInviteRegistrationPage() {
 			}
 			return;
 		}
+
+		if (password.length < 6) {
+			toast.error("Password must be at least 6 characters");
+			return;
+		}
+
+		if (password !== confirmPassword) {
+			toast.error("Passwords do not match");
+			return;
+		}
+
+		storePendingInviteData("sign_up");
 
 		setCompletingInvite(true);
 
@@ -193,6 +288,15 @@ export default function AdminInviteRegistrationPage() {
 		});
 
 		if (signUpError) {
+			if (isExistingAccountError(signUpError.message)) {
+				setCompletingInvite(false);
+				toast.info(
+					"This email already has an account. Sign in first to finish activating LGU access.",
+				);
+				navigateToSignIn();
+				return;
+			}
+
 			localStorage.removeItem(pendingStorageKey);
 			toast.error(signUpError.message);
 			setCompletingInvite(false);
@@ -260,10 +364,14 @@ export default function AdminInviteRegistrationPage() {
 				>
 					<div className="mb-6 text-center">
 						<h2 className="text-headline text-foreground">
-							Complete Official Admin Registration
+							{isUpdateMode
+								? "Update Official LGU Access"
+								: "Complete Official LGU Access"}
 						</h2>
 						<p className="mt-2 text-sm text-muted-foreground">
-							Use your invite to finish registering your official LGU access.
+							{isUpdateMode
+								? "Your account already exists. Confirm your details below to activate this LGU access."
+								: "Use your invite to finish registering your official LGU access."}
 						</p>
 					</div>
 
@@ -334,24 +442,28 @@ export default function AdminInviteRegistrationPage() {
 								onChange={(event) => setFullName(event.target.value)}
 								className="rounded-xl bg-surface-alt px-4 py-3 text-sm text-foreground outline-none focus:ring-2 focus:ring-primary/20"
 							/>
-							<input
-								type="password"
-								placeholder="Password"
-								value={password}
-								onChange={(event) => setPassword(event.target.value)}
-								className="rounded-xl bg-surface-alt px-4 py-3 text-sm text-foreground outline-none focus:ring-2 focus:ring-primary/20"
-							/>
-							<input
-								type="password"
-								placeholder="Confirm password"
-								value={confirmPassword}
-								onChange={(event) =>
-									setConfirmPassword(event.target.value)
-								}
-								className="rounded-xl bg-surface-alt px-4 py-3 text-sm text-foreground outline-none focus:ring-2 focus:ring-primary/20"
-							/>
+							{!isUpdateMode ? (
+								<>
+									<input
+										type="password"
+										placeholder="Password"
+										value={password}
+										onChange={(event) => setPassword(event.target.value)}
+										className="rounded-xl bg-surface-alt px-4 py-3 text-sm text-foreground outline-none focus:ring-2 focus:ring-primary/20"
+									/>
+									<input
+										type="password"
+										placeholder="Confirm password"
+										value={confirmPassword}
+										onChange={(event) =>
+											setConfirmPassword(event.target.value)
+										}
+										className="rounded-xl bg-surface-alt px-4 py-3 text-sm text-foreground outline-none focus:ring-2 focus:ring-primary/20"
+									/>
+								</>
+							) : null}
 
-							{user && user.email?.toLowerCase() !== invite.email.toLowerCase() ? (
+							{isMismatchedSignedInUser ? (
 								<p className="text-sm text-destructive">
 									You are currently signed in as {user.email}. This
 									invite is only valid for {invite.email}.
@@ -366,8 +478,20 @@ export default function AdminInviteRegistrationPage() {
 								{completingInvite ? (
 									<Loader2 className="h-4 w-4 animate-spin" />
 								) : null}
-								Complete Registration
+								{isUpdateMode
+									? "Update and Activate Access"
+									: "Complete Registration"}
 							</button>
+
+							{!user ? (
+								<button
+									type="button"
+									onClick={navigateToSignIn}
+									className="text-sm font-medium text-accent hover:underline"
+								>
+									Already have an account? Sign in first
+								</button>
+							) : null}
 
 							<button
 								type="button"

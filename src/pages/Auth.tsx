@@ -8,6 +8,17 @@ import { motion } from "framer-motion";
 import { Mail, Lock, User, ArrowRight } from "lucide-react";
 import { toast } from "@/lib/app-toast";
 import logo from "@/assets/images/logo.png";
+
+function getSafeRedirectPath(rawRedirect: string | null) {
+	if (!rawRedirect) {
+		return null;
+	}
+
+	return rawRedirect.startsWith("/") && !rawRedirect.startsWith("//")
+		? rawRedirect
+		: null;
+}
+
 export default function Auth() {
 	const navigate = useNavigate();
 	const location = useLocation();
@@ -41,6 +52,8 @@ export default function Auth() {
 	const hasRecoveryIntent =
 		searchParams.get("mode") === "reset" ||
 		hashParams.get("type") === "recovery";
+	const redirectPath = getSafeRedirectPath(searchParams.get("redirect"));
+	const prefilledEmail = searchParams.get("email")?.trim() ?? "";
 
 	useEffect(() => {
 		if (hasRecoveryIntent) {
@@ -50,12 +63,20 @@ export default function Auth() {
 	}, [hasRecoveryIntent]);
 
 	useEffect(() => {
+		if (!prefilledEmail || email.trim()) {
+			return;
+		}
+
+		setEmail(prefilledEmail);
+	}, [email, prefilledEmail]);
+
+	useEffect(() => {
 		if (user && !isRecoveryMode && !accessLoading) {
-			navigate(getDashboardPathForAccessLevel(accessLevel), {
+			navigate(redirectPath ?? getDashboardPathForAccessLevel(accessLevel), {
 				replace: true,
 			});
 		}
-	}, [accessLevel, accessLoading, user, isRecoveryMode, navigate]);
+	}, [accessLevel, accessLoading, redirectPath, user, isRecoveryMode, navigate]);
 
 	useEffect(() => {
 		const {
