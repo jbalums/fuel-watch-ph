@@ -551,6 +551,15 @@ export type Database = {
           scope_type: string
         }[]
       }
+      get_public_station_summary: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          average_diesel: number | null
+          average_premium: number | null
+          average_unleaded: number | null
+          total_stations: number | null
+        }[]
+      }
       get_scoped_dashboard_stats: {
         Args: Record<PropertyKey, never>
         Returns: {
@@ -657,6 +666,44 @@ export type Database = {
           used_at: string | null
           used_by: string | null
           used_by_name: string | null
+        }[]
+      }
+      list_public_gas_stations: {
+        Args: {
+          _city_municipality_code?: string | null
+          _fuel_filter?: string | null
+          _page?: number | null
+          _page_size?: number | null
+          _province_code?: string | null
+          _search?: string | null
+          _sort_by?: string | null
+          _status_filter?: string | null
+          _user_lat?: number | null
+          _user_lng?: number | null
+        }
+        Returns: {
+          address: string | null
+          city_municipality_code: string | null
+          created_at: string | null
+          fuel_type: string | null
+          id: string | null
+          is_lgu_verified: boolean | null
+          is_verified: boolean | null
+          lat: number | null
+          lgu_verified_at: string | null
+          lgu_verified_by: string | null
+          lgu_verified_role: Database["public"]["Enums"]["app_role"] | null
+          lng: number | null
+          manager_user_id: string | null
+          name: string | null
+          price_per_liter: number | null
+          prices: Json | null
+          province_code: string | null
+          report_count: number | null
+          status: string | null
+          total_count: number | null
+          updated_at: string | null
+          verified_at: string | null
         }[]
       }
       list_scoped_fuel_reports: {

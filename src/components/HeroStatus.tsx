@@ -1,8 +1,8 @@
 import { motion } from "framer-motion";
-import { FuelType, GasStation } from "@/types/station";
+import { FuelType, PublicStationSummary } from "@/types/station";
 
 interface HeroStatusProps {
-	stations: GasStation[];
+	summary: PublicStationSummary | null;
 }
 
 const fuelTypes: FuelType[] = ["Unleaded", "Premium", "Diesel"];
@@ -12,31 +12,20 @@ const fuelTypesColors: string[] = [
 	"text-amber-600",
 ];
 
-function formatAveragePrice(stations: GasStation[], fuelType: FuelType) {
-	const prices = stations
-		.map((station) => station.prices[fuelType])
-		.filter(
-			(price): price is number =>
-				typeof price === "number" &&
-				Number.isFinite(price) &&
-				price > 0,
-		);
+function formatAveragePrice(
+	summary: PublicStationSummary | null,
+	fuelType: FuelType,
+) {
+	const price = summary?.averagePrices[fuelType] ?? null;
 
-	if (prices.length === 0) {
+	if (price === null) {
 		return "—";
 	}
 
-	const average =
-		prices.reduce((sum, price) => sum + price, 0) / prices.length;
-
-	return `₱${average.toFixed(2)}`;
+	return `₱${price.toFixed(2)}`;
 }
 
-export function HeroStatus({ stations }: HeroStatusProps) {
-	const available = stations.filter((s) => s.status === "Available").length;
-	const statusText = available > 0 ? "Available" : "Limited";
-	const statusColor = available > 0 ? "text-success" : "text-warning";
-
+export function HeroStatus({ summary }: HeroStatusProps) {
 	return (
 		<motion.div
 			initial={{ opacity: 0, filter: "blur(10px)" }}
@@ -64,13 +53,13 @@ export function HeroStatus({ stations }: HeroStatusProps) {
 							{fuelType}
 						</p>
 						<p className="mt-1 text-xl font-semibold tabular-nums text-foreground">
-							{formatAveragePrice(stations, fuelType)}
+							{formatAveragePrice(summary, fuelType)}
 						</p>
 					</div>
 				))}
 			</div>
 			<p className="mt-4 text-base text-muted-foreground">
-				{stations.length} Stations Nearby
+				{summary?.totalStations ?? 0} Stations Listed
 			</p>
 		</motion.div>
 	);

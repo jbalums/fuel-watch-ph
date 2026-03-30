@@ -1,10 +1,11 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AlertBanner } from "@/components/AlertBanner";
 import { HeroStatus } from "@/components/HeroStatus";
 import { SearchFilter } from "@/components/SearchFilter";
 import { StationResultsList } from "@/components/StationResultsList";
 import { mockAlerts } from "@/data/mockStations";
 import { useGeoReferences } from "@/hooks/useGeoReferences";
+import { usePublicStationSummary } from "@/hooks/usePublicStationSummary";
 import { useCurrentUserScope } from "@/hooks/useCurrentUserScope";
 import { useStationBrowse } from "@/hooks/useStationBrowse";
 import { useUserAccess } from "@/hooks/useUserAccess";
@@ -14,10 +15,17 @@ const STATIONS_PER_PAGE = 10;
 export default function Index() {
 	const { isLguOperator } = useUserAccess();
 	const { data: currentUserScope } = useCurrentUserScope(isLguOperator);
+	const { provinces, citiesByProvince } = useGeoReferences();
+	const { data: stationSummary } = usePublicStationSummary();
+	const [currentPage, setCurrentPage] = useState(1);
+	const [selectedProvinceCode, setSelectedProvinceCode] = useState("");
+	const [selectedCityMunicipalityCode, setSelectedCityMunicipalityCode] =
+		useState("");
+	const hasInitializedScopeFilters = useRef(false);
 	const {
 		stations,
+		totalCount,
 		stationsLoading,
-		filteredStations,
 		searchQuery,
 		fuelFilter,
 		statusFilter,
@@ -26,55 +34,16 @@ export default function Index() {
 		setFuelFilter,
 		setStatusFilter,
 		setSortBy,
-	} = useStationBrowse();
-	const { provinces, citiesByProvince } = useGeoReferences();
-	const [currentPage, setCurrentPage] = useState(1);
-	const [selectedProvinceCode, setSelectedProvinceCode] = useState("");
-	const [selectedCityMunicipalityCode, setSelectedCityMunicipalityCode] =
-		useState("");
-	const hasInitializedScopeFilters = useRef(false);
-	const availableCities = useMemo(
-		() =>
-			selectedProvinceCode
-				? citiesByProvince.get(selectedProvinceCode) ?? []
-				: [],
-		[citiesByProvince, selectedProvinceCode],
-	);
-	const geoFilteredStations = useMemo(() => {
-		return filteredStations.filter((station) => {
-			if (
-				selectedProvinceCode &&
-				station.provinceCode !== selectedProvinceCode
-			) {
-				return false;
-			}
-
-			if (
-				selectedCityMunicipalityCode &&
-				station.cityMunicipalityCode !== selectedCityMunicipalityCode
-			) {
-				return false;
-			}
-
-			return true;
-		});
-	}, [
-		filteredStations,
-		selectedCityMunicipalityCode,
-		selectedProvinceCode,
-	]);
-	const totalPages = Math.max(
-		1,
-		Math.ceil(geoFilteredStations.length / STATIONS_PER_PAGE),
-	);
-	const activePage = Math.min(currentPage, totalPages);
-	const paginatedStations = useMemo(() => {
-		const startIndex = (activePage - 1) * STATIONS_PER_PAGE;
-		return geoFilteredStations.slice(
-			startIndex,
-			startIndex + STATIONS_PER_PAGE,
-		);
-	}, [activePage, geoFilteredStations]);
+	} = useStationBrowse({
+		page: currentPage,
+		pageSize: STATIONS_PER_PAGE,
+		provinceCode: selectedProvinceCode,
+		cityMunicipalityCode: selectedCityMunicipalityCode,
+	});
+	const availableCities = selectedProvinceCode
+		? citiesByProvince.get(selectedProvinceCode) ?? []
+		: [];
+	const totalPages = Math.max(1, Math.ceil(totalCount / STATIONS_PER_PAGE));
 
 	useEffect(() => {
 		if (!isLguOperator || !currentUserScope || hasInitializedScopeFilters.current) {
@@ -109,7 +78,7 @@ export default function Index() {
 
 	return (
 		<>
-			<HeroStatus stations={stations} />
+			<HeroStatus summary={stationSummary ?? null} />
 			<AlertBanner alerts={mockAlerts} />
 			<SearchFilter
 				searchQuery={searchQuery}
@@ -131,9 +100,9 @@ export default function Index() {
 				onCityChange={setSelectedCityMunicipalityCode}
 			/>
 			<StationResultsList
-				stations={paginatedStations}
+				stations={stations}
 				loading={stationsLoading}
-				currentPage={activePage}
+				currentPage={currentPage}
 				totalPages={totalPages}
 				onPageChange={setCurrentPage}
 			/>

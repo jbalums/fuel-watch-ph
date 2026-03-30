@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { SearchFilter } from "@/components/SearchFilter";
 import { StationResultsList } from "@/components/StationResultsList";
 import { useStationBrowse } from "@/hooks/useStationBrowse";
@@ -6,9 +6,11 @@ import { useStationBrowse } from "@/hooks/useStationBrowse";
 const STATIONS_PER_PAGE = 20;
 
 export default function SearchPage() {
+	const [currentPage, setCurrentPage] = useState(1);
 	const {
+		stations,
+		totalCount,
 		stationsLoading,
-		filteredStations,
 		searchQuery,
 		fuelFilter,
 		statusFilter,
@@ -17,20 +19,11 @@ export default function SearchPage() {
 		setFuelFilter,
 		setStatusFilter,
 		setSortBy,
-	} = useStationBrowse();
-	const [currentPage, setCurrentPage] = useState(1);
-	const totalPages = Math.max(
-		1,
-		Math.ceil(filteredStations.length / STATIONS_PER_PAGE),
-	);
-	const activePage = Math.min(currentPage, totalPages);
-	const paginatedStations = useMemo(() => {
-		const startIndex = (activePage - 1) * STATIONS_PER_PAGE;
-		return filteredStations.slice(
-			startIndex,
-			startIndex + STATIONS_PER_PAGE,
-		);
-	}, [activePage, filteredStations]);
+	} = useStationBrowse({
+		page: currentPage,
+		pageSize: STATIONS_PER_PAGE,
+	});
+	const totalPages = Math.max(1, Math.ceil(totalCount / STATIONS_PER_PAGE));
 
 	useEffect(() => {
 		setCurrentPage(1);
@@ -56,9 +49,9 @@ export default function SearchPage() {
 			/>
 			<div className="mt-5">
 				<StationResultsList
-					stations={paginatedStations}
+					stations={stations}
 					loading={stationsLoading}
-					currentPage={activePage}
+					currentPage={currentPage}
 					totalPages={totalPages}
 					onPageChange={setCurrentPage}
 				/>

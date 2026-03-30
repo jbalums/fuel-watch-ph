@@ -27,6 +27,11 @@ export interface GasStation {
   reportCount: number;
 }
 
+export interface PublicStationSummary {
+  totalStations: number;
+  averagePrices: Record<FuelType, number | null>;
+}
+
 export interface StationClaimRequest {
   id: string;
   stationId: string;
