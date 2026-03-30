@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Copy, Loader2, ShieldAlert } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
-import { toast } from "sonner";
+import { toast } from "@/lib/app-toast";
 import { GeoScopeFields } from "@/components/GeoScopeFields";
 import { useAdminAccessRequest } from "@/hooks/useAdminOnboarding";
 import { useGeoReferences } from "@/hooks/useGeoReferences";
@@ -116,7 +116,7 @@ export default function AdminAccessRequestDetailPage() {
 				}),
 			]);
 
-			toast.success("Access request rejected");
+			toast.destructive("Access request rejected");
 			navigate("/admin/access-requests");
 		},
 		onError: (rejectError) => toast.error(rejectError.message),
@@ -129,7 +129,7 @@ export default function AdminAccessRequestDetailPage() {
 
 		try {
 			await navigator.clipboard.writeText(generatedInviteLink);
-			toast.success("Invite link copied");
+			toast.info("Invite link copied");
 		} catch {
 			toast.error("Could not copy the invite link");
 		}

@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { toast } from "sonner";
+import { toast } from "@/lib/app-toast";
 import { useStations } from "@/hooks/useStations";
 import { useGeoReferences } from "@/hooks/useGeoReferences";
 import {

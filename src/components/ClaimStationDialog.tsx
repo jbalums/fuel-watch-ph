@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { FileUp, Loader2, ShieldCheck, X } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/lib/app-toast";
 import type { GasStation } from "@/types/station";
 import { useAuth } from "@/contexts/AuthContext";
 import {

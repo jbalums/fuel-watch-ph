@@ -4,7 +4,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { motion } from "framer-motion";
-import { toast } from "sonner";
+import { toast } from "@/lib/app-toast";
 import {
 	ArrowLeft,
 	Camera,
@@ -145,7 +145,7 @@ export default function Profile() {
 		if (error) {
 			toast.error("Failed to send reset email: " + error.message);
 		} else {
-			toast.success("Check your email for the password reset link");
+			toast.info("Check your email for the password reset link");
 		}
 
 		setSendingPasswordReset(false);

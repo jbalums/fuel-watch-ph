@@ -6,7 +6,7 @@ import { useUserAccess } from "@/hooks/useUserAccess";
 import { getDashboardPathForAccessLevel } from "@/lib/access-control";
 import { motion } from "framer-motion";
 import { Mail, Lock, User, ArrowRight } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/lib/app-toast";
 import logo from "@/assets/images/logo.png";
 export default function Auth() {
 	const navigate = useNavigate();
@@ -86,7 +86,7 @@ export default function Auth() {
 			if (error) {
 				toast.error(error.message);
 			} else {
-				toast.success("Check your email to confirm your account!");
+				toast.info("Check your email to confirm your account!");
 			}
 		} else {
 			const { error } = await supabase.auth.signInWithPassword({
@@ -119,7 +119,7 @@ export default function Auth() {
 		if (error) {
 			toast.error(error.message);
 		} else {
-			toast.success("Check your email for the password reset link");
+			toast.info("Check your email for the password reset link");
 		}
 
 		setSendingResetEmail(false);

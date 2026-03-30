@@ -18,7 +18,7 @@ import {
 	Search,
 	Trash2,
 } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/lib/app-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { AdminStationEditor } from "@/components/admin/AdminStationEditor";
 import { AdminListPagination } from "@/components/admin/AdminListPagination";
@@ -140,7 +140,7 @@ export default function LguStationsPage() {
 		},
 		onSuccess: async () => {
 			await refreshAdminData(queryClient);
-			toast.success("Station deleted");
+			toast.deleted("Station deleted");
 		},
 		onError: (error) => toast.error(error.message),
 	});
@@ -267,7 +267,7 @@ export default function LguStationsPage() {
 		deleteStation.mutate(stationToDelete.id, {
 			onSuccess: async () => {
 				await refreshAdminData(queryClient);
-				toast.success("Station deleted");
+				toast.deleted("Station deleted");
 				setStationToDelete(null);
 			},
 			onError: (error) => toast.error(error.message),

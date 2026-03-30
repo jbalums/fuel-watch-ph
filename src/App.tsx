@@ -22,6 +22,7 @@ import AdminAccessRequestsPage from "./pages/AdminAccessRequestsPage";
 import AdminAccessRequestDetailPage from "./pages/AdminAccessRequestDetailPage";
 import AdminInvitesPage from "./pages/AdminInvitesPage";
 import AdminGeoBackfillPage from "./pages/AdminGeoBackfillPage";
+import SystemPreviewPage from "./pages/SystemPreviewPage";
 import Auth from "./pages/Auth";
 import AboutUs from "./pages/AboutUs";
 import AdminAccessRequestPage from "./pages/AdminAccessRequestPage";
@@ -103,6 +104,10 @@ const App = () => (
 											<Route
 												path="geo-backfill"
 												element={<AdminGeoBackfillPage />}
+											/>
+											<Route
+												path="system-preview"
+												element={<SystemPreviewPage />}
 											/>
 										</Route>
 										<Route path="/lgu" element={<LguLayout />}>

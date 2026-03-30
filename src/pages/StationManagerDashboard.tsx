@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { ArrowLeft, Loader2, MapPin, Save, ShieldCheck } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/lib/app-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { useManagedStation } from "@/hooks/useManagedStation";
 import { supabase } from "@/integrations/supabase/client";

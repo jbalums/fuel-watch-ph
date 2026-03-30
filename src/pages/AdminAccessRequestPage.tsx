@@ -3,7 +3,7 @@ import { useMutation } from "@tanstack/react-query";
 import { ArrowLeft, CheckCircle2, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { toast } from "sonner";
+import { toast } from "@/lib/app-toast";
 import { GeoScopeFields } from "@/components/GeoScopeFields";
 import { useGeoReferences } from "@/hooks/useGeoReferences";
 import type { OfficialAdminRole } from "@/hooks/useAdminOnboarding";

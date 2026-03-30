@@ -10,7 +10,7 @@ import {
 	AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Loader2, Search, XCircle, CheckCircle2 } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/lib/app-toast";
 import { AdminListPagination } from "@/components/admin/AdminListPagination";
 import { VerifiedStationBadge } from "@/components/VerifiedStationBadge";
 import { usePaginatedList } from "@/hooks/usePaginatedList";
@@ -81,7 +81,7 @@ export default function AdminClaimsPage() {
 
 		rejectClaim.mutate(claimToReject.id, {
 			onSuccess: () => {
-				toast.success("Claim rejected");
+				toast.destructive("Claim rejected");
 				setClaimToReject(null);
 			},
 			onError: (error) => {

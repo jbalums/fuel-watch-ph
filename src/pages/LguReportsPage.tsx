@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { CheckCircle2, Loader2, Search, XCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { toast } from "sonner";
+import { toast } from "@/lib/app-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { AdminListPagination } from "@/components/admin/AdminListPagination";
 import { createFuelReportPhotoUrl } from "@/lib/fuel-report-photo-upload";
@@ -111,7 +111,7 @@ export default function LguReportsPage() {
 		},
 		onSuccess: async () => {
 			await refreshAdminData(queryClient);
-			toast.success("Report rejected");
+			toast.destructive("Report rejected");
 		},
 		onError: (error) => toast.error(error.message),
 	});
@@ -140,7 +140,7 @@ export default function LguReportsPage() {
 		rejectReport.mutate(reportToReject.id, {
 			onSuccess: async () => {
 				await refreshAdminData(queryClient);
-				toast.success("Report rejected");
+				toast.destructive("Report rejected");
 				setReportToReject(null);
 			},
 			onError: (error) => toast.error(error.message),

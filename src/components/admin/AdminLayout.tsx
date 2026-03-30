@@ -22,6 +22,7 @@ export function AdminLayout() {
 					},
 					{ label: "Invites", to: "/admin/invites" },
 					{ label: "Geo Backfill", to: "/admin/geo-backfill" },
+					{ label: "System Preview", to: "/admin/system-preview" },
 				]
 			: []),
 	];

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft, CheckCircle2, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useNavigate, useParams } from "react-router-dom";
-import { toast } from "sonner";
+import { toast } from "@/lib/app-toast";
 import logo from "@/assets/images/Icon.png";
 import { useAuth } from "@/contexts/AuthContext";
 import { useValidatedAdminInvite } from "@/hooks/useAdminOnboarding";

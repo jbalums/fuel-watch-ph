@@ -1,7 +1,7 @@
 import { useState, type Dispatch, type SetStateAction } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2, ShieldAlert } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/lib/app-toast";
 import { GeoScopeFields } from "@/components/GeoScopeFields";
 import { useGeoReferences } from "@/hooks/useGeoReferences";
 import { usePaginatedList } from "@/hooks/usePaginatedList";
