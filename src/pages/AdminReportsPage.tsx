@@ -1,6 +1,16 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
+	AlertDialog,
+	AlertDialogAction,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
 	CheckCircle2,
 	Loader2,
 	Search,
@@ -34,6 +44,12 @@ export default function AdminReportsPage() {
 	const [reportFilter, setReportFilter] = useState<ReportFilter>("pending");
 	const [openingReportPhotoId, setOpeningReportPhotoId] = useState<
 		string | null
+	>(null);
+	const [reportToApprove, setReportToApprove] = useState<
+		(typeof reports)[number] | null
+	>(null);
+	const [reportToReject, setReportToReject] = useState<
+		(typeof reports)[number] | null
 	>(null);
 
 	const stationLookup = useMemo(
@@ -122,6 +138,43 @@ export default function AdminReportsPage() {
 		} finally {
 			setOpeningReportPhotoId(null);
 		}
+	};
+
+	const confirmRejectReport = () => {
+		if (!reportToReject || rejectReport.isPending) {
+			return;
+		}
+
+		rejectReport.mutate(reportToReject.id, {
+			onSuccess: async () => {
+				await refreshAdminData(queryClient);
+				toast.success("Report rejected");
+				setReportToReject(null);
+			},
+			onError: (error) => toast.error(error.message),
+		});
+	};
+
+	const confirmApproveReport = () => {
+		if (!reportToApprove || approveReport.isPending) {
+			return;
+		}
+
+		approveReport.mutate(reportToApprove.id, {
+			onSuccess: async (stationId) => {
+				await refreshAdminData(queryClient);
+				const matchedStation = stationId
+					? stationLookup.get(stationId)
+					: null;
+				toast.success(
+					matchedStation
+						? `Report approved and applied to ${matchedStation.name}`
+						: "Report approved",
+				);
+				setReportToApprove(null);
+			},
+			onError: (error) => toast.error(error.message),
+		});
 	};
 
 	return (
@@ -297,7 +350,7 @@ export default function AdminReportsPage() {
 											<>
 												<button
 													onClick={() =>
-														approveReport.mutate(report.id)
+														setReportToApprove(report)
 													}
 													disabled={
 														approveReport.isPending ||
@@ -310,7 +363,7 @@ export default function AdminReportsPage() {
 												</button>
 												<button
 													onClick={() =>
-														rejectReport.mutate(report.id)
+														setReportToReject(report)
 													}
 													disabled={
 														approveReport.isPending ||
@@ -342,6 +395,117 @@ export default function AdminReportsPage() {
 				totalPages={totalPages}
 				onPageChange={setCurrentPage}
 			/>
+
+			<AlertDialog
+				open={!!reportToApprove}
+				onOpenChange={(open) => {
+					if (!open && !approveReport.isPending) {
+						setReportToApprove(null);
+					}
+				}}
+			>
+				<AlertDialogContent>
+					<AlertDialogHeader>
+						<AlertDialogTitle>Approve fuel report?</AlertDialogTitle>
+						<AlertDialogDescription>
+							This will approve the selected report and apply its
+							data to the matching station record.
+						</AlertDialogDescription>
+					</AlertDialogHeader>
+					{reportToApprove && (
+						<div className="rounded-xl border border-success/20 bg-success/5 p-4 text-sm">
+							<p className="font-semibold text-foreground">
+								{reportToApprove.stationName}
+							</p>
+							<p className="mt-1 text-muted-foreground">
+								{formatReportedPrices(reportToApprove.prices) ||
+									"No valid prices"}
+							</p>
+							<p className="mt-1 text-muted-foreground">
+								{reportToApprove.reportedAddress ??
+									(reportToApprove.lat !== null &&
+									reportToApprove.lng !== null
+										? `GPS: ${reportToApprove.lat.toFixed(5)}, ${reportToApprove.lng.toFixed(5)}`
+										: "No address or GPS")}
+							</p>
+							<p className="text-xs text-muted-foreground">
+								Submitted{" "}
+								{new Date(
+									reportToApprove.reportedAt,
+								).toLocaleString()}
+							</p>
+						</div>
+					)}
+					<AlertDialogFooter>
+						<AlertDialogCancel disabled={approveReport.isPending}>
+							Cancel
+						</AlertDialogCancel>
+						<AlertDialogAction
+							onClick={confirmApproveReport}
+							disabled={approveReport.isPending}
+						>
+							{approveReport.isPending
+								? "Approving..."
+								: "Approve report"}
+						</AlertDialogAction>
+					</AlertDialogFooter>
+				</AlertDialogContent>
+			</AlertDialog>
+
+			<AlertDialog
+				open={!!reportToReject}
+				onOpenChange={(open) => {
+					if (!open && !rejectReport.isPending) {
+						setReportToReject(null);
+					}
+				}}
+			>
+				<AlertDialogContent>
+					<AlertDialogHeader>
+						<AlertDialogTitle>Reject fuel report?</AlertDialogTitle>
+						<AlertDialogDescription>
+							This will mark the selected report as rejected.
+						</AlertDialogDescription>
+					</AlertDialogHeader>
+					{reportToReject && (
+						<div className="rounded-xl border border-destructive/20 bg-destructive/5 p-4 text-sm">
+							<p className="font-semibold text-foreground">
+								{reportToReject.stationName}
+							</p>
+							<p className="mt-1 text-muted-foreground">
+								{formatReportedPrices(reportToReject.prices) ||
+									"No valid prices"}
+							</p>
+							<p className="mt-1 text-muted-foreground">
+								{reportToReject.reportedAddress ??
+									(reportToReject.lat !== null &&
+									reportToReject.lng !== null
+										? `GPS: ${reportToReject.lat.toFixed(5)}, ${reportToReject.lng.toFixed(5)}`
+										: "No address or GPS")}
+							</p>
+							<p className="text-xs text-muted-foreground">
+								Submitted{" "}
+								{new Date(
+									reportToReject.reportedAt,
+								).toLocaleString()}
+							</p>
+						</div>
+					)}
+					<AlertDialogFooter>
+						<AlertDialogCancel disabled={rejectReport.isPending}>
+							Cancel
+						</AlertDialogCancel>
+						<AlertDialogAction
+							onClick={confirmRejectReport}
+							disabled={rejectReport.isPending}
+						>
+							{rejectReport.isPending
+								? "Rejecting..."
+								: "Reject report"}
+						</AlertDialogAction>
+					</AlertDialogFooter>
+				</AlertDialogContent>
+			</AlertDialog>
 		</div>
 	);
 }

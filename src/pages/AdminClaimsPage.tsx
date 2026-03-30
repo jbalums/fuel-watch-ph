@@ -1,4 +1,14 @@
 import { useMemo, useState } from "react";
+import {
+	AlertDialog,
+	AlertDialogAction,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Loader2, Search, XCircle, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import { AdminListPagination } from "@/components/admin/AdminListPagination";
@@ -25,6 +35,12 @@ export default function AdminClaimsPage() {
 	const rejectClaim = useRejectStationClaim();
 	const [claimSearch, setClaimSearch] = useState("");
 	const [claimFilter, setClaimFilter] = useState<ClaimFilter>("pending");
+	const [claimToApprove, setClaimToApprove] = useState<
+		(typeof claimRequests)[number] | null
+	>(null);
+	const [claimToReject, setClaimToReject] = useState<
+		(typeof claimRequests)[number] | null
+	>(null);
 
 	const stationLookup = useMemo(
 		() => new Map(stations.map((station) => [station.id, station])),
@@ -57,6 +73,41 @@ export default function AdminClaimsPage() {
 		filteredClaims,
 		`${claimSearch}::${claimFilter}`,
 	);
+
+	const confirmRejectClaim = () => {
+		if (!claimToReject || rejectClaim.isPending) {
+			return;
+		}
+
+		rejectClaim.mutate(claimToReject.id, {
+			onSuccess: () => {
+				toast.success("Claim rejected");
+				setClaimToReject(null);
+			},
+			onError: (error) => {
+				toast.error(error.message);
+			},
+		});
+	};
+
+	const confirmApproveClaim = () => {
+		if (!claimToApprove || approveClaim.isPending) {
+			return;
+		}
+
+		const station = stationLookup.get(claimToApprove.stationId);
+		approveClaim.mutate(claimToApprove.id, {
+			onSuccess: () => {
+				toast.success(
+					`Claim approved for ${station?.name ?? "station"}`,
+				);
+				setClaimToApprove(null);
+			},
+			onError: (error) => {
+				toast.error(error.message);
+			},
+		});
+	};
 
 	return (
 		<div className="rounded-2xl bg-card p-5 shadow-sovereign">
@@ -175,18 +226,7 @@ export default function AdminClaimsPage() {
 											<>
 												<button
 													onClick={() =>
-														approveClaim.mutate(claim.id, {
-															onSuccess: () => {
-																toast.success(
-																	`Claim approved for ${station?.name ?? "station"}`,
-																);
-															},
-															onError: (error) => {
-																toast.error(
-																	error.message,
-																);
-															},
-														})
+														setClaimToApprove(claim)
 													}
 													disabled={
 														approveClaim.isPending ||
@@ -199,18 +239,7 @@ export default function AdminClaimsPage() {
 												</button>
 												<button
 													onClick={() =>
-														rejectClaim.mutate(claim.id, {
-															onSuccess: () => {
-																toast.success(
-																	"Claim rejected",
-																);
-															},
-															onError: (error) => {
-																toast.error(
-																	error.message,
-																);
-															},
-														})
+														setClaimToReject(claim)
 													}
 													disabled={
 														approveClaim.isPending ||
@@ -242,6 +271,111 @@ export default function AdminClaimsPage() {
 				totalPages={totalPages}
 				onPageChange={setCurrentPage}
 			/>
+
+			<AlertDialog
+				open={!!claimToApprove}
+				onOpenChange={(open) => {
+					if (!open && !approveClaim.isPending) {
+						setClaimToApprove(null);
+					}
+				}}
+			>
+				<AlertDialogContent>
+					<AlertDialogHeader>
+						<AlertDialogTitle>Approve station claim?</AlertDialogTitle>
+						<AlertDialogDescription>
+							This will approve the selected ownership request and
+							assign the verified station to the claimant.
+						</AlertDialogDescription>
+					</AlertDialogHeader>
+					{claimToApprove && (
+						<div className="rounded-xl border border-success/20 bg-success/5 p-4 text-sm">
+							<p className="font-semibold text-foreground">
+								{stationLookup.get(claimToApprove.stationId)?.name ??
+									"Unknown Station"}
+							</p>
+							<p className="mt-1 text-muted-foreground">
+								{claimToApprove.businessName}
+							</p>
+							<p className="mt-1 text-muted-foreground">
+								Contact: {claimToApprove.contactName} •{" "}
+								{claimToApprove.contactPhone}
+							</p>
+							<p className="text-xs text-muted-foreground">
+								Submitted{" "}
+								{new Date(
+									claimToApprove.createdAt,
+								).toLocaleString()}
+							</p>
+						</div>
+					)}
+					<AlertDialogFooter>
+						<AlertDialogCancel disabled={approveClaim.isPending}>
+							Cancel
+						</AlertDialogCancel>
+						<AlertDialogAction
+							onClick={confirmApproveClaim}
+							disabled={approveClaim.isPending}
+						>
+							{approveClaim.isPending
+								? "Approving..."
+								: "Approve claim"}
+						</AlertDialogAction>
+					</AlertDialogFooter>
+				</AlertDialogContent>
+			</AlertDialog>
+
+			<AlertDialog
+				open={!!claimToReject}
+				onOpenChange={(open) => {
+					if (!open && !rejectClaim.isPending) {
+						setClaimToReject(null);
+					}
+				}}
+			>
+				<AlertDialogContent>
+					<AlertDialogHeader>
+						<AlertDialogTitle>Reject station claim?</AlertDialogTitle>
+						<AlertDialogDescription>
+							This will mark the selected ownership request as rejected.
+						</AlertDialogDescription>
+					</AlertDialogHeader>
+					{claimToReject && (
+						<div className="rounded-xl border border-destructive/20 bg-destructive/5 p-4 text-sm">
+							<p className="font-semibold text-foreground">
+								{stationLookup.get(claimToReject.stationId)?.name ??
+									"Unknown Station"}
+							</p>
+							<p className="mt-1 text-muted-foreground">
+								{claimToReject.businessName}
+							</p>
+							<p className="mt-1 text-muted-foreground">
+								Contact: {claimToReject.contactName} •{" "}
+								{claimToReject.contactPhone}
+							</p>
+							<p className="text-xs text-muted-foreground">
+								Submitted{" "}
+								{new Date(
+									claimToReject.createdAt,
+								).toLocaleString()}
+							</p>
+						</div>
+					)}
+					<AlertDialogFooter>
+						<AlertDialogCancel disabled={rejectClaim.isPending}>
+							Cancel
+						</AlertDialogCancel>
+						<AlertDialogAction
+							onClick={confirmRejectClaim}
+							disabled={rejectClaim.isPending}
+						>
+							{rejectClaim.isPending
+								? "Rejecting..."
+								: "Reject claim"}
+						</AlertDialogAction>
+					</AlertDialogFooter>
+				</AlertDialogContent>
+			</AlertDialog>
 		</div>
 	);
 }

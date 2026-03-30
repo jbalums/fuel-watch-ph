@@ -50,6 +50,9 @@ export default function AdminStationsPage() {
 	const initialEditorFormRef = useRef<StationFormState>(initialStationForm);
 	const [stationSearch, setStationSearch] = useState("");
 	const [discardConfirmOpen, setDiscardConfirmOpen] = useState(false);
+	const [stationToDelete, setStationToDelete] = useState<GasStationRow | null>(
+		null,
+	);
 	const pendingActionRef = useRef<(() => void) | null>(null);
 
 	const filteredStations = useMemo(() => {
@@ -197,6 +200,21 @@ export default function AdminStationsPage() {
 		pendingActionRef.current = null;
 	};
 
+	const confirmDeleteStation = () => {
+		if (!stationToDelete || deleteStation.isPending) {
+			return;
+		}
+
+		deleteStation.mutate(stationToDelete.id, {
+			onSuccess: async () => {
+				await refreshAdminData(queryClient);
+				toast.success("Station deleted");
+				setStationToDelete(null);
+			},
+			onError: (error) => toast.error(error.message),
+		});
+	};
+
 	return (
 		<>
 			<div className="rounded-2xl bg-card p-5 shadow-sovereign">
@@ -292,17 +310,9 @@ export default function AdminStationsPage() {
 											Edit
 										</button>
 										<button
-											onClick={() => {
-												if (
-													window.confirm(
-														`Delete ${station.name}?`,
-													)
-												) {
-													deleteStation.mutate(
-														station.id,
-													);
-												}
-											}}
+											onClick={() =>
+												setStationToDelete(station)
+											}
 											disabled={deleteStation.isPending}
 											className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm text-destructive transition-colors hover:bg-destructive/10 disabled:opacity-50"
 										>
@@ -361,6 +371,56 @@ export default function AdminStationsPage() {
 						<AlertDialogCancel>Keep editing</AlertDialogCancel>
 						<AlertDialogAction onClick={confirmDiscardChanges}>
 							Discard changes
+						</AlertDialogAction>
+					</AlertDialogFooter>
+				</AlertDialogContent>
+			</AlertDialog>
+
+			<AlertDialog
+				open={!!stationToDelete}
+				onOpenChange={(open) => {
+					if (!open && !deleteStation.isPending) {
+						setStationToDelete(null);
+					}
+				}}
+			>
+				<AlertDialogContent>
+					<AlertDialogHeader>
+						<AlertDialogTitle>Delete station record?</AlertDialogTitle>
+						<AlertDialogDescription>
+							This will permanently remove the station record from
+							the admin dashboard.
+						</AlertDialogDescription>
+					</AlertDialogHeader>
+					{stationToDelete && (
+						<div className="rounded-xl border border-destructive/20 bg-destructive/5 p-4 text-sm">
+							<p className="font-semibold text-foreground">
+								{stationToDelete.name}
+							</p>
+							<p className="mt-1 text-muted-foreground">
+								{stationToDelete.address}
+							</p>
+							<p className="mt-2 text-muted-foreground">
+								{stationToDelete.fuel_type} • ₱
+								{Number(stationToDelete.price_per_liter).toFixed(2)}
+							</p>
+							<p className="text-xs text-muted-foreground">
+								{stationToDelete.lat.toFixed(5)},{" "}
+								{stationToDelete.lng.toFixed(5)}
+							</p>
+						</div>
+					)}
+					<AlertDialogFooter>
+						<AlertDialogCancel disabled={deleteStation.isPending}>
+							Cancel
+						</AlertDialogCancel>
+						<AlertDialogAction
+							onClick={confirmDeleteStation}
+							disabled={deleteStation.isPending}
+						>
+							{deleteStation.isPending
+								? "Deleting..."
+								: "Delete station"}
 						</AlertDialogAction>
 					</AlertDialogFooter>
 				</AlertDialogContent>
