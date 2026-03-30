@@ -238,8 +238,8 @@ export default function LguPage() {
 				</div>
 
 				<div className="grid gap-4">
-					<div className="rounded-xl border border-border bg-secondary/30 p-4">
-						<div className="mb-3 flex items-center justify-between gap-3">
+					<div className="min-w-0 rounded-xl border border-border bg-secondary/30 p-4">
+						<div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
 							<div>
 								<p className="font-semibold text-foreground">
 									Direct Embed URL
@@ -263,13 +263,15 @@ export default function LguPage() {
 								Copy URL
 							</button>
 						</div>
-						<pre className="overflow-x-auto rounded-lg bg-background px-4 py-3 text-xs text-foreground">
-							<code>{embedDirectUrl}</code>
+						<pre className="max-w-full overflow-x-auto rounded-lg bg-background px-4 py-3 text-xs text-foreground">
+							<code className="block min-w-max whitespace-pre">
+								{embedDirectUrl}
+							</code>
 						</pre>
 					</div>
 
-					<div className="rounded-xl border border-border bg-secondary/30 p-4">
-						<div className="mb-3 flex items-center justify-between gap-3">
+					<div className="min-w-0 rounded-xl border border-border bg-secondary/30 p-4">
+						<div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
 							<div>
 								<p className="font-semibold text-foreground">
 									Script Usage
@@ -293,8 +295,10 @@ export default function LguPage() {
 								Copy Script
 							</button>
 						</div>
-						<pre className="overflow-x-auto rounded-lg bg-background px-4 py-3 text-xs text-foreground">
-							<code>{embedScriptSnippet}</code>
+						<pre className="max-w-full overflow-x-auto rounded-lg bg-background px-4 py-3 text-xs text-foreground">
+							<code className="block min-w-max whitespace-pre">
+								{embedScriptSnippet}
+							</code>
 						</pre>
 					</div>
 				</div>
