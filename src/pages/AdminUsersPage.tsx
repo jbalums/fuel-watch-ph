@@ -3,9 +3,11 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Search, ShieldAlert } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { AdminListPagination } from "@/components/admin/AdminListPagination";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { usePaginatedList } from "@/hooks/usePaginatedList";
 import {
 	type ManagedAccessLevel,
 	useUserAccess,
@@ -107,6 +109,12 @@ export default function AdminUsersPage() {
 			);
 		});
 	}, [searchQuery, users]);
+	const {
+		currentPage,
+		totalPages,
+		paginatedItems: paginatedUsers,
+		setCurrentPage,
+	} = usePaginatedList(filteredUsers, searchQuery);
 
 	const updateUserAccess = useMutation({
 		mutationFn: async ({
@@ -233,7 +241,7 @@ export default function AdminUsersPage() {
 						No users match the current search.
 					</p>
 				) : (
-					filteredUsers.map((managedUser) => {
+					paginatedUsers.map((managedUser) => {
 						const selectedAccessLevel =
 							selectedAccessByUserId[managedUser.userId] ??
 							managedUser.accessLevel;
@@ -332,9 +340,14 @@ export default function AdminUsersPage() {
 								</div>
 							</div>
 						);
-					})
+						})
 				)}
 			</div>
+			<AdminListPagination
+				currentPage={currentPage}
+				totalPages={totalPages}
+				onPageChange={setCurrentPage}
+			/>
 		</div>
 	);
 }

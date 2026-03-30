@@ -9,7 +9,9 @@ import {
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { AdminListPagination } from "@/components/admin/AdminListPagination";
 import { createFuelReportPhotoUrl } from "@/lib/fuel-report-photo-upload";
+import { usePaginatedList } from "@/hooks/usePaginatedList";
 import { StatusBadge } from "@/components/StatusBadge";
 import {
 	formatReportedPrices,
@@ -59,6 +61,15 @@ export default function AdminReportsPage() {
 			return matchesFilter && matchesSearch;
 		});
 	}, [reportFilter, reportSearch, reports, stationLookup]);
+	const {
+		currentPage,
+		totalPages,
+		paginatedItems: paginatedReports,
+		setCurrentPage,
+	} = usePaginatedList(
+		filteredReports,
+		`${reportSearch}::${reportFilter}`,
+	);
 
 	const approveReport = useMutation({
 		mutationFn: async (reportId: string) => {
@@ -161,7 +172,7 @@ export default function AdminReportsPage() {
 						No reports match the current filter.
 					</p>
 				) : (
-					filteredReports.map((report) => {
+					paginatedReports.map((report) => {
 						const appliedStation = report.appliedStationId
 							? stationLookup.get(report.appliedStationId)
 							: null;
@@ -322,6 +333,11 @@ export default function AdminReportsPage() {
 					})
 				)}
 			</div>
+			<AdminListPagination
+				currentPage={currentPage}
+				totalPages={totalPages}
+				onPageChange={setCurrentPage}
+			/>
 		</div>
 	);
 }

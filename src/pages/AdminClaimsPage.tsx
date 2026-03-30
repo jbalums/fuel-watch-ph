@@ -1,7 +1,9 @@
 import { useMemo, useState } from "react";
 import { Loader2, Search, XCircle, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
+import { AdminListPagination } from "@/components/admin/AdminListPagination";
 import { VerifiedStationBadge } from "@/components/VerifiedStationBadge";
+import { usePaginatedList } from "@/hooks/usePaginatedList";
 import {
 	claimFilters,
 	type ClaimFilter,
@@ -46,6 +48,15 @@ export default function AdminClaimsPage() {
 			return matchesFilter && matchesSearch;
 		});
 	}, [claimFilter, claimRequests, claimSearch, stationLookup]);
+	const {
+		currentPage,
+		totalPages,
+		paginatedItems: paginatedClaims,
+		setCurrentPage,
+	} = usePaginatedList(
+		filteredClaims,
+		`${claimSearch}::${claimFilter}`,
+	);
 
 	return (
 		<div className="rounded-2xl bg-card p-5 shadow-sovereign">
@@ -97,7 +108,7 @@ export default function AdminClaimsPage() {
 						No station claims match the current filter.
 					</p>
 				) : (
-					filteredClaims.map((claim) => {
+					paginatedClaims.map((claim) => {
 						const station = stationLookup.get(claim.stationId);
 						const isPending = claim.reviewStatus === "pending";
 
@@ -226,6 +237,11 @@ export default function AdminClaimsPage() {
 					})
 				)}
 			</div>
+			<AdminListPagination
+				currentPage={currentPage}
+				totalPages={totalPages}
+				onPageChange={setCurrentPage}
+			/>
 		</div>
 	);
 }

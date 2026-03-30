@@ -14,9 +14,11 @@ import { Loader2, Pencil, Plus, Search, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { AdminStationEditor } from "@/components/admin/AdminStationEditor";
+import { AdminListPagination } from "@/components/admin/AdminListPagination";
 import { StatusBadge } from "@/components/StatusBadge";
 import { VerifiedStationBadge } from "@/components/VerifiedStationBadge";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { usePaginatedList } from "@/hooks/usePaginatedList";
 import type { FuelType, StationStatus } from "@/types/station";
 import {
 	buildStationPayload,
@@ -55,6 +57,12 @@ export default function AdminStationsPage() {
 			);
 		});
 	}, [stationSearch, stations]);
+	const {
+		currentPage,
+		totalPages,
+		paginatedItems: paginatedStations,
+		setCurrentPage,
+	} = usePaginatedList(filteredStations, stationSearch);
 
 	const isEditorDirty = useMemo(
 		() =>
@@ -223,7 +231,7 @@ export default function AdminStationsPage() {
 							No stations found.
 						</p>
 					) : (
-						filteredStations.map((station) => (
+						paginatedStations.map((station) => (
 							<div
 								key={station.id}
 								className="rounded-xl border border-border bg-secondary/40 p-4"
@@ -293,6 +301,11 @@ export default function AdminStationsPage() {
 						))
 					)}
 				</div>
+				<AdminListPagination
+					currentPage={currentPage}
+					totalPages={totalPages}
+					onPageChange={setCurrentPage}
+				/>
 			</div>
 
 			<AdminStationEditor
