@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Route, Routes, useLocation } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -12,6 +12,7 @@ import { ThemeProvider } from "@/contexts/ThemeContext";
 import Index from "./pages/Index";
 import MapPage from "./pages/MapPage";
 import SearchPage from "./pages/SearchPage";
+import EmbeddedStationsPage from "./pages/EmbeddedStationsPage";
 import ReportPage from "./pages/ReportPage";
 import AdminPage from "./pages/AdminPage";
 import AdminStationsPage from "./pages/AdminStationsPage";
@@ -43,6 +44,74 @@ const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 const clientSecret = import.meta.env.VITE_GOOGLE_CLIENT_SECRET;
 const queryClient = new QueryClient();
 
+function RouterContent() {
+	const location = useLocation();
+	const isEmbedRoute = location.pathname.startsWith("/embed/");
+
+	return (
+		<div className="flex min-h-screen flex-col">
+			<div className="flex-1">
+				<Routes>
+					<Route path="/embed/stations" element={<EmbeddedStationsPage />} />
+					<Route element={<AppShellLayout />}>
+						<Route path="/" element={<Index />} />
+						<Route path="/map" element={<MapPage />} />
+						<Route path="/search" element={<SearchPage />} />
+						<Route path="/report" element={<ReportPage />} />
+						<Route path="/admin" element={<AdminLayout />}>
+							<Route index element={<AdminPage />} />
+							<Route path="stations" element={<AdminStationsPage />} />
+							<Route path="reports" element={<AdminReportsPage />} />
+							<Route path="claims" element={<AdminClaimsPage />} />
+							<Route path="users" element={<AdminUsersPage />} />
+							<Route
+								path="access-requests"
+								element={<AdminAccessRequestsPage />}
+							/>
+							<Route
+								path="access-requests/:requestId"
+								element={<AdminAccessRequestDetailPage />}
+							/>
+							<Route path="invites" element={<AdminInvitesPage />} />
+							<Route
+								path="geo-backfill"
+								element={<AdminGeoBackfillPage />}
+							/>
+							<Route
+								path="system-preview"
+								element={<SystemPreviewPage />}
+							/>
+						</Route>
+						<Route path="/lgu" element={<LguLayout />}>
+							<Route index element={<LguPage />} />
+							<Route path="stations" element={<LguStationsPage />} />
+							<Route path="reports" element={<LguReportsPage />} />
+							<Route path="team" element={<LguTeamPage />} />
+						</Route>
+					</Route>
+					<Route path="/auth" element={<Auth />} />
+					<Route
+						path="/admin-access-request"
+						element={<AdminAccessRequestPage />}
+					/>
+					<Route
+						path="/admin-invite/:token"
+						element={<AdminInviteRegistrationPage />}
+					/>
+					<Route path="/about-us" element={<AboutUs />} />
+					<Route path="/contact-us" element={<ContactUs />} />
+					<Route path="/profile" element={<Profile />} />
+					<Route path="/manager" element={<StationManagerDashboard />} />
+					<Route path="/privacy-policy" element={<PrivacyPolicy />} />
+					<Route path="/terms" element={<Terms />} />
+					<Route path="*" element={<NotFound />} />
+				</Routes>
+			</div>
+			{isEmbedRoute ? null : <SiteFooter />}
+		</div>
+	);
+}
+
 const App = () => (
 	<QueryClientProvider client={queryClient}>
 		<GoogleOAuthProvider clientId={clientId}>
@@ -52,113 +121,7 @@ const App = () => (
 						<Toaster />
 						<Sonner />
 						<BrowserRouter>
-							<div className="flex min-h-screen flex-col">
-								<div className="flex-1">
-									<Routes>
-										<Route element={<AppShellLayout />}>
-											<Route path="/" element={<Index />} />
-											<Route path="/map" element={<MapPage />} />
-											<Route
-												path="/search"
-												element={<SearchPage />}
-											/>
-										<Route
-											path="/report"
-											element={<ReportPage />}
-										/>
-										<Route
-											path="/admin"
-											element={<AdminLayout />}
-										>
-											<Route
-												index
-												element={<AdminPage />}
-											/>
-											<Route
-												path="stations"
-												element={<AdminStationsPage />}
-											/>
-											<Route
-												path="reports"
-												element={<AdminReportsPage />}
-											/>
-											<Route
-												path="claims"
-												element={<AdminClaimsPage />}
-											/>
-											<Route
-												path="users"
-												element={<AdminUsersPage />}
-											/>
-											<Route
-												path="access-requests"
-												element={<AdminAccessRequestsPage />}
-											/>
-											<Route
-												path="access-requests/:requestId"
-												element={<AdminAccessRequestDetailPage />}
-											/>
-											<Route
-												path="invites"
-												element={<AdminInvitesPage />}
-											/>
-											<Route
-												path="geo-backfill"
-												element={<AdminGeoBackfillPage />}
-											/>
-											<Route
-												path="system-preview"
-												element={<SystemPreviewPage />}
-											/>
-										</Route>
-										<Route path="/lgu" element={<LguLayout />}>
-											<Route index element={<LguPage />} />
-											<Route
-												path="stations"
-												element={<LguStationsPage />}
-											/>
-											<Route
-												path="reports"
-												element={<LguReportsPage />}
-											/>
-											<Route
-												path="team"
-												element={<LguTeamPage />}
-											/>
-										</Route>
-										</Route>
-										<Route path="/auth" element={<Auth />} />
-										<Route
-											path="/admin-access-request"
-											element={<AdminAccessRequestPage />}
-										/>
-										<Route
-											path="/admin-invite/:token"
-											element={<AdminInviteRegistrationPage />}
-										/>
-										<Route
-											path="/about-us"
-											element={<AboutUs />}
-										/>
-										<Route
-											path="/contact-us"
-											element={<ContactUs />}
-										/>
-										<Route path="/profile" element={<Profile />} />
-										<Route
-											path="/manager"
-											element={<StationManagerDashboard />}
-										/>
-										<Route
-											path="/privacy-policy"
-											element={<PrivacyPolicy />}
-										/>
-										<Route path="/terms" element={<Terms />} />
-										<Route path="*" element={<NotFound />} />
-									</Routes>
-								</div>
-								<SiteFooter />
-							</div>
+							<RouterContent />
 						</BrowserRouter>
 					</TooltipProvider>
 				</AuthProvider>

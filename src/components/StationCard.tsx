@@ -16,9 +16,15 @@ interface StationCardProps {
 		lat: number;
 		lng: number;
 	} | null;
+	openOnMapInNewTab?: boolean;
 }
 
-export function StationCard({ station, index, userLocation }: StationCardProps) {
+export function StationCard({
+	station,
+	index,
+	userLocation,
+	openOnMapInNewTab = false,
+}: StationCardProps) {
 	const navigate = useNavigate();
 	const location = useLocation();
 	const statusBarColor =
@@ -49,6 +55,15 @@ export function StationCard({ station, index, userLocation }: StationCardProps) 
 	const handleOpenOnMap = () => {
 		const searchParams = new URLSearchParams(location.search);
 		searchParams.set("station", station.id);
+
+		if (openOnMapInNewTab) {
+			window.open(
+				`/map?${searchParams.toString()}`,
+				"_blank",
+				"noopener,noreferrer",
+			);
+			return;
+		}
 
 		navigate({
 			pathname: "/map",

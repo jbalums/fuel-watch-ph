@@ -12,6 +12,7 @@ interface StationResultsListProps {
 	currentPage?: number;
 	totalPages?: number;
 	onPageChange?: (page: number) => void;
+	openOnMapInNewTab?: boolean;
 }
 
 export function StationResultsList({
@@ -21,6 +22,7 @@ export function StationResultsList({
 	currentPage = 1,
 	totalPages = 1,
 	onPageChange,
+	openOnMapInNewTab = false,
 }: StationResultsListProps) {
 	const { latitude, longitude } = useUserLocation();
 	const userLocation = useMemo(
@@ -93,6 +95,7 @@ export function StationResultsList({
 							station={station}
 							index={index}
 							userLocation={userLocation}
+							openOnMapInNewTab={openOnMapInNewTab}
 						/>
 					))}
 					{stations.length === 0 && (

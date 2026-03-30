@@ -1,6 +1,8 @@
 import { motion } from "framer-motion";
 import {
 	CheckCircle2,
+	Copy,
+	ExternalLink,
 	FileText,
 	Fuel,
 	Loader2,
@@ -9,11 +11,13 @@ import {
 	type LucideIcon,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useScopedDashboardStats } from "@/components/admin/admin-shared";
 import {
-	useScopedDashboardStats,
-} from "@/components/admin/admin-shared";
-import { useCurrentUserScope } from "@/hooks/useCurrentUserScope";
+	useCurrentUserScope,
+	type CurrentUserScope,
+} from "@/hooks/useCurrentUserScope";
 import { useUserAccess } from "@/hooks/useUserAccess";
+import { toast } from "@/lib/app-toast";
 
 function formatScopeLabel(
 	provinceName: string,
@@ -25,6 +29,45 @@ function formatScopeLabel(
 	}
 
 	return provinceName;
+}
+
+function buildEmbedDirectUrl(scope: CurrentUserScope) {
+	const directUrl = new URL("/embed/stations", window.location.origin);
+	directUrl.searchParams.set("provinceCode", scope.provinceCode);
+
+	if (scope.scopeType === "city" && scope.cityMunicipalityCode) {
+		directUrl.searchParams.set(
+			"cityMunicipalityCode",
+			scope.cityMunicipalityCode,
+		);
+	}
+
+	return directUrl.toString();
+}
+
+function buildEmbedScriptSnippet(scope: CurrentUserScope) {
+	const scriptUrl = new URL(
+		"/fuelwatch-stations-embed.js",
+		window.location.origin,
+	).toString();
+	const lines = [
+		'<div id="fuelwatch-stations"></div>',
+		"<script",
+		`  src="${scriptUrl}"`,
+		`  data-base-url="${window.location.origin}"`,
+		'  data-target-id="fuelwatch-stations"',
+		`  data-province-code="${scope.provinceCode}"`,
+	];
+
+	if (scope.scopeType === "city" && scope.cityMunicipalityCode) {
+		lines.push(
+			`  data-city-municipality-code="${scope.cityMunicipalityCode}"`,
+		);
+	}
+
+	lines.push('  data-height="720"', "></script>");
+
+	return lines.join("\n");
 }
 
 type LguSection = {
@@ -53,6 +96,8 @@ export default function LguPage() {
 		scope.cityMunicipalityName,
 		scope.scopeType,
 	);
+	const embedDirectUrl = buildEmbedDirectUrl(scope);
+	const embedScriptSnippet = buildEmbedScriptSnippet(scope);
 	const statCards = [
 		{ label: "Stations", value: Number(stats.total_stations), icon: Fuel },
 		{
@@ -98,6 +143,15 @@ export default function LguPage() {
 				]
 			: []),
 	];
+
+	const copyText = async (value: string, successMessage: string) => {
+		try {
+			await navigator.clipboard.writeText(value);
+			toast.info(successMessage);
+		} catch {
+			toast.error("Could not copy the embed code");
+		}
+	};
 
 	return (
 		<div className="flex flex-col gap-6">
@@ -158,6 +212,91 @@ export default function LguPage() {
 							</p>
 						</button>
 					))}
+				</div>
+			</div>
+
+			<div className="rounded-2xl bg-card p-5 shadow-sovereign">
+				<div className="mb-4 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+					<div>
+						<h3 className="text-xl font-semibold text-foreground">
+							Embed This Station List
+						</h3>
+						<p className="text-sm text-muted-foreground">
+							Use the scoped embed below to publish the station
+							list for {scopeLabel} on another site.
+						</p>
+					</div>
+					<a
+						href={embedDirectUrl}
+						target="_blank"
+						rel="noreferrer"
+						className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm text-foreground sovereign-ease transition-colors hover:bg-secondary"
+					>
+						<ExternalLink className="h-4 w-4" />
+						Open Direct URL
+					</a>
+				</div>
+
+				<div className="grid gap-4">
+					<div className="rounded-xl border border-border bg-secondary/30 p-4">
+						<div className="mb-3 flex items-center justify-between gap-3">
+							<div>
+								<p className="font-semibold text-foreground">
+									Direct Embed URL
+								</p>
+								<p className="text-sm text-muted-foreground">
+									Use this route directly in an iframe or open
+									it as a standalone embedded page.
+								</p>
+							</div>
+							<button
+								type="button"
+								onClick={() =>
+									void copyText(
+										embedDirectUrl,
+										"Embedded direct URL copied",
+									)
+								}
+								className="inline-flex shrink-0 items-center gap-2 rounded-lg bg-surface-alt px-3 py-2 text-sm text-foreground sovereign-ease transition-colors hover:bg-secondary"
+							>
+								<Copy className="h-4 w-4" />
+								Copy URL
+							</button>
+						</div>
+						<pre className="overflow-x-auto rounded-lg bg-background px-4 py-3 text-xs text-foreground">
+							<code>{embedDirectUrl}</code>
+						</pre>
+					</div>
+
+					<div className="rounded-xl border border-border bg-secondary/30 p-4">
+						<div className="mb-3 flex items-center justify-between gap-3">
+							<div>
+								<p className="font-semibold text-foreground">
+									Script Usage
+								</p>
+								<p className="text-sm text-muted-foreground">
+									Copy and paste this snippet into your LGU
+									website to render the embedded station list.
+								</p>
+							</div>
+							<button
+								type="button"
+								onClick={() =>
+									void copyText(
+										embedScriptSnippet,
+										"Embed script snippet copied",
+									)
+								}
+								className="inline-flex shrink-0 items-center gap-2 rounded-lg bg-surface-alt px-3 py-2 text-sm text-foreground sovereign-ease transition-colors hover:bg-secondary"
+							>
+								<Copy className="h-4 w-4" />
+								Copy Script
+							</button>
+						</div>
+						<pre className="overflow-x-auto rounded-lg bg-background px-4 py-3 text-xs text-foreground">
+							<code>{embedScriptSnippet}</code>
+						</pre>
+					</div>
 				</div>
 			</div>
 		</div>
