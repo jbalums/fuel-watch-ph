@@ -1,32 +1,32 @@
 import { motion } from "framer-motion";
 import { Loader2, ShieldAlert } from "lucide-react";
 import { NavLink, Outlet } from "react-router-dom";
-import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
-import { useAdminRole } from "@/hooks/useAdminRole";
+import { useCurrentUserScope } from "@/hooks/useCurrentUserScope";
+import { useUserAccess } from "@/hooks/useUserAccess";
+import { cn } from "@/lib/utils";
 
-export function AdminLayout() {
+function formatScopeLabel(
+	provinceName: string,
+	cityMunicipalityName: string | null,
+	scopeType: "province" | "city",
+) {
+	if (scopeType === "city" && cityMunicipalityName) {
+		return `${cityMunicipalityName}, ${provinceName}`;
+	}
+
+	return provinceName;
+}
+
+export function LguLayout() {
 	const { user } = useAuth();
-	const { isAdmin, isSuperAdmin, isLoading: roleLoading } = useAdminRole();
-	const adminNavItems = [
-		{ label: "Overview", to: "/admin", end: true },
-		{ label: "Stations", to: "/admin/stations" },
-		{ label: "Reports", to: "/admin/reports" },
-		{ label: "Claims", to: "/admin/claims" },
-		...(isSuperAdmin
-			? [
-					{ label: "Users", to: "/admin/users" },
-					{
-						label: "Access Requests",
-						to: "/admin/access-requests",
-					},
-					{ label: "Invites", to: "/admin/invites" },
-					{ label: "Geo Backfill", to: "/admin/geo-backfill" },
-				]
-			: []),
-	];
+	const { isLguAdmin, accessLevel, isLoading: accessLoading } =
+		useUserAccess();
+	const { data: scope, isLoading: scopeLoading } = useCurrentUserScope(
+		isLguAdmin,
+	);
 
-	if (roleLoading) {
+	if (accessLoading || (isLguAdmin && scopeLoading)) {
 		return (
 			<div className="flex items-center justify-center rounded-2xl bg-card p-10 shadow-sovereign">
 				<Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -34,24 +34,38 @@ export function AdminLayout() {
 		);
 	}
 
-	if (!user || !isAdmin) {
+	if (!user || !isLguAdmin || !scope) {
 		return (
 			<div className="rounded-2xl bg-card p-6 shadow-sovereign">
 				<div className="flex items-start gap-3">
 					<ShieldAlert className="mt-0.5 h-5 w-5 text-warning" />
 					<div>
 						<h2 className="text-headline text-foreground">
-							Admin access required
+							LGU access required
 						</h2>
 						<p className="mt-1 text-sm text-muted-foreground">
-							This dashboard is only available to users with the
-							admin role.
+							This dashboard is only available to official city
+							and province admins with an assigned geographic
+							scope.
 						</p>
 					</div>
 				</div>
 			</div>
 		);
 	}
+
+	const navItems = [
+		{ label: "Overview", to: "/lgu", end: true },
+		{ label: "Stations", to: "/lgu/stations" },
+		{ label: "Reports", to: "/lgu/reports" },
+	];
+	const scopeLabel = formatScopeLabel(
+		scope.provinceName,
+		scope.cityMunicipalityName,
+		scope.scopeType,
+	);
+	const roleLabel =
+		accessLevel === "province_admin" ? "Province Admin" : "City Admin";
 
 	return (
 		<motion.div
@@ -63,16 +77,17 @@ export function AdminLayout() {
 			<div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
 				<div>
 					<h2 className="text-headline text-foreground">
-						Admin Dashboard
+						LGU Dashboard
 					</h2>
 					<p className="mt-1 text-sm text-muted-foreground">
-						{isSuperAdmin
-							? "Manage fuel stations, review community submissions, and control platform access."
-							: "Manage fuel stations and review community submissions."}
+						Review and manage fuel data for your assigned LGU scope.
+					</p>
+					<p className="mt-2 inline-flex rounded-full bg-accent/10 px-3 py-1 text-xs font-medium text-accent">
+						{roleLabel} • {scopeLabel}
 					</p>
 				</div>
 				<div className="flex flex-wrap gap-2">
-					{adminNavItems.map((item) => (
+					{navItems.map((item) => (
 						<NavLink
 							key={item.to}
 							to={item.to}

@@ -8,10 +8,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePaginatedList } from "@/hooks/usePaginatedList";
-import {
-	type ManagedAccessLevel,
-	useUserAccess,
-} from "@/hooks/useUserAccess";
+import { useUserAccess } from "@/hooks/useUserAccess";
+import { type ManagedAccessLevel } from "@/lib/access-control";
 
 type ManageableUser = {
 	userId: string;

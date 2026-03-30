@@ -3,7 +3,8 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 
 interface BottomNavProps {
-	isAdmin?: boolean;
+	dashboardPath?: string | null;
+	dashboardLabel?: string;
 	isAuthenticated?: boolean;
 }
 
@@ -12,25 +13,31 @@ const baseTabs: {
 	path: string;
 	icon: typeof Home;
 	label: string;
-	adminOnly?: boolean;
 }[] = [
 	{ id: "home", path: "/", icon: Home, label: "Home" },
 	{ id: "map", path: "/map", icon: Map, label: "Map" },
 	{ id: "search", path: "/search", icon: Search, label: "Search" },
 	{ id: "report", path: "/report", icon: PlusCircle, label: "Report" },
-	{
-		id: "admin",
-		path: "/admin",
-		icon: Shield,
-		label: "Admin",
-		adminOnly: true,
-	},
 ];
 
-export function BottomNav({ isAdmin, isAuthenticated }: BottomNavProps) {
+export function BottomNav({
+	dashboardPath,
+	dashboardLabel = "Admin",
+	isAuthenticated,
+}: BottomNavProps) {
 	const location = useLocation();
 	const navigate = useNavigate();
-	const tabs = baseTabs.filter((t) => !t.adminOnly || isAdmin);
+	const tabs = dashboardPath
+		? [
+				...baseTabs,
+				{
+					id: "dashboard",
+					path: dashboardPath,
+					icon: Shield,
+					label: dashboardLabel,
+				},
+			]
+		: baseTabs;
 	const isActivePath = (path: string) => {
 		if (path === "/") {
 			return location.pathname === "/";

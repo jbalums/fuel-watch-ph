@@ -19,6 +19,8 @@ import { StatusBadge } from "@/components/StatusBadge";
 import { VerifiedStationBadge } from "@/components/VerifiedStationBadge";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { usePaginatedList } from "@/hooks/usePaginatedList";
+import { useCurrentUserScope } from "@/hooks/useCurrentUserScope";
+import { useUserAccess } from "@/hooks/useUserAccess";
 import type { FuelType, StationStatus } from "@/types/station";
 import {
 	buildStationPayload,
@@ -27,14 +29,16 @@ import {
 	type StationFormState,
 	normalizeStationPricesForForm,
 	refreshAdminData,
-	useAdminStations,
+	useScopedAdminStations,
 } from "@/components/admin/admin-shared";
 
-export default function AdminStationsPage() {
+export default function LguStationsPage() {
 	const queryClient = useQueryClient();
 	const isMobile = useIsMobile();
+	const { isCityAdmin } = useUserAccess();
+	const { data: scope } = useCurrentUserScope();
 	const { data: stations = [], isLoading: stationsLoading } =
-		useAdminStations();
+		useScopedAdminStations();
 	const [editorOpen, setEditorOpen] = useState(false);
 	const [editingStationId, setEditingStationId] = useState<string | null>(
 		null,
@@ -137,7 +141,14 @@ export default function AdminStationsPage() {
 	};
 
 	const openCreateStation = () => {
-		const nextForm = initialStationForm;
+		const nextForm: StationFormState = {
+			...initialStationForm,
+			provinceCode: scope?.provinceCode ?? "",
+			cityMunicipalityCode:
+				scope?.scopeType === "city"
+					? scope.cityMunicipalityCode ?? ""
+					: "",
+		};
 		initialEditorFormRef.current = nextForm;
 		setEditingStationId(null);
 		setStationForm(nextForm);
@@ -150,8 +161,12 @@ export default function AdminStationsPage() {
 			address: station.address,
 			lat: String(station.lat),
 			lng: String(station.lng),
-			provinceCode: station.province_code ?? "",
-			cityMunicipalityCode: station.city_municipality_code ?? "",
+			provinceCode: station.province_code ?? scope?.provinceCode ?? "",
+			cityMunicipalityCode:
+				station.city_municipality_code ??
+				(scope?.scopeType === "city"
+					? scope.cityMunicipalityCode ?? ""
+					: ""),
 			prices: normalizeStationPricesForForm(
 				station.prices,
 				station.fuel_type as FuelType,
@@ -194,10 +209,10 @@ export default function AdminStationsPage() {
 				<div className="mb-4 flex flex-col gap-3 border-b-2 pb-4 md:flex-row md:items-center md:justify-between">
 					<div>
 						<h3 className="text-xl font-semibold text-foreground">
-							Fuel Stations
+							Scoped Stations
 						</h3>
 						<p className="text-sm text-muted-foreground">
-							Create, update, and remove station records.
+							Manage stations inside your assigned LGU scope.
 						</p>
 					</div>
 					<div className="flex flex-col gap-2 md:flex-row">
@@ -230,7 +245,7 @@ export default function AdminStationsPage() {
 						</div>
 					) : filteredStations.length === 0 ? (
 						<p className="py-8 text-center text-sm text-muted-foreground">
-							No stations found.
+							No scoped stations found.
 						</p>
 					) : (
 						paginatedStations.map((station) => (
@@ -256,17 +271,12 @@ export default function AdminStationsPage() {
 										</p>
 										<p className="mt-2 text-sm text-muted-foreground">
 											{station.fuel_type} • ₱
-											{Number(
-												station.price_per_liter,
-											).toFixed(2)}{" "}
+											{Number(station.price_per_liter).toFixed(
+												2,
+											)}{" "}
 											• {station.report_count} reports
 										</p>
-										<p className="text-xs text-muted-foreground">
-											{station.lat.toFixed(5)},{" "}
-											{station.lng.toFixed(5)}
-										</p>
 									</div>
-
 									<div className="flex gap-2">
 										<button
 											onClick={() =>
@@ -274,25 +284,17 @@ export default function AdminStationsPage() {
 													openEditStation(station),
 												)
 											}
-											className="flex items-center gap-1.5 rounded-lg bg-background px-3 py-2 text-sm text-foreground transition-colors hover:bg-muted"
+											className="flex items-center gap-1.5 rounded-lg bg-surface-alt px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted"
 										>
 											<Pencil className="h-4 w-4" />
 											Edit
 										</button>
 										<button
-											onClick={() => {
-												if (
-													window.confirm(
-														`Delete ${station.name}?`,
-													)
-												) {
-													deleteStation.mutate(
-														station.id,
-													);
-												}
-											}}
+											onClick={() =>
+												deleteStation.mutate(station.id)
+											}
 											disabled={deleteStation.isPending}
-											className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm text-destructive transition-colors hover:bg-destructive/10 disabled:opacity-50"
+											className="flex items-center gap-1.5 rounded-lg bg-destructive/10 px-3 py-2 text-sm font-medium text-destructive transition-colors hover:bg-destructive/15 disabled:opacity-50"
 										>
 											<Trash2 className="h-4 w-4" />
 											Delete
@@ -303,6 +305,7 @@ export default function AdminStationsPage() {
 						))
 					)}
 				</div>
+
 				<AdminListPagination
 					currentPage={currentPage}
 					totalPages={totalPages}
@@ -317,36 +320,51 @@ export default function AdminStationsPage() {
 				stations={stations}
 				isMobile={isMobile}
 				isSaving={saveStation.isPending}
-				lockedProvinceCode={null}
-				lockedCityMunicipalityCode={null}
+				lockedProvinceCode={scope?.provinceCode ?? null}
+				lockedCityMunicipalityCode={
+					isCityAdmin ? scope?.cityMunicipalityCode ?? null : null
+				}
 				onOpenChange={(nextOpen) => {
 					if (!nextOpen) {
 						requestCloseEditor();
+						return;
 					}
+
+					setEditorOpen(true);
 				}}
-				onFormChange={setStationForm}
+				onFormChange={(updater) =>
+					setStationForm((current) =>
+						typeof updater === "function"
+							? updater(current)
+							: updater,
+					)
+				}
 				onSubmit={() => saveStation.mutate()}
 				onCancel={requestCloseEditor}
 			/>
 
 			<AlertDialog
 				open={discardConfirmOpen}
-				onOpenChange={(open) => {
-					if (!open) {
+				onOpenChange={(nextOpen) => {
+					if (!nextOpen) {
 						cancelDiscardChanges();
+						return;
 					}
+
+					setDiscardConfirmOpen(true);
 				}}
 			>
 				<AlertDialogContent>
 					<AlertDialogHeader>
-						<AlertDialogTitle>Discard changes?</AlertDialogTitle>
+						<AlertDialogTitle>Discard unsaved changes?</AlertDialogTitle>
 						<AlertDialogDescription>
-							You have unsaved station edits. Closing now will
-							remove those changes.
+							Your station edits haven&apos;t been saved yet.
 						</AlertDialogDescription>
 					</AlertDialogHeader>
 					<AlertDialogFooter>
-						<AlertDialogCancel>Keep editing</AlertDialogCancel>
+						<AlertDialogCancel onClick={cancelDiscardChanges}>
+							Keep editing
+						</AlertDialogCancel>
 						<AlertDialogAction onClick={confirmDiscardChanges}>
 							Discard changes
 						</AlertDialogAction>

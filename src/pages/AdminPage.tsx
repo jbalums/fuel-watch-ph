@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAdminStationClaims } from "@/hooks/useStationClaims";
+import { useAdminAccessRequests, useAdminInvites } from "@/hooks/useAdminOnboarding";
 import { useUserAccess } from "@/hooks/useUserAccess";
 import {
 	useAdminReports,
@@ -28,10 +29,19 @@ export default function AdminPage() {
 	const { data: stations = [], isLoading: stationsLoading } =
 		useAdminStations();
 	const { data: reports = [], isLoading: reportsLoading } = useAdminReports();
+	const { data: accessRequests = [], isLoading: requestsLoading } =
+		useAdminAccessRequests(isSuperAdmin);
+	const { data: invites = [], isLoading: invitesLoading } =
+		useAdminInvites(isSuperAdmin);
 	const { data: claimRequests = [], isLoading: claimsLoading } =
 		useAdminStationClaims(true);
 
-	if (stationsLoading || reportsLoading || claimsLoading) {
+	if (
+		stationsLoading ||
+		reportsLoading ||
+		claimsLoading ||
+		(isSuperAdmin && (requestsLoading || invitesLoading))
+	) {
 		return (
 			<div className="flex items-center justify-center rounded-2xl bg-card p-10 shadow-sovereign">
 				<Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -47,6 +57,12 @@ export default function AdminPage() {
 	).length;
 	const reviewedReports = reports.filter(
 		(report) => report.reviewStatus !== "pending",
+	).length;
+	const pendingAccessRequests = accessRequests.filter(
+		(request) => request.status === "pending",
+	).length;
+	const activeInvites = invites.filter(
+		(invite) => !invite.usedAt && new Date(invite.expiresAt).getTime() > Date.now(),
 	).length;
 
 	const stats = [
@@ -66,6 +82,20 @@ export default function AdminPage() {
 			value: reviewedReports,
 			icon: CheckCircle2,
 		},
+		...(isSuperAdmin
+			? [
+					{
+						label: "Pending Access Requests",
+						value: pendingAccessRequests,
+						icon: ShieldAlert,
+					},
+					{
+						label: "Active Invites",
+						value: activeInvites,
+						icon: Users,
+					},
+				]
+			: []),
 	];
 
 	const sections: AdminSection[] = [
@@ -92,6 +122,24 @@ export default function AdminPage() {
 							"Manage admin and super-admin access for platform users.",
 						path: "/admin/users",
 						icon: Users,
+					},
+					{
+						label: "Access Requests",
+						description:
+							"Review official LGU access requests and generate invite links.",
+						path: "/admin/access-requests",
+					},
+					{
+						label: "Invites",
+						description:
+							"Track issued city and province admin invites and usage status.",
+						path: "/admin/invites",
+					},
+					{
+						label: "Geo Backfill",
+						description:
+							"Assign province and city scope to older stations and fuel reports.",
+						path: "/admin/geo-backfill",
 					},
 				]
 			: []),

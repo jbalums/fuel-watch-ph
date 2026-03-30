@@ -1,7 +1,8 @@
 import { useUserAccess } from "@/hooks/useUserAccess";
 
 export function useAdminRole() {
-	const { isAdmin, isSuperAdmin, isLoading } = useUserAccess();
+	const { isAdmin, isLegacyAdmin, isSuperAdmin, isLoading } =
+		useUserAccess();
 
-	return { isAdmin, isSuperAdmin, isLoading };
+	return { isAdmin, isLegacyAdmin, isSuperAdmin, isLoading };
 }

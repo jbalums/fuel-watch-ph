@@ -9,6 +9,8 @@ export interface GasStation {
   address: string;
   lat: number;
   lng: number;
+  provinceCode: string | null;
+  cityMunicipalityCode: string | null;
   prices: Record<FuelType, number | null>;
   isVerified: boolean;
   verifiedAt: string | null;
@@ -45,6 +47,8 @@ export interface FuelReport {
   reportedAddress: string | null;
   lat: number | null;
   lng: number | null;
+  provinceCode: string | null;
+  cityMunicipalityCode: string | null;
   photoPath: string | null;
   photoFilename: string | null;
   photoUrl: string | null;

@@ -17,6 +17,7 @@ export type Database = {
       fuel_reports: {
         Row: {
           applied_station_id: string | null
+          city_municipality_code: string | null
           created_at: string
           fuel_type: string
           id: string
@@ -26,6 +27,7 @@ export type Database = {
           photo_path: string | null
           price: number
           prices: Json | null
+          province_code: string | null
           reported_address: string | null
           review_status: string
           reviewed_at: string | null
@@ -37,6 +39,7 @@ export type Database = {
         }
         Insert: {
           applied_station_id?: string | null
+          city_municipality_code?: string | null
           created_at?: string
           fuel_type: string
           id?: string
@@ -46,6 +49,7 @@ export type Database = {
           photo_path?: string | null
           price: number
           prices?: Json | null
+          province_code?: string | null
           reported_address?: string | null
           review_status?: string
           reviewed_at?: string | null
@@ -57,6 +61,7 @@ export type Database = {
         }
         Update: {
           applied_station_id?: string | null
+          city_municipality_code?: string | null
           created_at?: string
           fuel_type?: string
           id?: string
@@ -66,6 +71,7 @@ export type Database = {
           photo_path?: string | null
           price?: number
           prices?: Json | null
+          province_code?: string | null
           reported_address?: string | null
           review_status?: string
           reviewed_at?: string | null
@@ -95,6 +101,7 @@ export type Database = {
       gas_stations: {
         Row: {
           address: string
+          city_municipality_code: string | null
           created_at: string
           fuel_type: string
           id: string
@@ -105,6 +112,7 @@ export type Database = {
           name: string
           price_per_liter: number
           prices: Json
+          province_code: string | null
           report_count: number
           status: string
           updated_at: string
@@ -112,6 +120,7 @@ export type Database = {
         }
         Insert: {
           address: string
+          city_municipality_code?: string | null
           created_at?: string
           fuel_type?: string
           id?: string
@@ -122,6 +131,7 @@ export type Database = {
           name: string
           price_per_liter?: number
           prices?: Json
+          province_code?: string | null
           report_count?: number
           status?: string
           updated_at?: string
@@ -129,6 +139,7 @@ export type Database = {
         }
         Update: {
           address?: string
+          city_municipality_code?: string | null
           created_at?: string
           fuel_type?: string
           id?: string
@@ -139,10 +150,158 @@ export type Database = {
           name?: string
           price_per_liter?: number
           prices?: Json
+          province_code?: string | null
           report_count?: number
           status?: string
           updated_at?: string
           verified_at?: string | null
+        }
+        Relationships: []
+      }
+      admin_access_requests: {
+        Row: {
+          city_municipality_code: string | null
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+          mobile_number: string
+          office_name: string
+          position_title: string
+          province_code: string
+          reason: string
+          requested_role: Database["public"]["Enums"]["app_role"]
+          review_notes: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          city_municipality_code?: string | null
+          created_at?: string
+          email: string
+          full_name: string
+          id?: string
+          mobile_number: string
+          office_name: string
+          position_title: string
+          province_code: string
+          reason: string
+          requested_role: Database["public"]["Enums"]["app_role"]
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          city_municipality_code?: string | null
+          created_at?: string
+          email?: string
+          full_name?: string
+          id?: string
+          mobile_number?: string
+          office_name?: string
+          position_title?: string
+          province_code?: string
+          reason?: string
+          requested_role?: Database["public"]["Enums"]["app_role"]
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      admin_invites: {
+        Row: {
+          access_request_id: string | null
+          city_municipality_code: string | null
+          created_at: string
+          created_by: string
+          email: string
+          expires_at: string
+          full_name: string | null
+          id: string
+          province_code: string
+          role: Database["public"]["Enums"]["app_role"]
+          token_hash: string
+          updated_at: string
+          used_at: string | null
+          used_by: string | null
+        }
+        Insert: {
+          access_request_id?: string | null
+          city_municipality_code?: string | null
+          created_at?: string
+          created_by: string
+          email: string
+          expires_at: string
+          full_name?: string | null
+          id?: string
+          province_code: string
+          role: Database["public"]["Enums"]["app_role"]
+          token_hash: string
+          updated_at?: string
+          used_at?: string | null
+          used_by?: string | null
+        }
+        Update: {
+          access_request_id?: string | null
+          city_municipality_code?: string | null
+          created_at?: string
+          created_by?: string
+          email?: string
+          expires_at?: string
+          full_name?: string | null
+          id?: string
+          province_code?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          token_hash?: string
+          updated_at?: string
+          used_at?: string | null
+          used_by?: string | null
+        }
+        Relationships: []
+      }
+      geo_cities_municipalities: {
+        Row: {
+          code: string
+          created_at: string
+          name: string
+          province_code: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          name: string
+          province_code: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          name?: string
+          province_code?: string
+        }
+        Relationships: []
+      }
+      geo_provinces: {
+        Row: {
+          code: string
+          created_at: string
+          name: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          name: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          name?: string
         }
         Relationships: []
       }
@@ -153,6 +312,7 @@ export type Database = {
           display_name: string | null
           id: string
           updated_at: string
+          username: string | null
           user_id: string
         }
         Insert: {
@@ -161,6 +321,7 @@ export type Database = {
           display_name?: string | null
           id?: string
           updated_at?: string
+          username?: string | null
           user_id: string
         }
         Update: {
@@ -169,6 +330,7 @@ export type Database = {
           display_name?: string | null
           id?: string
           updated_at?: string
+          username?: string | null
           user_id?: string
         }
         Relationships: []
@@ -250,6 +412,36 @@ export type Database = {
         }
         Relationships: []
       }
+      user_scopes: {
+        Row: {
+          city_municipality_code: string | null
+          created_at: string
+          id: string
+          province_code: string
+          scope_type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          city_municipality_code?: string | null
+          created_at?: string
+          id?: string
+          province_code: string
+          scope_type: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          city_municipality_code?: string | null
+          created_at?: string
+          id?: string
+          province_code?: string
+          scope_type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -267,9 +459,104 @@ export type Database = {
         }
         Returns: string
       }
+      approve_admin_access_request: {
+        Args: {
+          _approved_role: Database["public"]["Enums"]["app_role"]
+          _city_municipality_code: string
+          _expires_in_days?: number
+          _province_code: string
+          _request_id: string
+          _review_notes: string
+        }
+        Returns: {
+          expires_at: string
+          invite_id: string
+          invite_token: string
+          request_id: string
+        }[]
+      }
+      can_manage_geo_scope: {
+        Args: {
+          _city_municipality_code: string
+          _province_code: string
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      consume_admin_invite: {
+        Args: {
+          _full_name: string
+          _token: string
+          _username: string
+        }
+        Returns: Database["public"]["Enums"]["app_role"]
+      }
+      get_admin_access_request: {
+        Args: {
+          _request_id: string
+        }
+        Returns: {
+          city_municipality_code: string | null
+          city_municipality_name: string | null
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+          mobile_number: string
+          office_name: string
+          position_title: string
+          province_code: string
+          province_name: string
+          reason: string
+          requested_role: Database["public"]["Enums"]["app_role"]
+          review_notes: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          reviewed_by_name: string | null
+          status: string
+          updated_at: string
+        }[]
+      }
+      get_current_user_scope: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          city_municipality_code: string | null
+          city_municipality_name: string | null
+          province_code: string
+          province_name: string
+          scope_type: string
+        }[]
+      }
+      get_scoped_dashboard_stats: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          pending_reports: number
+          reviewed_reports: number
+          total_reports: number
+          total_stations: number
+        }[]
+      }
+      get_user_scope: {
+        Args: {
+          _user_id: string
+        }
+        Returns: {
+          city_municipality_code: string | null
+          city_municipality_name: string | null
+          province_code: string
+          province_name: string
+          scope_type: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      is_legacy_admin: {
+        Args: {
           _user_id: string
         }
         Returns: boolean
@@ -279,6 +566,70 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      issue_admin_invite_for_request: {
+        Args: {
+          _expires_in_days?: number
+          _request_id: string
+        }
+        Returns: {
+          expires_at: string
+          invite_id: string
+          invite_token: string
+        }[]
+      }
+      list_admin_access_requests: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          city_municipality_code: string | null
+          city_municipality_name: string | null
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+          mobile_number: string
+          office_name: string
+          position_title: string
+          province_code: string
+          province_name: string
+          reason: string
+          requested_role: Database["public"]["Enums"]["app_role"]
+          review_notes: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          reviewed_by_name: string | null
+          status: string
+          updated_at: string
+        }[]
+      }
+      list_admin_invites: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          access_request_id: string | null
+          city_municipality_code: string | null
+          city_municipality_name: string | null
+          created_at: string
+          created_by: string
+          created_by_name: string | null
+          email: string
+          expires_at: string
+          full_name: string | null
+          id: string
+          province_code: string
+          province_name: string
+          role: Database["public"]["Enums"]["app_role"]
+          used_at: string | null
+          used_by: string | null
+          used_by_name: string | null
+        }[]
+      }
+      list_scoped_fuel_reports: {
+        Args: Record<PropertyKey, never>
+        Returns: Database["public"]["Tables"]["fuel_reports"]["Row"][]
+      }
+      list_scoped_gas_stations: {
+        Args: Record<PropertyKey, never>
+        Returns: Database["public"]["Tables"]["gas_stations"]["Row"][]
       }
       list_manageable_users: {
         Args: Record<PropertyKey, never>
@@ -296,6 +647,13 @@ export type Database = {
         }
         Returns: string
       }
+      reject_admin_access_request: {
+        Args: {
+          _request_id: string
+          _review_notes: string
+        }
+        Returns: string
+      }
       reject_station_claim: {
         Args: {
           _claim_id: string
@@ -309,6 +667,36 @@ export type Database = {
         }
         Returns: Database["public"]["Enums"]["app_role"]
       }
+      submit_admin_access_request: {
+        Args: {
+          _city_municipality_code: string
+          _email: string
+          _full_name: string
+          _mobile_number: string
+          _office_name: string
+          _position_title: string
+          _province_code: string
+          _reason: string
+          _requested_role: Database["public"]["Enums"]["app_role"]
+        }
+        Returns: string
+      }
+      validate_admin_invite: {
+        Args: {
+          _token: string
+        }
+        Returns: {
+          city_municipality_code: string | null
+          city_municipality_name: string | null
+          email: string
+          expires_at: string
+          full_name: string | null
+          invite_id: string
+          province_code: string
+          province_name: string
+          role: Database["public"]["Enums"]["app_role"]
+        }[]
+      }
       update_managed_station: {
         Args: {
           _address: string
@@ -321,7 +709,13 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "admin" | "moderator" | "user" | "super_admin"
+      app_role:
+        | "admin"
+        | "moderator"
+        | "user"
+        | "super_admin"
+        | "province_admin"
+        | "city_admin"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -449,7 +843,14 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "moderator", "user", "super_admin"],
+      app_role: [
+        "admin",
+        "moderator",
+        "user",
+        "super_admin",
+        "province_admin",
+        "city_admin",
+      ],
     },
   },
 } as const

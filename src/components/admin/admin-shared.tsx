@@ -25,6 +25,8 @@ export type StationFormState = {
 	address: string;
 	lat: string;
 	lng: string;
+	provinceCode: string;
+	cityMunicipalityCode: string;
 	prices: StationPricesFormState;
 	fuelType: FuelType;
 	status: StationStatus;
@@ -51,6 +53,8 @@ export const initialStationForm: StationFormState = {
 	address: "",
 	lat: "",
 	lng: "",
+	provinceCode: "",
+	cityMunicipalityCode: "",
 	prices: {
 		Unleaded: "",
 		Premium: "",
@@ -78,6 +82,8 @@ function mapFuelReport(report: FuelReportRow): FuelReport {
 		reportedAddress: report.reported_address,
 		lat: report.lat,
 		lng: report.lng,
+		provinceCode: report.province_code,
+		cityMunicipalityCode: report.city_municipality_code,
 		photoPath: report.photo_path,
 		photoFilename: report.photo_filename,
 		photoUrl: null,
@@ -133,6 +139,67 @@ export function useAdminReports(enabled = true) {
 	});
 }
 
+export function useScopedAdminStations(enabled = true) {
+	return useQuery({
+		queryKey: ["lgu", "gas_stations"],
+		enabled,
+		queryFn: async () => {
+			const { data, error } = await supabase.rpc(
+				"list_scoped_gas_stations",
+			);
+
+			if (error) {
+				throw error;
+			}
+
+			return data ?? [];
+		},
+	});
+}
+
+export function useScopedAdminReports(enabled = true) {
+	return useQuery({
+		queryKey: ["lgu", "fuel_reports"],
+		enabled,
+		queryFn: async () => {
+			const { data, error } = await supabase.rpc(
+				"list_scoped_fuel_reports",
+			);
+
+			if (error) {
+				throw error;
+			}
+
+			return (data ?? []).map(mapFuelReport);
+		},
+	});
+}
+
+export function useScopedDashboardStats(enabled = true) {
+	return useQuery({
+		queryKey: ["lgu", "dashboard_stats"],
+		enabled,
+		queryFn: async () => {
+			const { data, error } = await supabase.rpc(
+				"get_scoped_dashboard_stats",
+			);
+
+			if (error) {
+				throw error;
+			}
+
+			return (
+				data?.[0] ?? {
+					total_stations: 0,
+					pending_reports: 0,
+					reviewed_reports: 0,
+					total_reports: 0,
+				}
+			);
+		},
+	});
+}
+
 export async function refreshAdminData(queryClient: QueryClient) {
 	await Promise.all([
 		queryClient.invalidateQueries({
@@ -143,6 +210,15 @@ export async function refreshAdminData(queryClient: QueryClient) {
 		}),
 		queryClient.invalidateQueries({
 			queryKey: ["admin", "station_claim_requests"],
+		}),
+		queryClient.invalidateQueries({
+			queryKey: ["lgu", "gas_stations"],
+		}),
+		queryClient.invalidateQueries({
+			queryKey: ["lgu", "fuel_reports"],
+		}),
+		queryClient.invalidateQueries({
+			queryKey: ["lgu", "dashboard_stats"],
 		}),
 		queryClient.invalidateQueries({ queryKey: ["gas_stations"] }),
 	]);
@@ -196,6 +272,12 @@ export function buildStationPayload(stationForm: StationFormState) {
 		throw new Error("Station address is required");
 	if (Number.isNaN(lat)) throw new Error("Latitude must be a valid number");
 	if (Number.isNaN(lng)) throw new Error("Longitude must be a valid number");
+	if (!stationForm.provinceCode.trim()) {
+		throw new Error("Province is required");
+	}
+	if (!stationForm.cityMunicipalityCode.trim()) {
+		throw new Error("City or municipality is required");
+	}
 
 	const prices = fuelTypes.reduce<Record<FuelType, number | null>>(
 		(accumulator, fuelType) => {
@@ -232,6 +314,8 @@ export function buildStationPayload(stationForm: StationFormState) {
 		address: stationForm.address.trim(),
 		lat,
 		lng,
+		province_code: stationForm.provinceCode.trim(),
+		city_municipality_code: stationForm.cityMunicipalityCode.trim(),
 		prices,
 		fuel_type: stationForm.fuelType,
 		price_per_liter: pricePerLiter,

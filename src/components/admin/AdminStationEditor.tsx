@@ -1,4 +1,5 @@
 import { StationLocationPicker } from "@/components/StationLocationPicker";
+import { GeoScopeFields } from "@/components/GeoScopeFields";
 import {
 	Drawer,
 	DrawerContent,
@@ -14,6 +15,7 @@ import {
 	SheetTitle,
 } from "@/components/ui/sheet";
 import { Loader2 } from "lucide-react";
+import { useGeoReferences } from "@/hooks/useGeoReferences";
 import type { FuelType, StationStatus } from "@/types/station";
 import type { GasStationRow, StationFormState } from "./admin-shared";
 import { fuelTypes } from "./admin-shared";
@@ -25,6 +27,8 @@ interface AdminStationEditorProps {
 	stations: GasStationRow[];
 	isMobile: boolean;
 	isSaving: boolean;
+	lockedProvinceCode?: string | null;
+	lockedCityMunicipalityCode?: string | null;
 	onOpenChange: (open: boolean) => void;
 	onFormChange: (
 		updater:
@@ -40,10 +44,17 @@ function EditorForm({
 	form,
 	stations,
 	isSaving,
+	lockedProvinceCode,
+	lockedCityMunicipalityCode,
 	onFormChange,
 	onSubmit,
 	onCancel,
 }: Omit<AdminStationEditorProps, "open" | "isMobile" | "onOpenChange">) {
+	const { provinces, citiesByProvince } = useGeoReferences();
+	const visibleCities = form.provinceCode
+		? citiesByProvince.get(form.provinceCode) ?? []
+		: [];
+
 	return (
 		<form
 			onSubmit={(event) => {
@@ -127,6 +138,33 @@ function EditorForm({
 							lng: station.lng,
 						}))}
 					/>
+					<div className="md:col-span-2">
+						<GeoScopeFields
+							provinces={provinces}
+							cities={visibleCities}
+							provinceCode={form.provinceCode}
+							cityMunicipalityCode={form.cityMunicipalityCode}
+							provinceDisabled={!!lockedProvinceCode}
+							cityDisabled={!!lockedCityMunicipalityCode}
+							onProvinceChange={(provinceCode) =>
+								onFormChange((current) => ({
+									...current,
+									provinceCode,
+									cityMunicipalityCode:
+										lockedCityMunicipalityCode &&
+										provinceCode === lockedProvinceCode
+											? lockedCityMunicipalityCode
+											: "",
+								}))
+							}
+							onCityChange={(cityCode) =>
+								onFormChange((current) => ({
+									...current,
+									cityMunicipalityCode: cityCode,
+								}))
+							}
+						/>
+					</div>
 					<select
 						value={form.fuelType}
 						onChange={(event) =>
@@ -242,6 +280,8 @@ export function AdminStationEditor({
 	stations,
 	isMobile,
 	isSaving,
+	lockedProvinceCode,
+	lockedCityMunicipalityCode,
 	onOpenChange,
 	onFormChange,
 	onSubmit,
@@ -266,6 +306,8 @@ export function AdminStationEditor({
 						form={form}
 						stations={stations}
 						isSaving={isSaving}
+						lockedProvinceCode={lockedProvinceCode}
+						lockedCityMunicipalityCode={lockedCityMunicipalityCode}
 						onFormChange={onFormChange}
 						onSubmit={onSubmit}
 						onCancel={onCancel}
@@ -290,6 +332,8 @@ export function AdminStationEditor({
 					form={form}
 					stations={stations}
 					isSaving={isSaving}
+					lockedProvinceCode={lockedProvinceCode}
+					lockedCityMunicipalityCode={lockedCityMunicipalityCode}
 					onFormChange={onFormChange}
 					onSubmit={onSubmit}
 					onCancel={onCancel}

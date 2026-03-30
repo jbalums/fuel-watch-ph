@@ -57,6 +57,8 @@ async function fetchStations(): Promise<GasStation[]> {
       address: s.address,
       lat: s.lat,
       lng: s.lng,
+      provinceCode: s.province_code,
+      cityMunicipalityCode: s.city_municipality_code,
       prices,
       isVerified: s.is_verified,
       verifiedAt: s.verified_at,

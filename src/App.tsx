@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { SiteFooter } from "@/components/SiteFooter";
 import { AppShellLayout } from "@/components/AppShellLayout";
 import { AdminLayout } from "@/components/admin/AdminLayout";
+import { LguLayout } from "@/components/lgu/LguLayout";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import Index from "./pages/Index";
@@ -17,9 +18,18 @@ import AdminStationsPage from "./pages/AdminStationsPage";
 import AdminReportsPage from "./pages/AdminReportsPage";
 import AdminClaimsPage from "./pages/AdminClaimsPage";
 import AdminUsersPage from "./pages/AdminUsersPage";
+import AdminAccessRequestsPage from "./pages/AdminAccessRequestsPage";
+import AdminAccessRequestDetailPage from "./pages/AdminAccessRequestDetailPage";
+import AdminInvitesPage from "./pages/AdminInvitesPage";
+import AdminGeoBackfillPage from "./pages/AdminGeoBackfillPage";
 import Auth from "./pages/Auth";
 import AboutUs from "./pages/AboutUs";
+import AdminAccessRequestPage from "./pages/AdminAccessRequestPage";
+import AdminInviteRegistrationPage from "./pages/AdminInviteRegistrationPage";
 import ContactUs from "./pages/ContactUs";
+import LguPage from "./pages/LguPage";
+import LguStationsPage from "./pages/LguStationsPage";
+import LguReportsPage from "./pages/LguReportsPage";
 import Profile from "./pages/Profile";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import StationManagerDashboard from "./pages/StationManagerDashboard";
@@ -78,9 +88,44 @@ const App = () => (
 												path="users"
 												element={<AdminUsersPage />}
 											/>
+											<Route
+												path="access-requests"
+												element={<AdminAccessRequestsPage />}
+											/>
+											<Route
+												path="access-requests/:requestId"
+												element={<AdminAccessRequestDetailPage />}
+											/>
+											<Route
+												path="invites"
+												element={<AdminInvitesPage />}
+											/>
+											<Route
+												path="geo-backfill"
+												element={<AdminGeoBackfillPage />}
+											/>
+										</Route>
+										<Route path="/lgu" element={<LguLayout />}>
+											<Route index element={<LguPage />} />
+											<Route
+												path="stations"
+												element={<LguStationsPage />}
+											/>
+											<Route
+												path="reports"
+												element={<LguReportsPage />}
+											/>
 										</Route>
 										</Route>
 										<Route path="/auth" element={<Auth />} />
+										<Route
+											path="/admin-access-request"
+											element={<AdminAccessRequestPage />}
+										/>
+										<Route
+											path="/admin-invite/:token"
+											element={<AdminInviteRegistrationPage />}
+										/>
 										<Route
 											path="/about-us"
 											element={<AboutUs />}

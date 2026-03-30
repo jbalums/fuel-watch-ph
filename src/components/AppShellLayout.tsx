@@ -21,7 +21,8 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/contexts/AuthContext";
 import { useProfile } from "@/hooks/useProfile";
-import { useAdminRole } from "@/hooks/useAdminRole";
+import { useUserAccess } from "@/hooks/useUserAccess";
+import { getDashboardPathForAccessLevel } from "@/lib/access-control";
 import { LogIn } from "lucide-react";
 import logo from "@/assets/images/Icon.png";
 
@@ -58,10 +59,18 @@ function getUserNameFallback(email?: string | null) {
 export function AppShellLayout() {
 	const { user, signOut } = useAuth();
 	const { data: profile } = useProfile();
-	const { isAdmin } = useAdminRole();
+	const { accessLevel, isLoading: accessLoading } = useUserAccess();
 	const navigate = useNavigate();
 	const location = useLocation();
 	const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
+	const dashboardPath =
+		!accessLoading && accessLevel !== "user"
+			? getDashboardPathForAccessLevel(accessLevel)
+			: null;
+	const dashboardLabel =
+		accessLevel === "province_admin" || accessLevel === "city_admin"
+			? "LGU"
+			: "Admin";
 
 	const rawHeaderName =
 		profile?.displayName ||
@@ -197,7 +206,11 @@ export function AppShellLayout() {
 				<Outlet />
 			</main>
 
-			<BottomNav isAdmin={isAdmin} isAuthenticated={!!user} />
+			<BottomNav
+				dashboardPath={dashboardPath}
+				dashboardLabel={dashboardLabel}
+				isAuthenticated={!!user}
+			/>
 		</div>
 	);
 }

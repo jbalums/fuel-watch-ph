@@ -20,12 +20,6 @@ export function SiteFooter() {
 						About Us
 					</Link>
 					<Link
-						to="/contact-us"
-						className="font-bold dark:text-white transition-colors hover:text-foreground"
-					>
-						Contact Us
-					</Link>
-					<Link
 						to="/terms"
 						className="font-bold dark:text-white transition-colors hover:text-foreground"
 					>
@@ -36,6 +30,12 @@ export function SiteFooter() {
 						className="font-bold dark:text-white transition-colors hover:text-foreground"
 					>
 						Privacy Policy
+					</Link>
+					<Link
+						to="/contact-us"
+						className="font-bold dark:text-white transition-colors hover:text-foreground"
+					>
+						Contact Us
 					</Link>
 				</div>
 				<p className="text-xs text-muted-foreground mb-2">

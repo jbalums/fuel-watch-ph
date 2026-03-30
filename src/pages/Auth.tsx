@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useUserAccess } from "@/hooks/useUserAccess";
+import { getDashboardPathForAccessLevel } from "@/lib/access-control";
 import { motion } from "framer-motion";
 import { Mail, Lock, User, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
@@ -10,6 +12,7 @@ export default function Auth() {
 	const navigate = useNavigate();
 	const location = useLocation();
 	const { user } = useAuth();
+	const { accessLevel, isLoading: accessLoading } = useUserAccess();
 	const [isSignUp, setIsSignUp] = useState(false);
 	const [isRecoveryMode, setIsRecoveryMode] = useState(false);
 	const [email, setEmail] = useState("");
@@ -47,10 +50,12 @@ export default function Auth() {
 	}, [hasRecoveryIntent]);
 
 	useEffect(() => {
-		if (user && !isRecoveryMode) {
-			navigate("/", { replace: true });
+		if (user && !isRecoveryMode && !accessLoading) {
+			navigate(getDashboardPathForAccessLevel(accessLevel), {
+				replace: true,
+			});
 		}
-	}, [user, isRecoveryMode, navigate]);
+	}, [accessLevel, accessLoading, user, isRecoveryMode, navigate]);
 
 	useEffect(() => {
 		const {
@@ -425,6 +430,17 @@ export default function Auth() {
 								className="font-medium text-accent hover:underline"
 							>
 								{isSignUp ? "Sign in" : "Sign up"}
+							</button>
+						</p>
+
+						<p className="mt-2 text-center text-sm text-muted-foreground">
+							LGU official requesting access?{" "}
+							<button
+								type="button"
+								onClick={() => navigate("/admin-access-request")}
+								className="font-medium text-accent hover:underline"
+							>
+								Request official admin access
 							</button>
 						</p>
 					</>

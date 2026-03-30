@@ -13,6 +13,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { useStations } from "@/hooks/useStations";
+import { useGeoReferences } from "@/hooks/useGeoReferences";
 import {
   FUEL_REPORT_FILE_INPUT_ACCEPT,
   removeFuelReportPhoto,
@@ -27,6 +28,7 @@ import {
   fuelTypes,
   type FuelPriceFormMap,
 } from "@/lib/fuel-prices";
+import { GeoScopeFields } from "@/components/GeoScopeFields";
 
 const statuses: StationStatus[] = ["Available", "Low", "Out"];
 
@@ -38,6 +40,7 @@ type UploadedPhoto = {
 export function ReportForm() {
   const { user } = useAuth();
   const { data: stations = [] } = useStations();
+  const { provinces, citiesByProvince } = useGeoReferences();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [stationName, setStationName] = useState("");
   const [prices, setPrices] = useState<FuelPriceFormMap>(
@@ -47,6 +50,8 @@ export function ReportForm() {
   const [selectedStationId, setSelectedStationId] = useState<string | null>(
     null,
   );
+  const [provinceCode, setProvinceCode] = useState("");
+  const [cityMunicipalityCode, setCityMunicipalityCode] = useState("");
   const [reportedAddress, setReportedAddress] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
@@ -88,10 +93,22 @@ export function ReportForm() {
     setPrices(createEmptyFuelPriceFormMap());
     setStatus("Available");
     setSelectedStationId(null);
+    setProvinceCode("");
+    setCityMunicipalityCode("");
     setReportedAddress(null);
     setCoords(null);
     resetPhotoState();
   };
+
+  const selectedStation = selectedStationId
+    ? stations.find((station) => station.id === selectedStationId) ?? null
+    : null;
+  const selectedStationHasScope = Boolean(
+    selectedStation?.provinceCode && selectedStation?.cityMunicipalityCode,
+  );
+  const availableCities = provinceCode
+    ? citiesByProvince.get(provinceCode) ?? []
+    : [];
 
   const uploadSelectedPhoto = async (file: File) => {
     if (!user) {
@@ -182,6 +199,16 @@ export function ReportForm() {
       return;
     }
 
+    if (!provinceCode.trim()) {
+      toast.error("Select the report province");
+      return;
+    }
+
+    if (!cityMunicipalityCode.trim()) {
+      toast.error("Select the report city or municipality");
+      return;
+    }
+
     let normalizedPrices;
     try {
       normalizedPrices = parseFuelPriceForm(prices);
@@ -219,6 +246,8 @@ export function ReportForm() {
       prices: normalizedPrices,
       status,
       station_id: selectedStationId,
+      province_code: provinceCode.trim(),
+      city_municipality_code: cityMunicipalityCode.trim(),
       reported_address:
         reportedAddress ??
         `Pinned location (${coords.lat.toFixed(6)}, ${coords.lng.toFixed(6)})`,
@@ -302,6 +331,8 @@ export function ReportForm() {
             setSelectedStationId(station.id);
             setStationName(station.name);
             setReportedAddress(station.address);
+            setProvinceCode(station.provinceCode ?? "");
+            setCityMunicipalityCode(station.cityMunicipalityCode ?? "");
             setCoords({
               lat: station.lat,
               lng: station.lng,
@@ -321,12 +352,41 @@ export function ReportForm() {
           onClearSelection={() => {
             setCoords(null);
             setReportedAddress(null);
+            setProvinceCode("");
+            setCityMunicipalityCode("");
             setStationName((current) =>
               selectedStationId ? "" : current,
             );
             setSelectedStationId(null);
           }}
         />
+      </div>
+
+      <div className="flex flex-col gap-1.5">
+        <label className="text-label text-muted-foreground">
+          Geographic Scope
+        </label>
+        <GeoScopeFields
+          provinces={provinces}
+          cities={availableCities}
+          provinceCode={provinceCode}
+          cityMunicipalityCode={cityMunicipalityCode}
+          requestedRole="city_admin"
+          provinceDisabled={selectedStationHasScope}
+          cityDisabled={selectedStationHasScope}
+          onProvinceChange={(nextProvinceCode) => {
+            setProvinceCode(nextProvinceCode);
+            setCityMunicipalityCode("");
+          }}
+          onCityChange={setCityMunicipalityCode}
+        />
+        <p className="text-xs text-muted-foreground">
+          {selectedStationHasScope
+            ? "This scope is inherited from the selected station."
+            : selectedStationId
+              ? "This station still needs a province and city assignment for approval."
+              : "Pick the province and city or municipality for this report."}
+        </p>
       </div>
 
       {/* Price */}
