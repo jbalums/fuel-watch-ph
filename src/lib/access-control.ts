@@ -6,7 +6,8 @@ export type ManagedAccessLevel =
 	| "admin"
 	| "super_admin"
 	| "province_admin"
-	| "city_admin";
+	| "city_admin"
+	| "lgu_staff";
 
 export function getManagedAccessLevelFromRoles(
 	roles: AppRole[],
@@ -27,6 +28,10 @@ export function getManagedAccessLevelFromRoles(
 		return "city_admin";
 	}
 
+	if (roles.includes("lgu_staff")) {
+		return "lgu_staff";
+	}
+
 	return "user";
 }
 
@@ -40,7 +45,8 @@ export function getDashboardPathForAccessLevel(accessLevel: ManagedAccessLevel) 
 
 	if (
 		accessLevel === "province_admin" ||
-		accessLevel === "city_admin"
+		accessLevel === "city_admin" ||
+		accessLevel === "lgu_staff"
 	) {
 		return "/lgu";
 	}
@@ -58,6 +64,8 @@ export function formatAccessLevelLabel(accessLevel: ManagedAccessLevel) {
 			return "Province Admin";
 		case "city_admin":
 			return "City Admin";
+		case "lgu_staff":
+			return "LGU Staff";
 		default:
 			return "User";
 	}

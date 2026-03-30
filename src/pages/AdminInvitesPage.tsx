@@ -11,32 +11,39 @@ export default function AdminInvitesPage() {
 	const { data: invites = [], isLoading, error } =
 		useAdminInvites(isSuperAdmin);
 	const [searchQuery, setSearchQuery] = useState("");
+	const [roleFilter, setRoleFilter] = useState<"all" | "official" | "staff">(
+		"all",
+	);
 
 	const filteredInvites = useMemo(() => {
 		const normalizedQuery = searchQuery.trim().toLowerCase();
 
-		if (!normalizedQuery) {
-			return invites;
-		}
-
 		return invites.filter((invite) => {
-			return (
+			const matchesRole =
+				roleFilter === "all"
+					? true
+					: roleFilter === "staff"
+						? invite.role === "lgu_staff"
+						: invite.role !== "lgu_staff";
+			const matchesQuery =
+				!normalizedQuery ||
 				invite.email.toLowerCase().includes(normalizedQuery) ||
 				invite.fullName?.toLowerCase().includes(normalizedQuery) ||
 				invite.provinceName.toLowerCase().includes(normalizedQuery) ||
 				invite.cityMunicipalityName
 					?.toLowerCase()
-					.includes(normalizedQuery)
-			);
+					.includes(normalizedQuery);
+
+			return matchesRole && matchesQuery;
 		});
-	}, [invites, searchQuery]);
+	}, [invites, roleFilter, searchQuery]);
 
 	const {
 		currentPage,
 		totalPages,
 		paginatedItems: paginatedInvites,
 		setCurrentPage,
-	} = usePaginatedList(filteredInvites, searchQuery);
+	} = usePaginatedList(filteredInvites, `${searchQuery}::${roleFilter}`);
 
 	if (accessLoading) {
 		return (
@@ -69,7 +76,7 @@ export default function AdminInvitesPage() {
 			<div className="mb-4 flex flex-col gap-3 border-b-2 pb-4 md:flex-row md:items-center md:justify-between">
 				<div>
 					<h3 className="text-xl font-semibold text-foreground">
-						Official Admin Invites
+						LGU Invites
 					</h3>
 					<p className="text-sm text-muted-foreground">
 						Track issued LGU invites, expiry dates, and usage status.
@@ -85,6 +92,30 @@ export default function AdminInvitesPage() {
 						className="w-full rounded-xl bg-surface-alt py-2.5 pl-9 pr-3 text-sm text-foreground outline-none focus:ring-2 focus:ring-primary/20 md:w-72"
 					/>
 				</div>
+			</div>
+
+			<div className="mb-4 flex flex-wrap gap-2">
+				{[
+					{ value: "all", label: "All" },
+					{ value: "official", label: "Official Admins" },
+					{ value: "staff", label: "LGU Staff" },
+				].map((filter) => (
+					<button
+						key={filter.value}
+						onClick={() =>
+							setRoleFilter(
+								filter.value as "all" | "official" | "staff",
+							)
+						}
+						className={`rounded-full px-4 py-1.5 text-sm font-medium ${
+							roleFilter === filter.value
+								? "bg-accent text-accent-foreground"
+								: "bg-surface-alt text-muted-foreground hover:text-foreground"
+						}`}
+					>
+						{filter.label}
+					</button>
+				))}
 			</div>
 
 			<div className="rounded-xl bg-surface-alt p-4 text-xs text-muted-foreground">

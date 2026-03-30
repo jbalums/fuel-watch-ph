@@ -64,7 +64,12 @@ async function fetchStations(): Promise<GasStation[]> {
       isLguVerified: s.is_lgu_verified,
       lguVerifiedAt: s.lgu_verified_at,
       lguVerifiedBy: s.lgu_verified_by,
-      lguVerifiedRole: s.lgu_verified_role as "province_admin" | "city_admin" | null,
+      lguVerifiedRole:
+        s.lgu_verified_role as
+          | "province_admin"
+          | "city_admin"
+          | "lgu_staff"
+          | null,
       verifiedAt: s.verified_at,
       managerUserId: s.manager_user_id,
       status: s.status as StationStatus,

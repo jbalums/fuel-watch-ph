@@ -20,7 +20,13 @@ function formatScopeLabel(
 
 export function LguLayout() {
 	const { user } = useAuth();
-	const { isLguAdmin, accessLevel, isLoading: accessLoading } =
+	const {
+		isLguAdmin,
+		isProvinceAdmin,
+		isCityAdmin,
+		accessLevel,
+		isLoading: accessLoading,
+	} =
 		useUserAccess();
 	const { data: scope, isLoading: scopeLoading } = useCurrentUserScope(
 		isLguAdmin,
@@ -44,9 +50,8 @@ export function LguLayout() {
 							LGU access required
 						</h2>
 						<p className="mt-1 text-sm text-muted-foreground">
-							This dashboard is only available to official city
-							and province admins with an assigned geographic
-							scope.
+							This dashboard is only available to official LGU
+							users with an assigned geographic scope.
 						</p>
 					</div>
 				</div>
@@ -58,6 +63,9 @@ export function LguLayout() {
 		{ label: "Overview", to: "/lgu", end: true },
 		{ label: "Stations", to: "/lgu/stations" },
 		{ label: "Reports", to: "/lgu/reports" },
+		...((isProvinceAdmin || isCityAdmin)
+			? [{ label: "Team", to: "/lgu/team" }]
+			: []),
 	];
 	const scopeLabel = formatScopeLabel(
 		scope.provinceName,
@@ -65,7 +73,11 @@ export function LguLayout() {
 		scope.scopeType,
 	);
 	const roleLabel =
-		accessLevel === "province_admin" ? "Province Admin" : "City Admin";
+		accessLevel === "province_admin"
+			? "Province Admin"
+			: accessLevel === "city_admin"
+				? "City Admin"
+				: "LGU Staff";
 
 	return (
 		<motion.div

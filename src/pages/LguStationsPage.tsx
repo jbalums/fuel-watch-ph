@@ -46,7 +46,7 @@ export default function LguStationsPage() {
 	const queryClient = useQueryClient();
 	const isMobile = useIsMobile();
 	const { user } = useAuth();
-	const { isCityAdmin, accessLevel } = useUserAccess();
+	const { accessLevel } = useUserAccess();
 	const { data: scope } = useCurrentUserScope();
 	const { data: stations = [], isLoading: stationsLoading } =
 		useScopedAdminStations();
@@ -411,7 +411,9 @@ export default function LguStationsPage() {
 				isSaving={saveStation.isPending}
 				lockedProvinceCode={scope?.provinceCode ?? null}
 				lockedCityMunicipalityCode={
-					isCityAdmin ? scope?.cityMunicipalityCode ?? null : null
+					scope?.scopeType === "city"
+						? scope.cityMunicipalityCode ?? null
+						: null
 				}
 				onOpenChange={(nextOpen) => {
 					if (!nextOpen) {

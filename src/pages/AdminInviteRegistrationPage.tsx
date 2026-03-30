@@ -60,12 +60,13 @@ export default function AdminInviteRegistrationPage() {
 
 			localStorage.removeItem(pendingStorageKey);
 			setInviteComplete(true);
-			toast.success("Official admin access activated");
+			toast.success("LGU access activated");
 			navigate(
 				getDashboardPathForAccessLevel(
 					data as
 						| "province_admin"
 						| "city_admin"
+						| "lgu_staff"
 						| "admin"
 						| "super_admin"
 						| "user",

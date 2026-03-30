@@ -132,7 +132,7 @@ export default function AdminPage() {
 					{
 						label: "Invites",
 						description:
-							"Track issued city and province admin invites and usage status.",
+							"Track issued LGU admin and staff invites with usage status.",
 						path: "/admin/invites",
 					},
 					{

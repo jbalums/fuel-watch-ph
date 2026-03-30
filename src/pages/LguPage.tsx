@@ -5,6 +5,7 @@ import {
 	useScopedDashboardStats,
 } from "@/components/admin/admin-shared";
 import { useCurrentUserScope } from "@/hooks/useCurrentUserScope";
+import { useUserAccess } from "@/hooks/useUserAccess";
 
 function formatScopeLabel(
 	provinceName: string,
@@ -20,6 +21,7 @@ function formatScopeLabel(
 
 export default function LguPage() {
 	const navigate = useNavigate();
+	const { isProvinceAdmin, isCityAdmin } = useUserAccess();
 	const { data: stats, isLoading: statsLoading } = useScopedDashboardStats();
 	const { data: scope, isLoading: scopeLoading } = useCurrentUserScope();
 
@@ -67,6 +69,16 @@ export default function LguPage() {
 				"Approve or reject community fuel reports inside your assigned area.",
 			path: "/lgu/reports",
 		},
+		...((isProvinceAdmin || isCityAdmin)
+			? [
+					{
+						label: "Team",
+						description:
+							"Invite and manage LGU staff members inside your assigned scope.",
+						path: "/lgu/team",
+					},
+				]
+			: []),
 	];
 
 	return (

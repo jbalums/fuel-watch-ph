@@ -89,7 +89,11 @@ async function fetchManagedStation(userId: string): Promise<GasStation | null> {
     lguVerifiedAt: station.lgu_verified_at,
     lguVerifiedBy: station.lgu_verified_by,
     lguVerifiedRole:
-      station.lgu_verified_role as "province_admin" | "city_admin" | null,
+      station.lgu_verified_role as
+        | "province_admin"
+        | "city_admin"
+        | "lgu_staff"
+        | null,
     verifiedAt: station.verified_at,
     managerUserId: station.manager_user_id,
     status: station.status as StationStatus,

@@ -68,7 +68,9 @@ export function AppShellLayout() {
 			? getDashboardPathForAccessLevel(accessLevel)
 			: null;
 	const dashboardLabel =
-		accessLevel === "province_admin" || accessLevel === "city_admin"
+		accessLevel === "province_admin" ||
+		accessLevel === "city_admin" ||
+		accessLevel === "lgu_staff"
 			? "LGU"
 			: "Admin";
 

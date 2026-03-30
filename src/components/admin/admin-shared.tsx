@@ -105,6 +105,7 @@ function mapFuelReport(report: FuelReportRow): FuelReport {
 			(report.lgu_verified_role as
 				| "province_admin"
 				| "city_admin"
+				| "lgu_staff"
 				| null) ?? null,
 		appliedStationId: report.applied_station_id,
 	};
@@ -337,7 +338,9 @@ export function buildStationLguVerificationPayload(
 	userId: string | null | undefined,
 ) {
 	const isLguRole =
-		accessLevel === "city_admin" || accessLevel === "province_admin";
+		accessLevel === "city_admin" ||
+		accessLevel === "province_admin" ||
+		accessLevel === "lgu_staff";
 
 	return {
 		is_lgu_verified: isLguRole,

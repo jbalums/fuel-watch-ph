@@ -602,6 +602,18 @@ export type Database = {
           invite_token: string
         }[]
       }
+      issue_lgu_staff_invite: {
+        Args: {
+          _email: string
+          _expires_in_days?: number
+          _full_name?: string
+        }
+        Returns: {
+          expires_at: string
+          invite_id: string
+          invite_token: string
+        }[]
+      }
       list_admin_access_requests: {
         Args: Record<PropertyKey, never>
         Returns: {
@@ -665,6 +677,43 @@ export type Database = {
           user_id: string
         }[]
       }
+      list_lgu_scope_members: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          city_municipality_code: string | null
+          city_municipality_name: string | null
+          created_at: string
+          display_name: string | null
+          email: string
+          invited_by: string | null
+          invited_by_name: string | null
+          province_code: string
+          province_name: string
+          role: Database["public"]["Enums"]["app_role"]
+          scope_type: string
+          user_id: string
+          username: string | null
+        }[]
+      }
+      list_lgu_staff_invites: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          city_municipality_code: string | null
+          city_municipality_name: string | null
+          created_at: string
+          created_by: string
+          created_by_name: string | null
+          email: string
+          expires_at: string
+          full_name: string | null
+          id: string
+          province_code: string
+          province_name: string
+          used_at: string | null
+          used_by: string | null
+          used_by_name: string | null
+        }[]
+      }
       reject_fuel_report: {
         Args: {
           _report_id: string
@@ -681,6 +730,12 @@ export type Database = {
       reject_station_claim: {
         Args: {
           _claim_id: string
+        }
+        Returns: string
+      }
+      revoke_lgu_staff_access: {
+        Args: {
+          _target_user_id: string
         }
         Returns: string
       }
@@ -740,6 +795,7 @@ export type Database = {
         | "super_admin"
         | "province_admin"
         | "city_admin"
+        | "lgu_staff"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -874,6 +930,7 @@ export const Constants = {
         "super_admin",
         "province_admin",
         "city_admin",
+        "lgu_staff",
       ],
     },
   },

@@ -6,6 +6,7 @@ export type OfficialAdminRole = Extract<
 	Enums<"app_role">,
 	"province_admin" | "city_admin"
 >;
+export type AdminInviteRole = OfficialAdminRole | "lgu_staff";
 
 export type AdminAccessRequestRecord = {
 	id: string;
@@ -34,7 +35,7 @@ export type AdminInviteRecord = {
 	accessRequestId: string | null;
 	email: string;
 	fullName: string | null;
-	role: OfficialAdminRole;
+	role: AdminInviteRole;
 	provinceCode: string;
 	provinceName: string;
 	cityMunicipalityCode: string | null;
@@ -52,12 +53,45 @@ export type ValidatedAdminInvite = {
 	inviteId: string;
 	email: string;
 	fullName: string | null;
-	role: OfficialAdminRole;
+	role: AdminInviteRole;
 	provinceCode: string;
 	provinceName: string;
 	cityMunicipalityCode: string | null;
 	cityMunicipalityName: string | null;
 	expiresAt: string;
+};
+
+export type LguScopeMemberRecord = {
+	userId: string;
+	email: string;
+	displayName: string | null;
+	username: string | null;
+	role: "lgu_staff";
+	scopeType: "province" | "city";
+	provinceCode: string;
+	provinceName: string;
+	cityMunicipalityCode: string | null;
+	cityMunicipalityName: string | null;
+	invitedBy: string | null;
+	invitedByName: string | null;
+	createdAt: string;
+};
+
+export type LguStaffInviteRecord = {
+	id: string;
+	email: string;
+	fullName: string | null;
+	provinceCode: string;
+	provinceName: string;
+	cityMunicipalityCode: string | null;
+	cityMunicipalityName: string | null;
+	createdBy: string;
+	createdByName: string | null;
+	expiresAt: string;
+	usedAt: string | null;
+	usedBy: string | null;
+	usedByName: string | null;
+	createdAt: string;
 };
 
 export function useAdminAccessRequests(enabled = true) {
@@ -160,7 +194,7 @@ export function useAdminInvites(enabled = true) {
 				accessRequestId: row.access_request_id,
 				email: row.email,
 				fullName: row.full_name,
-				role: row.role as OfficialAdminRole,
+				role: row.role as AdminInviteRole,
 				provinceCode: row.province_code,
 				provinceName: row.province_name,
 				cityMunicipalityCode: row.city_municipality_code,
@@ -200,13 +234,74 @@ export function useValidatedAdminInvite(token: string | undefined) {
 				inviteId: row.invite_id,
 				email: row.email,
 				fullName: row.full_name,
-				role: row.role as OfficialAdminRole,
+				role: row.role as AdminInviteRole,
 				provinceCode: row.province_code,
 				provinceName: row.province_name,
 				cityMunicipalityCode: row.city_municipality_code,
 				cityMunicipalityName: row.city_municipality_name,
 				expiresAt: row.expires_at,
 			};
+		},
+	});
+}
+
+export function useLguScopeMembers(enabled = true) {
+	return useQuery({
+		queryKey: ["lgu", "scope_members"],
+		enabled,
+		queryFn: async (): Promise<LguScopeMemberRecord[]> => {
+			const { data, error } = await supabase.rpc("list_lgu_scope_members");
+
+			if (error) {
+				throw error;
+			}
+
+			return (data ?? []).map((row) => ({
+				userId: row.user_id,
+				email: row.email,
+				displayName: row.display_name,
+				username: row.username,
+				role: "lgu_staff",
+				scopeType: row.scope_type as "province" | "city",
+				provinceCode: row.province_code,
+				provinceName: row.province_name,
+				cityMunicipalityCode: row.city_municipality_code,
+				cityMunicipalityName: row.city_municipality_name,
+				invitedBy: row.invited_by,
+				invitedByName: row.invited_by_name,
+				createdAt: row.created_at,
+			}));
+		},
+	});
+}
+
+export function useLguStaffInvites(enabled = true) {
+	return useQuery({
+		queryKey: ["lgu", "staff_invites"],
+		enabled,
+		queryFn: async (): Promise<LguStaffInviteRecord[]> => {
+			const { data, error } = await supabase.rpc("list_lgu_staff_invites");
+
+			if (error) {
+				throw error;
+			}
+
+			return (data ?? []).map((row) => ({
+				id: row.id,
+				email: row.email,
+				fullName: row.full_name,
+				provinceCode: row.province_code,
+				provinceName: row.province_name,
+				cityMunicipalityCode: row.city_municipality_code,
+				cityMunicipalityName: row.city_municipality_name,
+				createdBy: row.created_by,
+				createdByName: row.created_by_name,
+				expiresAt: row.expires_at,
+				usedAt: row.used_at,
+				usedBy: row.used_by,
+				usedByName: row.used_by_name,
+				createdAt: row.created_at,
+			}));
 		},
 	});
 }

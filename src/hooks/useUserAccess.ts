@@ -17,7 +17,9 @@ interface UserAccessResult {
 	isSuperAdmin: boolean;
 	isProvinceAdmin: boolean;
 	isCityAdmin: boolean;
+	isLguStaff: boolean;
 	isLguAdmin: boolean;
+	isLguOperator: boolean;
 }
 
 export function useUserAccess() {
@@ -41,7 +43,9 @@ export function useUserAccess() {
 			const isLegacyAdmin = isSuperAdmin || roles.includes("admin");
 			const isProvinceAdmin = roles.includes("province_admin");
 			const isCityAdmin = roles.includes("city_admin");
-			const isLguAdmin = isProvinceAdmin || isCityAdmin;
+			const isLguStaff = roles.includes("lgu_staff");
+			const isLguOperator =
+				isProvinceAdmin || isCityAdmin || isLguStaff;
 			const accessLevel = getManagedAccessLevelFromRoles(roles);
 
 			return {
@@ -52,7 +56,9 @@ export function useUserAccess() {
 				isSuperAdmin,
 				isProvinceAdmin,
 				isCityAdmin,
-				isLguAdmin,
+				isLguStaff,
+				isLguAdmin: isLguOperator,
+				isLguOperator,
 			};
 		},
 	});
@@ -65,7 +71,9 @@ export function useUserAccess() {
 		isSuperAdmin: data?.isSuperAdmin ?? false,
 		isProvinceAdmin: data?.isProvinceAdmin ?? false,
 		isCityAdmin: data?.isCityAdmin ?? false,
+		isLguStaff: data?.isLguStaff ?? false,
 		isLguAdmin: data?.isLguAdmin ?? false,
+		isLguOperator: data?.isLguOperator ?? false,
 		isLoading,
 	};
 }

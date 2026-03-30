@@ -16,7 +16,7 @@ export interface GasStation {
   isLguVerified: boolean;
   lguVerifiedAt: string | null;
   lguVerifiedBy: string | null;
-  lguVerifiedRole: "province_admin" | "city_admin" | null;
+  lguVerifiedRole: "province_admin" | "city_admin" | "lgu_staff" | null;
   verifiedAt: string | null;
   managerUserId: string | null;
   status: StationStatus;
@@ -68,7 +68,7 @@ export interface FuelReport {
   isLguVerified: boolean;
   lguVerifiedAt: string | null;
   lguVerifiedBy: string | null;
-  lguVerifiedRole: "province_admin" | "city_admin" | null;
+  lguVerifiedRole: "province_admin" | "city_admin" | "lgu_staff" | null;
   appliedStationId: string | null;
 }
 

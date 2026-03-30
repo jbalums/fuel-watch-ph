@@ -31,6 +31,7 @@ import ContactUs from "./pages/ContactUs";
 import LguPage from "./pages/LguPage";
 import LguStationsPage from "./pages/LguStationsPage";
 import LguReportsPage from "./pages/LguReportsPage";
+import LguTeamPage from "./pages/LguTeamPage";
 import Profile from "./pages/Profile";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import StationManagerDashboard from "./pages/StationManagerDashboard";
@@ -119,6 +120,10 @@ const App = () => (
 											<Route
 												path="reports"
 												element={<LguReportsPage />}
+											/>
+											<Route
+												path="team"
+												element={<LguTeamPage />}
 											/>
 										</Route>
 										</Route>
