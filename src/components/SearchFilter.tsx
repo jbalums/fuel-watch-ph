@@ -1,6 +1,12 @@
+import { useEffect, useState } from "react";
 import { FilterFuelType, SortOption, StatusFilter } from "@/types/station";
 import { cn } from "@/lib/utils";
-import { ArrowDownUp } from "lucide-react";
+import { ArrowDownUp, ChevronDown, ChevronUp, MapPinned } from "lucide-react";
+import type {
+	GeoCityMunicipality,
+	GeoProvince,
+} from "@/hooks/useGeoReferences";
+import { GeoScopeFields } from "@/components/GeoScopeFields";
 
 interface SearchFilterProps {
 	searchQuery: string;
@@ -11,6 +17,12 @@ interface SearchFilterProps {
 	onStatusFilterChange: (status: StatusFilter) => void;
 	sortBy: SortOption;
 	onSortChange: (s: SortOption) => void;
+	provinces?: GeoProvince[];
+	cities?: GeoCityMunicipality[];
+	provinceCode?: string;
+	cityMunicipalityCode?: string;
+	onProvinceChange?: (provinceCode: string) => void;
+	onCityChange?: (cityCode: string) => void;
 }
 
 const fuelTypes: FilterFuelType[] = ["All", "Unleaded", "Premium", "Diesel"];
@@ -29,19 +41,80 @@ export function SearchFilter({
 	onStatusFilterChange,
 	sortBy,
 	onSortChange,
+	provinces,
+	cities,
+	provinceCode = "",
+	cityMunicipalityCode = "",
+	onProvinceChange,
+	onCityChange,
 }: SearchFilterProps) {
 	const priceSortEnabled = fuelFilter !== "All";
+	const showGeoFilters =
+		!!provinces && !!cities && !!onProvinceChange && !!onCityChange;
+	const hasActiveGeoFilter = !!provinceCode || !!cityMunicipalityCode;
+	const [geoFiltersOpen, setGeoFiltersOpen] = useState(hasActiveGeoFilter);
+
+	useEffect(() => {
+		if (hasActiveGeoFilter) {
+			setGeoFiltersOpen(true);
+		}
+	}, [hasActiveGeoFilter]);
 
 	return (
 		<div className="flex flex-col gap-3">
-			{/* Search */}
-			<input
-				type="text"
-				placeholder="Search stations..."
-				value={searchQuery}
-				onChange={(e) => onSearchChange(e.target.value)}
-				className="w-full rounded-sm bg-surface-alt px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:bg-card focus:ring-2 focus:ring-primary/20 sovereign-ease transition-all border"
-			/>
+			<div className="flex items-center gap-2">
+				<input
+					type="text"
+					placeholder="Search stations..."
+					value={searchQuery}
+					onChange={(e) => onSearchChange(e.target.value)}
+					className="min-w-0 flex-1 rounded-sm border bg-surface-alt px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:bg-card focus:ring-2 focus:ring-primary/20 sovereign-ease transition-all"
+				/>
+
+				{showGeoFilters ? (
+					<button
+						type="button"
+						onClick={() => setGeoFiltersOpen((current) => !current)}
+						className={cn(
+							"inline-flex h-[46px] shrink-0 items-center gap-1.5 rounded-lg border px-3 text-xs font-medium sovereign-ease transition-colors",
+							hasActiveGeoFilter || geoFiltersOpen
+								? "border-accent/30 bg-accent/10 text-accent"
+								: "border-border bg-surface-alt text-muted-foreground hover:text-foreground",
+						)}
+					>
+						<MapPinned className="h-4 w-4" />
+						<span className="hidden sm:inline">Location</span>
+						{hasActiveGeoFilter ? (
+							<span className="h-1.5 w-1.5 rounded-full bg-current" />
+						) : null}
+						{geoFiltersOpen ? (
+							<ChevronUp className="h-3.5 w-3.5" />
+						) : (
+							<ChevronDown className="h-3.5 w-3.5" />
+						)}
+					</button>
+				) : null}
+			</div>
+
+			{showGeoFilters ? (
+				<div className="flex flex-col gap-2">
+					{geoFiltersOpen ? (
+						<div className="rounded-xl border border-border bg-card p-3">
+							<GeoScopeFields
+								provinces={provinces}
+								cities={cities}
+								provinceCode={provinceCode}
+								cityMunicipalityCode={cityMunicipalityCode}
+								provincePlaceholder="All Provinces"
+								cityPlaceholder="All Cities / Municipalities"
+								cityRequired={false}
+								onProvinceChange={onProvinceChange}
+								onCityChange={onCityChange}
+							/>
+						</div>
+					) : null}
+				</div>
+			) : null}
 
 			<div className="flex items-center gap-2 overflow-x-auto pb-1 flex-wrap justify-center">
 				{/* Fuel type chips */}
