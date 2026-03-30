@@ -8,6 +8,7 @@ import { usePaginatedList } from "@/hooks/usePaginatedList";
 import { useUserAccess } from "@/hooks/useUserAccess";
 import { supabase } from "@/integrations/supabase/client";
 import { AdminListPagination } from "@/components/admin/AdminListPagination";
+import { detectGeoScopeFromAddress } from "@/lib/geo-detection";
 
 type BackfillSelection = {
 	provinceCode: string;
@@ -215,6 +216,7 @@ export default function AdminGeoBackfillPage() {
 
 	const renderGeoEditor = (
 		id: string,
+		address: string,
 		selectionMap: Record<string, BackfillSelection>,
 		setSelectionMap: Dispatch<
 			SetStateAction<Record<string, BackfillSelection>>
@@ -257,21 +259,63 @@ export default function AdminGeoBackfillPage() {
 						}))
 					}
 				/>
-				<button
-					type="button"
-					onClick={() => {
-						if (!selection.provinceCode || !selection.cityMunicipalityCode) {
-							toast.error("Select both province and city");
-							return;
-						}
+				<div className="mt-3 flex flex-col gap-2 sm:flex-row">
+					<button
+						type="button"
+						onClick={() => {
+							const detectedScope = detectGeoScopeFromAddress({
+								address,
+								provinces,
+								cities,
+							});
 
-						onSave(selection);
-					}}
-					disabled={isSaving || geoLoading}
-					className="mt-3 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary-hover disabled:opacity-60"
-				>
-					Save scope
-				</button>
+							if (!detectedScope) {
+								toast.error(
+									"Could not detect province or city from this station address",
+								);
+								return;
+							}
+
+							setSelectionMap((current) => ({
+								...current,
+								[id]: detectedScope,
+							}));
+
+							if (
+								detectedScope.provinceCode &&
+								detectedScope.cityMunicipalityCode
+							) {
+								toast.success(
+									"Province and city were auto-detected from the address",
+								);
+								return;
+							}
+
+							toast.message(
+								"Province was detected. Please confirm the city or municipality.",
+							);
+						}}
+						disabled={isSaving || geoLoading}
+						className="rounded-lg border border-border bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted disabled:opacity-60"
+					>
+						Auto detect
+					</button>
+					<button
+						type="button"
+						onClick={() => {
+							if (!selection.provinceCode || !selection.cityMunicipalityCode) {
+								toast.error("Select both province and city");
+								return;
+							}
+
+							onSave(selection);
+						}}
+						disabled={isSaving || geoLoading}
+						className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary-hover disabled:opacity-60"
+					>
+						Save scope
+					</button>
+				</div>
 			</div>
 		);
 	};
@@ -319,6 +363,7 @@ export default function AdminGeoBackfillPage() {
 								</p>
 								{renderGeoEditor(
 									station.id,
+									station.address,
 									stationSelections,
 									setStationSelections,
 									(selection) =>
@@ -371,6 +416,7 @@ export default function AdminGeoBackfillPage() {
 								</p>
 								{renderGeoEditor(
 									report.id,
+									report.reportedAddress ?? "",
 									reportSelections,
 									setReportSelections,
 									(selection) =>
