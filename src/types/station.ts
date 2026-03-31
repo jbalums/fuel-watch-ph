@@ -1,4 +1,8 @@
-export type FuelType = "Unleaded" | "Premium" | "Diesel";
+export type FuelType =
+  | "Unleaded"
+  | "Premium"
+  | "Diesel"
+  | "Premium Diesel";
 export type StationStatus = "Available" | "Low" | "Out";
 export type FuelReportReviewStatus = "pending" | "approved" | "rejected";
 export type StationClaimReviewStatus = "pending" | "approved" | "rejected";

@@ -16,9 +16,9 @@ import {
 } from "@/components/ui/sheet";
 import { Loader2 } from "lucide-react";
 import { useGeoReferences } from "@/hooks/useGeoReferences";
+import { fuelTypes } from "@/lib/fuel-prices";
 import type { FuelType, StationStatus } from "@/types/station";
 import type { GasStationRow, StationFormState } from "./admin-shared";
-import { fuelTypes } from "./admin-shared";
 
 interface AdminStationEditorProps {
 	open: boolean;
@@ -175,9 +175,11 @@ function EditorForm({
 						}
 						className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
 					>
-						<option value="Diesel">Diesel</option>
-						<option value="Unleaded">Unleaded</option>
-						<option value="Premium">Premium</option>
+						{fuelTypes.map((fuelType) => (
+							<option key={fuelType} value={fuelType}>
+								{fuelType}
+							</option>
+						))}
 					</select>
 					<select
 						value={form.status}
@@ -208,7 +210,7 @@ function EditorForm({
 								Primary: <b>{form.fuelType}</b>
 							</span>
 						</div>
-						<div className="grid gap-3 md:grid-cols-3">
+						<div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
 							{fuelTypes.map((fuelType) => (
 								<div
 									key={fuelType}

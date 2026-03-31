@@ -1,16 +1,13 @@
 import { motion } from "framer-motion";
 import { FuelType, PublicStationSummary } from "@/types/station";
+import {
+	fuelTypes,
+	fuelTypeTextColorClassNames,
+} from "@/lib/fuel-prices";
 
 interface HeroStatusProps {
 	summary: PublicStationSummary | null;
 }
-
-const fuelTypes: FuelType[] = ["Unleaded", "Premium", "Diesel"];
-const fuelTypesColors: string[] = [
-	"text-green-600",
-	"text-red-600",
-	"text-amber-600",
-];
 
 function formatAveragePrice(
 	summary: PublicStationSummary | null,
@@ -44,11 +41,11 @@ export function HeroStatus({ summary }: HeroStatusProps) {
 				⚠️ Fuel prices are crowd-sourced and may not reflect real-time
 				changes. Verify at the station before refueling.
 			</p>
-			<div className="flex flex-wrap items-end gap-4 md:gap-6">
-				{fuelTypes.map((fuelType, index) => (
+			<div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+				{fuelTypes.map((fuelType) => (
 					<div key={fuelType}>
 						<p
-							className={`text-xs font-semibold uppercase tracking-[0.08em] ${fuelTypesColors[index]}`}
+							className={`text-xs font-semibold uppercase tracking-[0.08em] ${fuelTypeTextColorClassNames[fuelType]}`}
 						>
 							{fuelType}
 						</p>

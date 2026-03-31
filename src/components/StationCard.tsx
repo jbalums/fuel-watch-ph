@@ -5,6 +5,10 @@ import { motion } from "framer-motion";
 import { MapPin, Clock, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useLocation, useNavigate } from "react-router-dom";
+import {
+	fuelTypes,
+	fuelTypeTextColorClassNames,
+} from "@/lib/fuel-prices";
 import { calculateDistanceKm } from "@/utils/distance";
 import { LguVerifiedBadge } from "./LguVerifiedBadge";
 import { VerifiedStationBadge } from "./VerifiedStationBadge";
@@ -125,39 +129,32 @@ export function StationCard({
 				</div>
 
 				<div className="flex flex-wrap items-end justify-between">
-					<div className="flex flex-wrap gap-2 md:gap-4 items-center pb-4">
-						<div className="">
-							<span className="text-label !text-green-600">
-								Unleaded
-							</span>
-							<p className="mt-0.5 text-xl md:text-2xl font-bold tabular-nums text-shadow-sm text-shadow-blue-300">
-								{station.status === "Out"
-									? "—"
-									: `₱${station.prices?.Unleaded > 0 ? Number(station.prices?.Unleaded).toFixed(2) : "-"}`}
-							</p>
-						</div>
-						<div className="h-10 w-[1px] bg-slate-200 dark:bg-slate-600"></div>
-						<div>
-							<span className="text-label !text-red-600">
-								Premium
-							</span>
-							<p className="mt-0.5 text-xl md:text-2xl font-bold tabular-nums text-foreground">
-								{station.status === "Out"
-									? "—"
-									: `₱${station.prices?.Premium > 0 ? Number(station.prices?.Premium).toFixed(2) : "-"}`}
-							</p>
-						</div>
-						<div className="h-10 w-[1px] bg-slate-200 dark:bg-slate-600"></div>
-						<div>
-							<span className="text-label !text-amber-600">
-								Diesel
-							</span>
-							<p className="mt-0.5 text-xl md:text-2xl font-bold tabular-nums text-foreground">
-								{station.status === "Out"
-									? "—"
-									: `₱${station.prices?.Diesel > 0 ? Number(station.prices?.Diesel).toFixed(2) : "-"}`}
-							</p>
-						</div>
+					<div className="grid min-w-0 grid-cols-2 gap-x-4 gap-y-3 pb-4 sm:grid-cols-4">
+						{fuelTypes.map((fuelType) => {
+							const price = station.prices?.[fuelType];
+							const hasPrice =
+								typeof price === "number" &&
+								Number.isFinite(price) &&
+								price > 0;
+
+							return (
+								<div key={`${station.id}-${fuelType}`} className="min-w-0">
+									<span
+										className={cn(
+											"text-label",
+											fuelTypeTextColorClassNames[fuelType],
+										)}
+									>
+										{fuelType}
+									</span>
+									<p className="mt-0.5 text-lg font-bold tabular-nums text-foreground md:text-2xl">
+										{station.status === "Out"
+											? "—"
+											: `₱${hasPrice ? price.toFixed(2) : "-"}`}
+									</p>
+								</div>
+							);
+						})}
 					</div>
 					<div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
 						<span className="flex items-center gap-1">

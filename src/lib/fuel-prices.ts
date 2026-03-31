@@ -1,24 +1,34 @@
 import type { FuelType } from "@/types/station";
 
-export const fuelTypes: FuelType[] = ["Unleaded", "Premium", "Diesel"];
+export const fuelTypes = [
+  "Unleaded",
+  "Premium",
+  "Diesel",
+  "Premium Diesel",
+] as const satisfies readonly FuelType[];
+
+export const fuelTypeTextColorClassNames: Record<FuelType, string> = {
+  Unleaded: "text-green-600",
+  Premium: "text-red-600",
+  Diesel: "text-amber-600",
+  "Premium Diesel": "text-sky-600",
+};
 
 export type FuelPriceMap = Record<FuelType, number | null>;
 export type FuelPriceFormMap = Record<FuelType, string>;
 
 export function createEmptyFuelPriceMap(): FuelPriceMap {
-  return {
-    Unleaded: null,
-    Premium: null,
-    Diesel: null,
-  };
+  return fuelTypes.reduce((prices, fuelType) => {
+    prices[fuelType] = null;
+    return prices;
+  }, {} as FuelPriceMap);
 }
 
 export function createEmptyFuelPriceFormMap(): FuelPriceFormMap {
-  return {
-    Unleaded: "",
-    Premium: "",
-    Diesel: "",
-  };
+  return fuelTypes.reduce((prices, fuelType) => {
+    prices[fuelType] = "";
+    return prices;
+  }, {} as FuelPriceFormMap);
 }
 
 export function normalizeFuelPrices(

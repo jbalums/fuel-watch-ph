@@ -1,8 +1,9 @@
 import { useSearchParams } from "react-router-dom";
+import { fuelTypes as availableFuelTypes } from "@/lib/fuel-prices";
 import { usePublicStationResults } from "@/hooks/usePublicStationResults";
 import type { FilterFuelType, SortOption, StatusFilter } from "@/types/station";
 
-const fuelFilters: FilterFuelType[] = ["All", "Unleaded", "Premium", "Diesel"];
+const fuelFilters: FilterFuelType[] = ["All", ...availableFuelTypes];
 const statusFilters: StatusFilter[] = ["All", "Available", "Low", "Out"];
 const sortOptions: SortOption[] = ["price_asc", "price_desc"];
 

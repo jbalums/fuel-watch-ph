@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { FilterFuelType, SortOption, StatusFilter } from "@/types/station";
 import { cn } from "@/lib/utils";
 import { ArrowDownUp, ChevronDown, ChevronUp, MapPinned } from "lucide-react";
+import { fuelTypes as availableFuelTypes } from "@/lib/fuel-prices";
 import type {
 	GeoCityMunicipality,
 	GeoProvince,
@@ -25,7 +26,7 @@ interface SearchFilterProps {
 	onCityChange?: (cityCode: string) => void;
 }
 
-const fuelTypes: FilterFuelType[] = ["All", "Unleaded", "Premium", "Diesel"];
+const fuelTypes: FilterFuelType[] = ["All", ...availableFuelTypes];
 const statusOptions: StatusFilter[] = ["All", "Available", "Low", "Out"];
 const sortOptions: { value: SortOption; label: string }[] = [
 	{ value: "price_asc", label: "Low to High" },

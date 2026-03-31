@@ -58,7 +58,7 @@ export const aboutUsSections = [
 		],
 		bullets: [
 			"📍 View nearby fuel stations based on location",
-			"⛽ Check reported fuel prices (Unleaded, Premium, Diesel)",
+			"⛽ Check reported fuel prices (Unleaded, Premium, Diesel, Premium Diesel)",
 			"📊 See average fuel prices in different areas",
 			"🧑‍🤝‍🧑 Contribute by reporting updated fuel prices",
 			"🗺️ Explore stations through an interactive map",

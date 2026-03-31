@@ -2,6 +2,9 @@ import { useQuery, type QueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
 import {
+	createEmptyFuelPriceFormMap,
+	createEmptyFuelPriceMap,
+	fuelTypes,
 	getPrimaryFuelPriceSelection,
 	normalizeFuelPrices,
 } from "@/lib/fuel-prices";
@@ -33,8 +36,6 @@ export type StationFormState = {
 	status: StationStatus;
 };
 
-export const fuelTypes: FuelType[] = ["Unleaded", "Premium", "Diesel"];
-
 export const reportFilters: { value: ReportFilter; label: string }[] = [
 	{ value: "pending", label: "Pending" },
 	{ value: "approved", label: "Approved" },
@@ -56,11 +57,7 @@ export const initialStationForm: StationFormState = {
 	lng: "",
 	provinceCode: "",
 	cityMunicipalityCode: "",
-	prices: {
-		Unleaded: "",
-		Premium: "",
-		Diesel: "",
-	},
+	prices: createEmptyFuelPriceFormMap(),
 	fuelType: "Diesel",
 	status: "Available",
 };
@@ -305,11 +302,7 @@ export function buildStationPayload(stationForm: StationFormState) {
 			accumulator[fuelType] = parsedValue;
 			return accumulator;
 		},
-		{
-			Unleaded: null,
-			Premium: null,
-			Diesel: null,
-		},
+		createEmptyFuelPriceMap(),
 	);
 
 	const pricePerLiter = prices[stationForm.fuelType];
@@ -357,11 +350,7 @@ export function normalizeStationPricesForForm(
 	fuelType: FuelType,
 	fallbackPricePerLiter: number,
 ): StationPricesFormState {
-	const prices: StationPricesFormState = {
-		Unleaded: "",
-		Premium: "",
-		Diesel: "",
-	};
+	const prices = createEmptyFuelPriceFormMap();
 
 	if (
 		rawPrices &&

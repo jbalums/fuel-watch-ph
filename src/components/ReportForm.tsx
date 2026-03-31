@@ -394,7 +394,7 @@ export function ReportForm() {
         <label className="text-label text-muted-foreground">
           Prices per Liter (₱)
         </label>
-        <div className="grid gap-3 md:grid-cols-3">
+        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
           {fuelTypes.map((fuelType) => (
             <div key={fuelType} className="flex flex-col gap-1.5">
               <label className="text-xs font-medium text-muted-foreground">

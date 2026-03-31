@@ -7,29 +7,24 @@ import { toast } from "@/lib/app-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { useManagedStation } from "@/hooks/useManagedStation";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  createEmptyFuelPriceFormMap,
+  createEmptyFuelPriceMap,
+  fuelTypes,
+} from "@/lib/fuel-prices";
 import type { FuelType, StationStatus } from "@/types/station";
 
 type StationPricesFormState = Record<FuelType, string>;
 
-const fuelTypes: FuelType[] = ["Unleaded", "Premium", "Diesel"];
-
 function normalizePrices(
   prices: Record<FuelType, number | null>,
 ): StationPricesFormState {
-  return {
-    Unleaded:
-      typeof prices.Unleaded === "number" && prices.Unleaded > 0
-        ? prices.Unleaded.toFixed(2)
-        : "",
-    Premium:
-      typeof prices.Premium === "number" && prices.Premium > 0
-        ? prices.Premium.toFixed(2)
-        : "",
-    Diesel:
-      typeof prices.Diesel === "number" && prices.Diesel > 0
-        ? prices.Diesel.toFixed(2)
-        : "",
-  };
+  return fuelTypes.reduce((formattedPrices, fuelType) => {
+    const price = prices[fuelType];
+    formattedPrices[fuelType] =
+      typeof price === "number" && price > 0 ? price.toFixed(2) : "";
+    return formattedPrices;
+  }, createEmptyFuelPriceFormMap());
 }
 
 export default function StationManagerDashboard() {
@@ -40,11 +35,9 @@ export default function StationManagerDashboard() {
   const [address, setAddress] = useState("");
   const [fuelType, setFuelType] = useState<FuelType>("Diesel");
   const [status, setStatus] = useState<StationStatus>("Available");
-  const [prices, setPrices] = useState<StationPricesFormState>({
-    Unleaded: "",
-    Premium: "",
-    Diesel: "",
-  });
+  const [prices, setPrices] = useState<StationPricesFormState>(
+    createEmptyFuelPriceFormMap(),
+  );
 
   useEffect(() => {
     if (authLoading) {
@@ -73,11 +66,12 @@ export default function StationManagerDashboard() {
         throw new Error("No managed station found");
       }
 
-      const payload = {
-        Unleaded: prices.Unleaded.trim() ? Number(prices.Unleaded) : null,
-        Premium: prices.Premium.trim() ? Number(prices.Premium) : null,
-        Diesel: prices.Diesel.trim() ? Number(prices.Diesel) : null,
-      };
+      const payload = fuelTypes.reduce((fuelPrices, currentFuelType) => {
+        fuelPrices[currentFuelType] = prices[currentFuelType].trim()
+          ? Number(prices[currentFuelType])
+          : null;
+        return fuelPrices;
+      }, createEmptyFuelPriceMap());
 
       const selectedPrice = payload[fuelType];
 
@@ -241,7 +235,7 @@ export default function StationManagerDashboard() {
                     Primary: <b>{fuelType}</b>
                   </span>
                 </div>
-                <div className="grid gap-3 md:grid-cols-3">
+                <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
                   {fuelTypes.map((type) => (
                     <div key={type} className="flex flex-col gap-1.5">
                       <label className="text-xs font-medium text-muted-foreground">

@@ -1,9 +1,10 @@
-import type { FuelType, GasStation, StationStatus } from "@/types/station";
+import type { GasStation, StationStatus } from "@/types/station";
 import { LguVerifiedBadge } from "@/components/LguVerifiedBadge";
 import { VerifiedStationBadge } from "@/components/VerifiedStationBadge";
-
-const fuelTypes: FuelType[] = ["Unleaded", "Premium", "Diesel"];
-const fuelTypeColors = ["text-green-600", "text-red-600", "text-amber-600"];
+import {
+	fuelTypes,
+	fuelTypeTextColorClassNames,
+} from "@/lib/fuel-prices";
 const statusColors: Record<StationStatus, string> = {
 	Available: "#22c55e",
 	Low: "#f59e0b",
@@ -16,7 +17,7 @@ export function StationMarkerInfoWindow({
 	station: GasStation;
 }) {
 	return (
-		<div className="flex min-w-[180px] flex-col gap-1.5 text-sm">
+		<div className="flex min-w-[220px] flex-col gap-1.5 text-sm">
 			<span className="font-semibold !text-black">{station.name}</span>
 			<span className="text-xs text-gray-500">{station.address}</span>
 			{(station.isLguVerified || station.isVerified) && (
@@ -29,7 +30,7 @@ export function StationMarkerInfoWindow({
 					)}
 				</div>
 			)}
-			{fuelTypes.map((fuelType, index) => {
+			{fuelTypes.map((fuelType) => {
 				const price = station.prices[fuelType];
 				const hasPrice =
 					typeof price === "number" &&
@@ -43,12 +44,12 @@ export function StationMarkerInfoWindow({
 						className="mt-1 flex items-center justify-between"
 					>
 						<span
-							className={`w-1/3 text-base font-bold ${fuelTypeColors[index]}`}
+							className={`w-[45%] text-xs font-semibold ${fuelTypeTextColorClassNames[fuelType]}`}
 						>
 							{fuelType}
 						</span>
 						<span
-							className={`w-1/3 text-right text-base font-bold ${fuelTypeColors[index]}`}
+							className={`w-[30%] text-right text-sm font-bold ${fuelTypeTextColorClassNames[fuelType]}`}
 						>
 							{station.status === "Out"
 								? "—"

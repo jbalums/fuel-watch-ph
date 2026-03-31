@@ -1,8 +1,7 @@
 import { formatDistanceToNow } from "date-fns";
 import type { Tables } from "@/integrations/supabase/types";
+import { createEmptyFuelPriceMap, fuelTypes } from "@/lib/fuel-prices";
 import type { FuelType, GasStation, PublicStationSummary } from "@/types/station";
-
-const fuelTypes: FuelType[] = ["Unleaded", "Premium", "Diesel"];
 
 function safeNumber(value: unknown) {
 	if (typeof value === "number") {
@@ -22,11 +21,7 @@ export function normalizeStationPrices(
 	fallbackFuelType: FuelType,
 	fallbackPricePerLiter: number,
 ) {
-	const prices: Record<FuelType, number | null> = {
-		Unleaded: null,
-		Premium: null,
-		Diesel: null,
-	};
+	const prices = createEmptyFuelPriceMap();
 
 	if (rawPrices && typeof rawPrices === "object" && !Array.isArray(rawPrices)) {
 		for (const fuelType of fuelTypes) {
@@ -93,6 +88,7 @@ export function mapPublicStationSummaryRow(summaryRow: {
 	average_unleaded: number | null;
 	average_premium: number | null;
 	average_diesel: number | null;
+	average_premium_diesel: number | null;
 }): PublicStationSummary {
 	return {
 		totalStations: Number(summaryRow.total_stations ?? 0),
@@ -100,6 +96,7 @@ export function mapPublicStationSummaryRow(summaryRow: {
 			Unleaded: safeNumber(summaryRow.average_unleaded),
 			Premium: safeNumber(summaryRow.average_premium),
 			Diesel: safeNumber(summaryRow.average_diesel),
+			"Premium Diesel": safeNumber(summaryRow.average_premium_diesel),
 		},
 	};
 }
