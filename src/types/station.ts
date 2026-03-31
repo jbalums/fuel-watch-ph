@@ -71,6 +71,7 @@ export interface FuelReport {
   status: StationStatus;
   reportedAt: string;
   reportedBy: string;
+  reportedByLabel: string;
   reviewStatus: FuelReportReviewStatus;
   reviewedAt: string | null;
   reviewedBy: string | null;

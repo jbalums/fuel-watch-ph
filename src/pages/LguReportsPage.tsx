@@ -310,6 +310,12 @@ export default function LguReportsPage() {
 												</button>
 											</p>
 										)}
+										<p className="mt-2 text-xs text-muted-foreground">
+											Reported by {report.reportedByLabel}
+											{report.reviewedAt
+												? ` • Reviewed ${new Date(report.reviewedAt).toLocaleString()}`
+												: ""}
+										</p>
 									</div>
 
 									<div className="flex gap-2">

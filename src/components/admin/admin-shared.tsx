@@ -19,6 +19,10 @@ import type { ManagedAccessLevel } from "@/lib/access-control";
 
 export type GasStationRow = Tables<"gas_stations">;
 type FuelReportRow = Tables<"fuel_reports">;
+type ProfileRow = Pick<
+	Tables<"profiles">,
+	"user_id" | "display_name" | "username"
+>;
 
 export type ReportFilter = FuelReportReviewStatus | "all";
 export type ClaimFilter = StationClaimReviewStatus | "all";
@@ -62,12 +66,33 @@ export const initialStationForm: StationFormState = {
 	status: "Available",
 };
 
-function mapFuelReport(report: FuelReportRow): FuelReport {
+function formatReportedByLabel(
+	reportedBy: string,
+	profile?: ProfileRow,
+) {
+	const displayName = profile?.display_name?.trim();
+	if (displayName) {
+		return displayName;
+	}
+
+	const username = profile?.username?.trim();
+	if (username) {
+		return username;
+	}
+
+	return reportedBy.slice(0, 8);
+}
+
+function mapFuelReport(
+	report: FuelReportRow,
+	reporterProfiles: Map<string, ProfileRow>,
+): FuelReport {
 	const prices = normalizeFuelPrices(
 		report.prices,
 		report.fuel_type as FuelType,
 		Number(report.price) || 0,
 	);
+	const reportedBy = report.user_id;
 	const primarySelection = getPrimaryFuelPriceSelection(prices) ?? {
 		fuelType: report.fuel_type as FuelType,
 		price: Number(report.price) || 0,
@@ -90,7 +115,11 @@ function mapFuelReport(report: FuelReportRow): FuelReport {
 		fuelType: primarySelection.fuelType,
 		status: report.status as StationStatus,
 		reportedAt: report.created_at,
-		reportedBy: report.user_id,
+		reportedBy,
+		reportedByLabel: formatReportedByLabel(
+			reportedBy,
+			reporterProfiles.get(reportedBy),
+		),
 		reviewStatus: (report.review_status ??
 			"pending") as FuelReportReviewStatus,
 		reviewedAt: report.reviewed_at,
@@ -106,6 +135,29 @@ function mapFuelReport(report: FuelReportRow): FuelReport {
 				| null) ?? null,
 		appliedStationId: report.applied_station_id,
 	};
+}
+
+async function fetchReporterProfiles(reports: FuelReportRow[]) {
+	const reporterIds = Array.from(
+		new Set(reports.map((report) => report.user_id).filter(Boolean)),
+	);
+
+	if (reporterIds.length === 0) {
+		return new Map<string, ProfileRow>();
+	}
+
+	const { data, error } = await supabase
+		.from("profiles")
+		.select("user_id, display_name, username")
+		.in("user_id", reporterIds);
+
+	if (error) {
+		throw error;
+	}
+
+	return new Map(
+		(data ?? []).map((profile) => [profile.user_id, profile]),
+	);
 }
 
 export function useAdminStations(enabled = true) {
@@ -141,7 +193,12 @@ export function useAdminReports(enabled = true) {
 				throw error;
 			}
 
-			return (data ?? []).map(mapFuelReport);
+			const reports = data ?? [];
+			const reporterProfiles = await fetchReporterProfiles(reports);
+
+			return reports.map((report) =>
+				mapFuelReport(report, reporterProfiles),
+			);
 		},
 	});
 }
@@ -177,7 +234,12 @@ export function useScopedAdminReports(enabled = true) {
 				throw error;
 			}
 
-			return (data ?? []).map(mapFuelReport);
+			const reports = data ?? [];
+			const reporterProfiles = await fetchReporterProfiles(reports);
+
+			return reports.map((report) =>
+				mapFuelReport(report, reporterProfiles),
+			);
 		},
 	});
 }

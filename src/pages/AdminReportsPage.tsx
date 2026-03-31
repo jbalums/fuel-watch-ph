@@ -332,7 +332,7 @@ export default function AdminReportsPage() {
 										)}
 
 										<p className="mt-2 text-xs text-muted-foreground">
-											Submitted by {report.reportedBy.slice(0, 8)}
+											Reported by {report.reportedByLabel}
 											{report.reviewedAt
 												? ` • Reviewed ${new Date(report.reviewedAt).toLocaleString()}`
 												: ""}
