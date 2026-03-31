@@ -21,6 +21,7 @@ interface StationCardProps {
 		lng: number;
 	} | null;
 	openOnMapInNewTab?: boolean;
+	hideDistanceLabel?: boolean;
 }
 
 export function StationCard({
@@ -28,6 +29,7 @@ export function StationCard({
 	index,
 	userLocation,
 	openOnMapInNewTab = false,
+	hideDistanceLabel = false,
 }: StationCardProps) {
 	const navigate = useNavigate();
 	const location = useLocation();
@@ -157,10 +159,12 @@ export function StationCard({
 						})}
 					</div>
 					<div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
-						<span className="flex items-center gap-1">
-							<MapPin className="h-3 w-3" />
-							{distanceLabel}
-						</span>
+						{!hideDistanceLabel ? (
+							<span className="flex items-center gap-1">
+								<MapPin className="h-3 w-3" />
+								{distanceLabel}
+							</span>
+						) : null}
 						<span className="flex items-center gap-1">
 							<Clock className="h-3 w-3" />
 							{station.lastUpdated}

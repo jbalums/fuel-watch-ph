@@ -240,6 +240,7 @@ export default function EmbeddedStationsPage() {
 					totalPages={totalPages}
 					onPageChange={handlePageChange}
 					openOnMapInNewTab
+					hideDistanceLabel
 					emptyMessage="No stations match the embedded location filters."
 				/>
 			</div>
