@@ -1,9 +1,23 @@
-import { useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
+import { ChevronDown, ChevronUp, SlidersHorizontal } from "lucide-react";
+import { SearchFilter } from "@/components/SearchFilter";
 import { StationResultsList } from "@/components/StationResultsList";
+import { useGeoReferences } from "@/hooks/useGeoReferences";
 import { usePublicStationResults } from "@/hooks/usePublicStationResults";
+import { fuelTypes as availableFuelTypes } from "@/lib/fuel-prices";
+import { cn } from "@/lib/utils";
+import type {
+	FilterFuelType,
+	SortOption,
+	StatusFilter,
+} from "@/types/station";
 import logo from "@/assets/images/Icon.png";
+
 const EMBED_STATIONS_PER_PAGE = 10;
+const fuelFilters: FilterFuelType[] = ["All", ...availableFuelTypes];
+const statusFilters: StatusFilter[] = ["All", "Available", "Low", "Out"];
+const sortOptions: SortOption[] = ["price_asc", "price_desc"];
 
 function parsePageParam(rawValue: string | null) {
 	if (!rawValue) {
@@ -14,12 +28,52 @@ function parsePageParam(rawValue: string | null) {
 	return Number.isFinite(parsedPage) && parsedPage > 0 ? parsedPage : 1;
 }
 
+function isFuelFilter(value: string | null): value is FilterFuelType {
+	return value !== null && fuelFilters.includes(value as FilterFuelType);
+}
+
+function isStatusFilter(value: string | null): value is StatusFilter {
+	return value !== null && statusFilters.includes(value as StatusFilter);
+}
+
+function isSortOption(value: string | null): value is SortOption {
+	return value !== null && sortOptions.includes(value as SortOption);
+}
+
 export default function EmbeddedStationsPage() {
 	const [searchParams, setSearchParams] = useSearchParams();
+	const { provinces, citiesByProvince } = useGeoReferences();
+	const searchQuery = searchParams.get("q") ?? "";
+	const fuelFilter = isFuelFilter(searchParams.get("fuel"))
+		? searchParams.get("fuel")!
+		: "All";
+	const statusFilter = isStatusFilter(searchParams.get("status"))
+		? searchParams.get("status")!
+		: "All";
+	const sortBy = isSortOption(searchParams.get("sort"))
+		? searchParams.get("sort")!
+		: "price_asc";
 	const provinceCode = searchParams.get("provinceCode") ?? "";
 	const cityMunicipalityCode = searchParams.get("cityMunicipalityCode") ?? "";
 	const currentPage = parsePageParam(searchParams.get("page"));
+	const availableCities = useMemo(
+		() =>
+			provinceCode ? citiesByProvince.get(provinceCode) ?? [] : [],
+		[citiesByProvince, provinceCode],
+	);
+	const hasActiveFilters =
+		!!searchQuery ||
+		fuelFilter !== "All" ||
+		statusFilter !== "All" ||
+		sortBy !== "price_asc" ||
+		!!provinceCode ||
+		!!cityMunicipalityCode;
+	const [filtersOpen, setFiltersOpen] = useState(false);
 	const { stations, totalCount, isLoading } = usePublicStationResults({
+		searchQuery,
+		fuelFilter,
+		statusFilter,
+		sortBy,
 		page: currentPage,
 		pageSize: EMBED_STATIONS_PER_PAGE,
 		provinceCode,
@@ -44,6 +98,27 @@ export default function EmbeddedStationsPage() {
 		}
 		setSearchParams(nextSearchParams, { replace: true });
 	}, [currentPage, isLoading, searchParams, setSearchParams, totalPages]);
+
+	const updateSearchParams = (
+		updates: Record<string, string | null>,
+		resetPage = true,
+	) => {
+		const nextSearchParams = new URLSearchParams(searchParams);
+
+		for (const [key, value] of Object.entries(updates)) {
+			if (!value) {
+				nextSearchParams.delete(key);
+			} else {
+				nextSearchParams.set(key, value);
+			}
+		}
+
+		if (resetPage) {
+			nextSearchParams.delete("page");
+		}
+
+		setSearchParams(nextSearchParams, { replace: true });
+	};
 
 	const handlePageChange = (page: number) => {
 		const nextSearchParams = new URLSearchParams(searchParams);
@@ -78,6 +153,86 @@ export default function EmbeddedStationsPage() {
 						</p>
 					</div>
 				</a>
+				<div className="mb-4 rounded-2xl border border-border bg-card/95 p-3 shadow-sovereign">
+					<div className="flex items-center justify-between gap-3">
+						<div>
+							<p className="text-sm font-semibold text-foreground">
+								Find Stations
+							</p>
+							<p className="text-xs text-muted-foreground">
+								Browse nearby stations and narrow the list with filters when needed.
+							</p>
+						</div>
+						<button
+							type="button"
+							onClick={() => setFiltersOpen((current) => !current)}
+							className={cn(
+								"inline-flex h-10 shrink-0 items-center gap-2 rounded-lg border px-3 text-xs font-medium sovereign-ease transition-colors",
+								hasActiveFilters || filtersOpen
+									? "border-accent/30 bg-accent/10 text-accent"
+									: "border-border bg-surface-alt text-muted-foreground hover:text-foreground",
+							)}
+						>
+							<SlidersHorizontal className="h-4 w-4" />
+							Filters
+							{hasActiveFilters ? (
+								<span className="h-1.5 w-1.5 rounded-full bg-current" />
+							) : null}
+							{filtersOpen ? (
+								<ChevronUp className="h-3.5 w-3.5" />
+							) : (
+								<ChevronDown className="h-3.5 w-3.5" />
+							)}
+						</button>
+					</div>
+
+					{filtersOpen ? (
+						<div className="mt-3 border-t border-border pt-3">
+							<SearchFilter
+								searchQuery={searchQuery}
+								onSearchChange={(value) =>
+									updateSearchParams({
+										q: value.trim() ? value : null,
+									})
+								}
+								fuelFilter={fuelFilter}
+								onFuelFilterChange={(value) =>
+									updateSearchParams({
+										fuel: value === "All" ? null : value,
+									})
+								}
+								statusFilter={statusFilter}
+								onStatusFilterChange={(value) =>
+									updateSearchParams({
+										status: value === "All" ? null : value,
+									})
+								}
+								sortBy={sortBy}
+								onSortChange={(value) =>
+									updateSearchParams({
+										sort: value === "price_asc" ? null : value,
+									})
+								}
+								provinces={provinces}
+								cities={availableCities}
+								provinceCode={provinceCode}
+								cityMunicipalityCode={cityMunicipalityCode}
+								onProvinceChange={(nextProvinceCode) =>
+									updateSearchParams({
+										provinceCode: nextProvinceCode || null,
+										cityMunicipalityCode: null,
+									})
+								}
+								onCityChange={(nextCityMunicipalityCode) =>
+									updateSearchParams({
+										cityMunicipalityCode:
+											nextCityMunicipalityCode || null,
+									})
+								}
+							/>
+						</div>
+					) : null}
+				</div>
 				<StationResultsList
 					stations={stations}
 					loading={isLoading}
