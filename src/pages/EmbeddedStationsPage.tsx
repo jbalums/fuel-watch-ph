@@ -92,12 +92,12 @@ export default function EmbeddedStationsPage() {
 				<span className="text-xs">
 					Powered by:{" "}
 					<a
-						href="https://fuelfinder.ph"
+						href="https://fuelwatchph.com"
 						target="_blank"
 						rel="noopener noreferrer"
 						className="text-blue-500 hover:underline"
 					>
-						FuelFinder PH
+						FuelWatch PH
 					</a>
 				</span>
 			</div>
