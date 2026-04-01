@@ -206,7 +206,7 @@ export default function EmbeddedStationsPage() {
 							type="button"
 							onClick={() => void toggleFullscreen()}
 							className={cn(
-								"inline-flex ml-auto h-10 shrink-0 items-center gap-2 rounded-lg border px-3 text-xs font-medium sovereign-ease transition-colors",
+								"inline-flex ml-auto h-8 shrink-0 items-center gap-2 rounded-lg border px-3 text-xs font-medium sovereign-ease transition-colors",
 								isFullscreen
 									? "border-accent/30 bg-accent/10 text-accent"
 									: "border-border bg-surface-alt text-muted-foreground hover:text-foreground",
