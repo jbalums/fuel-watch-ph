@@ -3,7 +3,7 @@ import logo from "@/assets/images/logo.png";
 export function SiteFooter() {
 	const navigate = useNavigate();
 	return (
-		<footer className="border-t border-border bg-card/80 px-5 pb-24 pt-6 md:pb-6">
+		<footer className="border-t border-border bg-card/80 px-5 pb-6 pt-6 md:pb-6">
 			<div className="container flex flex-col items-center gap-3 text-center">
 				<div
 					onClick={() => {
