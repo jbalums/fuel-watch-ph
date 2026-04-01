@@ -111,8 +111,8 @@ export const contactUsChannels = [
 		title: "Email",
 		description:
 			"Send questions, feedback, bug reports, or account concerns through email.",
-		label: "jbalums@gmail.com",
-		href: "mailto:jbalums@gmail.com",
+		label: "contact@fuelwatchph.com",
+		href: "mailto:contact@fuelwatchph.com",
 	},
 	{
 		title: "Facebook",
