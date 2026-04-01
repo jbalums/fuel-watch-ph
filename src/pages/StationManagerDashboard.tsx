@@ -102,6 +102,12 @@ export default function StationManagerDashboard() {
         queryClient.invalidateQueries({ queryKey: ["managed_station"] }),
         queryClient.invalidateQueries({ queryKey: ["gas_stations"] }),
         queryClient.invalidateQueries({ queryKey: ["admin", "gas_stations"] }),
+        queryClient.invalidateQueries({
+          queryKey: ["public_station_browse"],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["public_station_summary"],
+        }),
       ]);
       toast.success("Station details updated");
     },

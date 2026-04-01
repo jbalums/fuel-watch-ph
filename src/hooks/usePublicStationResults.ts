@@ -47,6 +47,8 @@ function mapBrowseStationRow(row: BrowseStationRow) {
 		province_code: row.province_code,
 		city_municipality_code: row.city_municipality_code,
 		prices: row.prices ?? {},
+		previous_prices: row.previous_prices ?? {},
+		price_trends: row.price_trends ?? {},
 		is_verified: row.is_verified ?? false,
 		is_lgu_verified: row.is_lgu_verified ?? false,
 		lgu_verified_at: row.lgu_verified_at,

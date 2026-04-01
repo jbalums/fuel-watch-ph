@@ -127,7 +127,9 @@ export type Database = {
           manager_user_id: string | null
           name: string
           price_per_liter: number
+          previous_prices: Json
           prices: Json
+          price_trends: Json
           province_code: string | null
           report_count: number
           status: string
@@ -150,7 +152,9 @@ export type Database = {
           manager_user_id?: string | null
           name: string
           price_per_liter?: number
+          previous_prices?: Json
           prices?: Json
+          price_trends?: Json
           province_code?: string | null
           report_count?: number
           status?: string
@@ -173,7 +177,9 @@ export type Database = {
           manager_user_id?: string | null
           name?: string
           price_per_liter?: number
+          previous_prices?: Json
           prices?: Json
+          price_trends?: Json
           province_code?: string | null
           report_count?: number
           status?: string
@@ -698,7 +704,9 @@ export type Database = {
           manager_user_id: string | null
           name: string | null
           price_per_liter: number | null
+          previous_prices: Json | null
           prices: Json | null
+          price_trends: Json | null
           province_code: string | null
           report_count: number | null
           status: string | null

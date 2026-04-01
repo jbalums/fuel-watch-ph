@@ -36,6 +36,7 @@ export type StationFormState = {
 	provinceCode: string;
 	cityMunicipalityCode: string;
 	prices: StationPricesFormState;
+	previousPrices: StationPricesFormState;
 	fuelType: FuelType;
 	status: StationStatus;
 };
@@ -62,6 +63,7 @@ export const initialStationForm: StationFormState = {
 	provinceCode: "",
 	cityMunicipalityCode: "",
 	prices: createEmptyFuelPriceFormMap(),
+	previousPrices: createEmptyFuelPriceFormMap(),
 	fuelType: "Diesel",
 	status: "Available",
 };
@@ -290,6 +292,12 @@ export async function refreshAdminData(queryClient: QueryClient) {
 			queryKey: ["lgu", "dashboard_stats"],
 		}),
 		queryClient.invalidateQueries({ queryKey: ["gas_stations"] }),
+		queryClient.invalidateQueries({
+			queryKey: ["public_station_browse"],
+		}),
+		queryClient.invalidateQueries({
+			queryKey: ["public_station_summary"],
+		}),
 	]);
 }
 
@@ -332,25 +340,12 @@ export function ReviewStatusBadge({
 	);
 }
 
-export function buildStationPayload(stationForm: StationFormState) {
-	const lat = Number.parseFloat(stationForm.lat);
-	const lng = Number.parseFloat(stationForm.lng);
-
-	if (!stationForm.name.trim()) throw new Error("Station name is required");
-	if (!stationForm.address.trim())
-		throw new Error("Station address is required");
-	if (Number.isNaN(lat)) throw new Error("Latitude must be a valid number");
-	if (Number.isNaN(lng)) throw new Error("Longitude must be a valid number");
-	if (!stationForm.provinceCode.trim()) {
-		throw new Error("Province is required");
-	}
-	if (!stationForm.cityMunicipalityCode.trim()) {
-		throw new Error("City or municipality is required");
-	}
-
-	const prices = fuelTypes.reduce<Record<FuelType, number | null>>(
+function parseStationPriceFormMap(
+	priceForm: StationPricesFormState,
+) {
+	return fuelTypes.reduce<Record<FuelType, number | null>>(
 		(accumulator, fuelType) => {
-			const rawValue = stationForm.prices[fuelType].trim();
+			const rawValue = priceForm[fuelType].trim();
 			if (!rawValue) {
 				accumulator[fuelType] = null;
 				return accumulator;
@@ -366,6 +361,72 @@ export function buildStationPayload(stationForm: StationFormState) {
 		},
 		createEmptyFuelPriceMap(),
 	);
+}
+
+function computeStationPriceTrendMap(
+	currentPrices: Record<FuelType, number | null>,
+	previousPrices: Record<FuelType, number | null>,
+) {
+	return fuelTypes.reduce<Record<FuelType, number | null>>(
+		(accumulator, fuelType) => {
+			const currentPrice = currentPrices[fuelType];
+			const previousPrice = previousPrices[fuelType];
+
+			if (
+				typeof currentPrice !== "number" ||
+				!Number.isFinite(currentPrice) ||
+				currentPrice <= 0 ||
+				typeof previousPrice !== "number" ||
+				!Number.isFinite(previousPrice) ||
+				previousPrice <= 0
+			) {
+				accumulator[fuelType] = null;
+				return accumulator;
+			}
+
+			accumulator[fuelType] = Number(
+				(currentPrice - previousPrice).toFixed(2),
+			);
+			return accumulator;
+		},
+		createEmptyFuelPriceMap(),
+	);
+}
+
+export function buildStationPayload(
+	stationForm: StationFormState,
+	existingStation?: GasStationRow | null,
+) {
+	const lat = Number.parseFloat(stationForm.lat);
+	const lng = Number.parseFloat(stationForm.lng);
+
+	if (!stationForm.name.trim()) throw new Error("Station name is required");
+	if (!stationForm.address.trim())
+		throw new Error("Station address is required");
+	if (Number.isNaN(lat)) throw new Error("Latitude must be a valid number");
+	if (Number.isNaN(lng)) throw new Error("Longitude must be a valid number");
+	if (!stationForm.provinceCode.trim()) {
+		throw new Error("Province is required");
+	}
+	if (!stationForm.cityMunicipalityCode.trim()) {
+		throw new Error("City or municipality is required");
+	}
+
+	const prices = parseStationPriceFormMap(stationForm.prices);
+	const submittedPreviousPrices = parseStationPriceFormMap(
+		stationForm.previousPrices,
+	);
+	const previousPrices = existingStation
+		? normalizeFuelPrices(existingStation.previous_prices)
+		: createEmptyFuelPriceMap();
+	const existingCurrentPrices = existingStation
+		? normalizeFuelPrices(
+				existingStation.prices,
+				existingStation.fuel_type as FuelType,
+				Number(existingStation.price_per_liter) || 0,
+			)
+		: createEmptyFuelPriceMap();
+	const nextPreviousPrices = { ...previousPrices, ...submittedPreviousPrices };
 
 	const pricePerLiter = prices[stationForm.fuelType];
 	if (pricePerLiter === null) {
@@ -373,6 +434,30 @@ export function buildStationPayload(stationForm: StationFormState) {
 			`Add a ${stationForm.fuelType} price to match the selected fuel type`,
 		);
 	}
+
+	if (existingStation) {
+		for (const fuelType of fuelTypes) {
+			const currentPrice = prices[fuelType];
+			const existingPrice = existingCurrentPrices[fuelType];
+
+			if (currentPrice === existingPrice) {
+				continue;
+			}
+
+			if (
+				typeof existingPrice === "number" &&
+				Number.isFinite(existingPrice) &&
+				existingPrice > 0
+			) {
+				nextPreviousPrices[fuelType] = existingPrice;
+			}
+		}
+	}
+
+	const priceTrends = computeStationPriceTrendMap(
+		prices,
+		nextPreviousPrices,
+	);
 
 	return {
 		name: stationForm.name.trim(),
@@ -382,6 +467,8 @@ export function buildStationPayload(stationForm: StationFormState) {
 		province_code: stationForm.provinceCode.trim(),
 		city_municipality_code: stationForm.cityMunicipalityCode.trim(),
 		prices,
+		previous_prices: nextPreviousPrices,
+		price_trends: priceTrends,
 		fuel_type: stationForm.fuelType,
 		price_per_liter: pricePerLiter,
 		status: stationForm.status,

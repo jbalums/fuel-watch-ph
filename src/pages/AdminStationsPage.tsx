@@ -83,8 +83,13 @@ export default function AdminStationsPage() {
 
 	const saveStation = useMutation({
 		mutationFn: async () => {
+			const editingStation =
+				editingStationId
+					? stations.find((station) => station.id === editingStationId) ??
+						null
+					: null;
 			const payload = {
-				...buildStationPayload(stationForm),
+				...buildStationPayload(stationForm, editingStation),
 				...buildStationLguVerificationPayload(accessLevel, user?.id),
 			};
 
@@ -168,6 +173,11 @@ export default function AdminStationsPage() {
 				station.prices,
 				station.fuel_type as FuelType,
 				Number(station.price_per_liter) || 0,
+			),
+			previousPrices: normalizeStationPricesForForm(
+				station.previous_prices,
+				station.fuel_type as FuelType,
+				0,
 			),
 			fuelType: station.fuel_type as FuelType,
 			status: station.status as StationStatus,

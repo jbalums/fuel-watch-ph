@@ -11,6 +11,7 @@ import {
 } from "@/lib/fuel-prices";
 import { calculateDistanceKm } from "@/utils/distance";
 import { LguVerifiedBadge } from "./LguVerifiedBadge";
+import { PriceTrendIndicator } from "./PriceTrendIndicator";
 import { VerifiedStationBadge } from "./VerifiedStationBadge";
 
 interface StationCardProps {
@@ -154,6 +155,13 @@ export function StationCard({
 											? "—"
 											: `₱${hasPrice ? price.toFixed(2) : "-"}`}
 									</p>
+									<PriceTrendIndicator
+										delta={
+											station.status === "Out" || !hasPrice
+												? null
+												: station.priceTrends[fuelType]
+										}
+									/>
 								</div>
 							);
 						})}

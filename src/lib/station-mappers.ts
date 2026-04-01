@@ -1,6 +1,10 @@
 import { formatDistanceToNow } from "date-fns";
 import type { Tables } from "@/integrations/supabase/types";
-import { createEmptyFuelPriceMap, fuelTypes } from "@/lib/fuel-prices";
+import {
+	createEmptyFuelPriceMap,
+	fuelTypes,
+	normalizeFuelPrices,
+} from "@/lib/fuel-prices";
 import type { FuelType, GasStation, PublicStationSummary } from "@/types/station";
 
 function safeNumber(value: unknown) {
@@ -60,6 +64,8 @@ export function mapGasStationRow(station: Tables<"gas_stations">): GasStation {
 		provinceCode: station.province_code,
 		cityMunicipalityCode: station.city_municipality_code,
 		prices,
+		previousPrices: normalizeFuelPrices(station.previous_prices),
+		priceTrends: normalizeFuelPrices(station.price_trends),
 		isVerified: station.is_verified,
 		isLguVerified: station.is_lgu_verified,
 		lguVerifiedAt: station.lgu_verified_at,

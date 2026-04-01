@@ -199,7 +199,7 @@ function EditorForm({
 						<div className="mb-3 flex items-center justify-between gap-3">
 							<div>
 								<p className="text-sm font-medium text-foreground">
-									Fuel Prices
+									Current Prices
 								</p>
 								<p className="text-xs text-muted-foreground">
 									Add each available fuel price. The selected
@@ -245,6 +245,46 @@ function EditorForm({
 								? `₱${Number(form.prices[form.fuelType]).toFixed(2)}`
 								: "Set a price for the selected fuel type"}
 						</p>
+					</div>
+					<div className="rounded-lg border border-border bg-background p-3 md:col-span-2">
+						<div className="mb-3">
+							<p className="text-sm font-medium text-foreground">
+								Previous Prices
+							</p>
+							<p className="text-xs text-muted-foreground">
+								Set previous fuel prices manually when you need
+								to seed or correct trend comparisons.
+							</p>
+						</div>
+						<div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+							{fuelTypes.map((fuelType) => (
+								<div
+									key={`previous-${fuelType}`}
+									className="flex flex-col gap-1.5"
+								>
+									<label className="text-xs font-medium text-muted-foreground">
+										{fuelType}
+									</label>
+									<input
+										type="number"
+										step="0.01"
+										placeholder="0.00"
+										value={form.previousPrices[fuelType]}
+										onChange={(event) =>
+											onFormChange((current) => ({
+												...current,
+												previousPrices: {
+													...current.previousPrices,
+													[fuelType]:
+														event.target.value,
+												},
+											}))
+										}
+										className="rounded-lg border border-border bg-surface-alt px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground"
+									/>
+								</div>
+							))}
+						</div>
 					</div>
 				</div>
 			</div>
@@ -292,8 +332,8 @@ export function AdminStationEditor({
 	const title = mode === "edit" ? "Edit Station" : "Add Station";
 	const description =
 		mode === "edit"
-			? "Update station details, prices, and map location."
-			: "Create a new station record with location and prices.";
+			? "Update station details, current and previous prices, and map location."
+			: "Create a new station record with location, current prices, and optional previous prices.";
 
 	if (isMobile) {
 		return (

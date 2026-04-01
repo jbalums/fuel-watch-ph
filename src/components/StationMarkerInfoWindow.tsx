@@ -1,5 +1,6 @@
 import type { GasStation, StationStatus } from "@/types/station";
 import { LguVerifiedBadge } from "@/components/LguVerifiedBadge";
+import { PriceTrendIndicator } from "@/components/PriceTrendIndicator";
 import { VerifiedStationBadge } from "@/components/VerifiedStationBadge";
 import {
 	fuelTypes,
@@ -48,13 +49,25 @@ export function StationMarkerInfoWindow({
 						>
 							{fuelType}
 						</span>
-						<span
+						<div
 							className={`w-[30%] text-right text-sm font-bold ${fuelTypeTextColorClassNames[fuelType]}`}
 						>
-							{station.status === "Out"
-								? "—"
-								: `₱${hasPrice ? price.toFixed(2) : "--.--"}`}
-						</span>
+							<div className="flex flex-col items-end">
+								<span>
+									{station.status === "Out"
+										? "—"
+										: `₱${hasPrice ? price.toFixed(2) : "--.--"}`}
+								</span>
+								<PriceTrendIndicator
+									delta={
+										station.status === "Out" || !hasPrice
+											? null
+											: station.priceTrends[fuelType]
+									}
+									className="mt-0.5 text-[10px]"
+								/>
+							</div>
+						</div>
 						<span
 							className="min-w-16 rounded-full px-2 py-0.5 text-xs"
 							style={{

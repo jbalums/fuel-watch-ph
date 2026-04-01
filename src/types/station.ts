@@ -16,6 +16,8 @@ export interface GasStation {
   provinceCode: string | null;
   cityMunicipalityCode: string | null;
   prices: Record<FuelType, number | null>;
+  previousPrices: Record<FuelType, number | null>;
+  priceTrends: Record<FuelType, number | null>;
   isVerified: boolean;
   isLguVerified: boolean;
   lguVerifiedAt: string | null;
