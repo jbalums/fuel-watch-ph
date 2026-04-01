@@ -70,6 +70,20 @@ function buildEmbedScriptSnippet(scope: CurrentUserScope) {
 	return lines.join("\n");
 }
 
+function buildEmbedIframeSnippet(scope: CurrentUserScope) {
+	const directUrl = buildEmbedDirectUrl(scope);
+
+	return [
+		"<iframe",
+		`  src="${directUrl}"`,
+		'  title="FuelWatch PH Station List"',
+		'  allow="geolocation; fullscreen"',
+		"  allowfullscreen",
+		'  style="width: 100vw; height: 100vh; border: 0;"',
+		"></iframe>",
+	].join("\n");
+}
+
 type LguSection = {
 	label: string;
 	description: string;
@@ -98,6 +112,7 @@ export default function LguPage() {
 	);
 	const embedDirectUrl = buildEmbedDirectUrl(scope);
 	const embedScriptSnippet = buildEmbedScriptSnippet(scope);
+	const embedIframeSnippet = buildEmbedIframeSnippet(scope);
 	const statCards = [
 		{ label: "Stations", value: Number(stats.total_stations), icon: Fuel },
 		{
@@ -298,6 +313,39 @@ export default function LguPage() {
 						<pre className="max-w-full overflow-x-auto rounded-lg bg-background px-4 py-3 text-xs text-foreground">
 							<code className="block min-w-max whitespace-pre">
 								{embedScriptSnippet}
+							</code>
+						</pre>
+					</div>
+
+					<div className="min-w-0 rounded-xl border border-border bg-secondary/30 p-4">
+						<div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+							<div>
+								<p className="font-semibold text-foreground">
+									Full-Screen iframe Example
+								</p>
+								<p className="text-sm text-muted-foreground">
+									Use this example if you want the embedded
+									station list to fill the full browser
+									viewport at 100vw by 100vh.
+								</p>
+							</div>
+							<button
+								type="button"
+								onClick={() =>
+									void copyText(
+										embedIframeSnippet,
+										"Full-screen iframe snippet copied",
+									)
+								}
+								className="inline-flex shrink-0 items-center gap-2 rounded-lg bg-surface-alt px-3 py-2 text-sm text-foreground sovereign-ease transition-colors hover:bg-secondary"
+							>
+								<Copy className="h-4 w-4" />
+								Copy iframe
+							</button>
+						</div>
+						<pre className="max-w-full overflow-x-auto rounded-lg bg-background px-4 py-3 text-xs text-foreground">
+							<code className="block min-w-max whitespace-pre">
+								{embedIframeSnippet}
 							</code>
 						</pre>
 					</div>

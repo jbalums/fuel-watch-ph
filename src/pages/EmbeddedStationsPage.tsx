@@ -1,17 +1,20 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { ChevronDown, ChevronUp, SlidersHorizontal } from "lucide-react";
+import {
+	ChevronDown,
+	ChevronUp,
+	Expand,
+	Minimize2,
+	SlidersHorizontal,
+} from "lucide-react";
 import { SearchFilter } from "@/components/SearchFilter";
 import { StationResultsList } from "@/components/StationResultsList";
 import { useGeoReferences } from "@/hooks/useGeoReferences";
 import { usePublicStationResults } from "@/hooks/usePublicStationResults";
+import { toast } from "@/lib/app-toast";
 import { fuelTypes as availableFuelTypes } from "@/lib/fuel-prices";
 import { cn } from "@/lib/utils";
-import type {
-	FilterFuelType,
-	SortOption,
-	StatusFilter,
-} from "@/types/station";
+import type { FilterFuelType, SortOption, StatusFilter } from "@/types/station";
 import logo from "@/assets/images/Icon.png";
 
 const EMBED_STATIONS_PER_PAGE = 10;
@@ -41,6 +44,7 @@ function isSortOption(value: string | null): value is SortOption {
 }
 
 export default function EmbeddedStationsPage() {
+	const embedRootRef = useRef<HTMLDivElement>(null);
 	const [searchParams, setSearchParams] = useSearchParams();
 	const { provinces, citiesByProvince } = useGeoReferences();
 	const searchQuery = searchParams.get("q") ?? "";
@@ -57,8 +61,7 @@ export default function EmbeddedStationsPage() {
 	const cityMunicipalityCode = searchParams.get("cityMunicipalityCode") ?? "";
 	const currentPage = parsePageParam(searchParams.get("page"));
 	const availableCities = useMemo(
-		() =>
-			provinceCode ? citiesByProvince.get(provinceCode) ?? [] : [],
+		() => (provinceCode ? (citiesByProvince.get(provinceCode) ?? []) : []),
 		[citiesByProvince, provinceCode],
 	);
 	const hasActiveFilters =
@@ -69,6 +72,7 @@ export default function EmbeddedStationsPage() {
 		!!provinceCode ||
 		!!cityMunicipalityCode;
 	const [filtersOpen, setFiltersOpen] = useState(false);
+	const [isFullscreen, setIsFullscreen] = useState(false);
 	const { stations, totalCount, isLoading } = usePublicStationResults({
 		searchQuery,
 		fuelFilter,
@@ -84,6 +88,9 @@ export default function EmbeddedStationsPage() {
 		1,
 		Math.ceil(totalCount / EMBED_STATIONS_PER_PAGE),
 	);
+	const fullscreenSupported =
+		typeof document !== "undefined" &&
+		typeof document.documentElement.requestFullscreen === "function";
 
 	useEffect(() => {
 		if (isLoading || currentPage <= totalPages) {
@@ -98,6 +105,26 @@ export default function EmbeddedStationsPage() {
 		}
 		setSearchParams(nextSearchParams, { replace: true });
 	}, [currentPage, isLoading, searchParams, setSearchParams, totalPages]);
+
+	useEffect(() => {
+		if (typeof document === "undefined") {
+			return;
+		}
+
+		const handleFullscreenChange = () => {
+			setIsFullscreen(Boolean(document.fullscreenElement));
+		};
+
+		handleFullscreenChange();
+		document.addEventListener("fullscreenchange", handleFullscreenChange);
+
+		return () => {
+			document.removeEventListener(
+				"fullscreenchange",
+				handleFullscreenChange,
+			);
+		};
+	}, []);
 
 	const updateSearchParams = (
 		updates: Record<string, string | null>,
@@ -132,27 +159,68 @@ export default function EmbeddedStationsPage() {
 		setSearchParams(nextSearchParams, { replace: true });
 	};
 
+	const toggleFullscreen = async () => {
+		if (!fullscreenSupported) {
+			toast.info("Fullscreen mode is not available in this browser");
+			return;
+		}
+
+		try {
+			if (document.fullscreenElement) {
+				await document.exitFullscreen();
+				return;
+			}
+
+			await (
+				embedRootRef.current ?? document.documentElement
+			).requestFullscreen();
+		} catch {
+			toast.error("Could not toggle fullscreen mode");
+		}
+	};
+
 	return (
-		<div className="min-h-screen bg-background p-3 md:p-5 relative">
+		<div ref={embedRootRef} className="bg-background p-3 md:p-5 relative">
 			<div className="mx-auto max-w-5xl">
-				<a
-					href="https://fuelwatchph.com/"
-					target="_blank"
-					className="flex h-12 pt-1 w-full top-0 backdrop-blur-lg px-4 z-[2000] sticky"
-				>
-					<div className="flex h-8 w-8 items-center justify-center">
-						<img src={logo} className="h-8" />
-					</div>
-					<div>
-						<h1 className="text-base font-bold tracking-tight text-foreground">
-							<span className="text-primary">FuelWatch</span>{" "}
-							<span className="text-amber-600">PH</span>
-						</h1>
-						<p className="text-[10px] text-muted-foreground">
-							Know before you fill up
-						</p>
-					</div>
-				</a>
+				<div className="h-12 pt-1 w-full top-0 backdrop-blur-lg px-4 sticky flex z-[2000] ">
+					<a
+						href="https://fuelwatchph.com/"
+						target="_blank"
+						className="flex"
+					>
+						<div className="flex h-8 w-8 items-center justify-center">
+							<img src={logo} className="h-8" />
+						</div>
+						<div>
+							<h1 className="text-base font-bold tracking-tight text-foreground">
+								<span className="text-primary">FuelWatch</span>{" "}
+								<span className="text-amber-600">PH</span>
+							</h1>
+							<p className="text-[10px] text-muted-foreground">
+								Know before you fill up
+							</p>
+						</div>
+					</a>
+					{fullscreenSupported ? (
+						<button
+							type="button"
+							onClick={() => void toggleFullscreen()}
+							className={cn(
+								"inline-flex ml-auto h-10 shrink-0 items-center gap-2 rounded-lg border px-3 text-xs font-medium sovereign-ease transition-colors",
+								isFullscreen
+									? "border-accent/30 bg-accent/10 text-accent"
+									: "border-border bg-surface-alt text-muted-foreground hover:text-foreground",
+							)}
+						>
+							{isFullscreen ? (
+								<Minimize2 className="h-4 w-4" />
+							) : (
+								<Expand className="h-4 w-4" />
+							)}
+							{isFullscreen ? "Exit fullscreen" : "Fullscreen"}
+						</button>
+					) : null}
+				</div>
 				<div className="mb-4 rounded-2xl border border-border bg-card/95 p-3 shadow-sovereign">
 					<div className="flex items-center justify-between gap-3">
 						<div>
@@ -160,30 +228,35 @@ export default function EmbeddedStationsPage() {
 								Find Stations
 							</p>
 							<p className="text-xs text-muted-foreground">
-								Browse nearby stations and narrow the list with filters when needed.
+								Browse nearby stations and narrow the list with
+								filters when needed.
 							</p>
 						</div>
-						<button
-							type="button"
-							onClick={() => setFiltersOpen((current) => !current)}
-							className={cn(
-								"inline-flex h-10 shrink-0 items-center gap-2 rounded-lg border px-3 text-xs font-medium sovereign-ease transition-colors",
-								hasActiveFilters || filtersOpen
-									? "border-accent/30 bg-accent/10 text-accent"
-									: "border-border bg-surface-alt text-muted-foreground hover:text-foreground",
-							)}
-						>
-							<SlidersHorizontal className="h-4 w-4" />
-							Filters
-							{hasActiveFilters ? (
-								<span className="h-1.5 w-1.5 rounded-full bg-current" />
-							) : null}
-							{filtersOpen ? (
-								<ChevronUp className="h-3.5 w-3.5" />
-							) : (
-								<ChevronDown className="h-3.5 w-3.5" />
-							)}
-						</button>
+						<div className="flex items-center gap-2">
+							<button
+								type="button"
+								onClick={() =>
+									setFiltersOpen((current) => !current)
+								}
+								className={cn(
+									"inline-flex h-10 shrink-0 items-center gap-2 rounded-lg border px-3 text-xs font-medium sovereign-ease transition-colors",
+									hasActiveFilters || filtersOpen
+										? "border-accent/30 bg-accent/10 text-accent"
+										: "border-border bg-surface-alt text-muted-foreground hover:text-foreground",
+								)}
+							>
+								<SlidersHorizontal className="h-4 w-4" />
+								Filters
+								{hasActiveFilters ? (
+									<span className="h-1.5 w-1.5 rounded-full bg-current" />
+								) : null}
+								{filtersOpen ? (
+									<ChevronUp className="h-3.5 w-3.5" />
+								) : (
+									<ChevronDown className="h-3.5 w-3.5" />
+								)}
+							</button>
+						</div>
 					</div>
 
 					{filtersOpen ? (
@@ -210,7 +283,10 @@ export default function EmbeddedStationsPage() {
 								sortBy={sortBy}
 								onSortChange={(value) =>
 									updateSearchParams({
-										sort: value === "price_asc" ? null : value,
+										sort:
+											value === "price_asc"
+												? null
+												: value,
 									})
 								}
 								provinces={provinces}
