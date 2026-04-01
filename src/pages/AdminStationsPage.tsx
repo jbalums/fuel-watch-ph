@@ -26,6 +26,7 @@ import type { FuelType, StationStatus } from "@/types/station";
 import {
 	buildStationLguVerificationPayload,
 	buildStationPayload,
+	formatStationPricesSummary,
 	type GasStationRow,
 	initialStationForm,
 	type StationFormState,
@@ -295,10 +296,11 @@ export default function AdminStationsPage() {
 											{station.address}
 										</p>
 										<p className="mt-2 text-sm text-muted-foreground">
-											{station.fuel_type} • ₱
-											{Number(
-												station.price_per_liter,
-											).toFixed(2)}{" "}
+											{formatStationPricesSummary(
+												station.prices,
+												station.fuel_type as FuelType,
+												Number(station.price_per_liter) || 0,
+											) || "No valid prices"}{" "}
 											• {station.report_count} reports
 										</p>
 										<p className="text-xs text-muted-foreground">
@@ -411,8 +413,11 @@ export default function AdminStationsPage() {
 								{stationToDelete.address}
 							</p>
 							<p className="mt-2 text-muted-foreground">
-								{stationToDelete.fuel_type} • ₱
-								{Number(stationToDelete.price_per_liter).toFixed(2)}
+								{formatStationPricesSummary(
+									stationToDelete.prices,
+									stationToDelete.fuel_type as FuelType,
+									Number(stationToDelete.price_per_liter) || 0,
+								) || "No valid prices"}
 							</p>
 							<p className="text-xs text-muted-foreground">
 								{stationToDelete.lat.toFixed(5)},{" "}

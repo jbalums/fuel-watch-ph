@@ -313,6 +313,28 @@ export function formatReportedPrices(prices: Record<FuelType, number | null>) {
 		.join(" • ");
 }
 
+export function formatStationPricesSummary(
+	rawPrices: unknown,
+	fallbackFuelType?: FuelType,
+	fallbackPricePerLiter?: number,
+) {
+	const prices = normalizeFuelPrices(
+		rawPrices,
+		fallbackFuelType,
+		fallbackPricePerLiter,
+	);
+
+	return fuelTypes
+		.filter((fuelType) => {
+			const price = prices[fuelType];
+			return (
+				typeof price === "number" && Number.isFinite(price) && price > 0
+			);
+		})
+		.map((fuelType) => `${fuelType}: ₱${prices[fuelType]!.toFixed(2)}`)
+		.join(" • ");
+}
+
 export function formatReviewStatusLabel(status: FuelReportReviewStatus) {
 	if (status === "pending") return "Pending";
 	if (status === "approved") return "Approved";
