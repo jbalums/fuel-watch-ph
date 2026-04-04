@@ -24,7 +24,7 @@ import { useProfile } from "@/hooks/useProfile";
 import { useUserAccess } from "@/hooks/useUserAccess";
 import { getDashboardPathForAccessLevel } from "@/lib/access-control";
 import { LogIn } from "lucide-react";
-import logo from "@/assets/images/Icon.png";
+import logo from "@/assets/images/fuelwatch-ph-icon.png";
 
 function formatCompactUserName(rawName: string) {
 	const parts = rawName.trim().split(/\s+/).filter(Boolean);
@@ -115,7 +115,7 @@ export function AppShellLayout() {
 						className="flex items-center gap-0 rounded-xl text-left sovereign-ease transition-opacity hover:opacity-90"
 					>
 						<div className="flex h-9 w-9 items-center justify-center">
-							<img src={logo} className="h-9 w-12" />
+							<img src={logo} className="h-9" />
 						</div>
 						<div>
 							<h1 className="text-base font-bold tracking-tight text-foreground">
@@ -137,7 +137,8 @@ export function AppShellLayout() {
 											<AvatarImage
 												src={
 													profile?.avatarUrl ||
-													user.user_metadata?.avatar_url
+													user.user_metadata
+														?.avatar_url
 												}
 											/>
 											<AvatarFallback className="bg-primary text-xs font-semibold text-primary-foreground">

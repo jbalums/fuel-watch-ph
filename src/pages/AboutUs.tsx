@@ -2,7 +2,7 @@ import { motion } from "framer-motion";
 import { ArrowLeft, Rocket } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { aboutUsSections } from "@/lib/legal";
-import logo from "@/assets/images/Icon.png";
+import logo from "@/assets/images/fuelwatch-icon.png";
 import logoFull from "@/assets/images/logo.png";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
