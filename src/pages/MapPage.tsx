@@ -23,8 +23,7 @@ export default function MapPage() {
 	const [searchParams, setSearchParams] = useSearchParams();
 	const stationParam = searchParams.get("station");
 	const provinceCode = searchParams.get("provinceCode") ?? "";
-	const cityMunicipalityCode =
-		searchParams.get("cityMunicipalityCode") ?? "";
+	const cityMunicipalityCode = searchParams.get("cityMunicipalityCode") ?? "";
 	const hasInitializedScopeFilters = useRef(false);
 	const reportLocation = useMemo(() => {
 		const state = location.state as MapPageLocationState | null;
@@ -44,8 +43,7 @@ export default function MapPage() {
 		return candidate;
 	}, [location.state]);
 	const availableCities = useMemo(
-		() =>
-			provinceCode ? citiesByProvince.get(provinceCode) ?? [] : [],
+		() => (provinceCode ? (citiesByProvince.get(provinceCode) ?? []) : []),
 		[citiesByProvince, provinceCode],
 	);
 	const filteredStations = useMemo(() => {
@@ -167,13 +165,11 @@ export default function MapPage() {
 				highlightLocation={reportLocation}
 				onFocusedStationChange={(stationId) => {
 					const nextParams = new URLSearchParams(searchParams);
-
 					if (stationId) {
 						nextParams.set("station", stationId);
 					} else {
 						nextParams.delete("station");
 					}
-
 					setSearchParams(nextParams, { replace: true });
 				}}
 			/>

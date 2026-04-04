@@ -79,25 +79,25 @@ function GoogleStationMap({
 
 		if (highlightLocation) {
 			map.setCenter(highlightLocation);
-			map.setZoom(17);
+			// map.setZoom(15);
 			return;
 		}
 
 		if (currentLocation) {
 			map.setCenter(currentLocation);
-			map.setZoom(15);
+			// map.setZoom(15);
 			return;
 		}
 
 		if (stations.length === 0) {
 			map.setCenter(MANILA_CENTER);
-			map.setZoom(14);
+			// map.setZoom(14);
 			return;
 		}
 
 		if (stations.length === 1) {
 			map.panTo({ lat: stations[0].lat, lng: stations[0].lng });
-			map.setZoom(16);
+			// map.setZoom(15);
 			return;
 		}
 
@@ -154,7 +154,7 @@ function GoogleStationMap({
 				height: "calc(100dvh - 185px)",
 			}}
 			center={mapCenter}
-			zoom={focusedStation ? 17 : 18}
+			zoom={focusedStation ? 15 : 14}
 			onLoad={(map) => {
 				setMap(map);
 			}}
@@ -201,7 +201,7 @@ function GoogleStationMap({
 						zIndex={10_001}
 					>
 						<div className="pointer-events-none -translate-x-1/2 -translate-y-full pb-4">
-							<div className="rounded-full bg-blue-600 px-3 py-1 text-xs font-semibold text-white shadow-lg">
+							<div className="rounded-full bg-red-600 px-3 py-1 text-xs font-semibold text-white shadow-lg">
 								You are here
 							</div>
 						</div>

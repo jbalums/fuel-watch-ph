@@ -2,24 +2,19 @@ import type { GasStation, StationStatus } from "@/types/station";
 import { LguVerifiedBadge } from "@/components/LguVerifiedBadge";
 import { PriceTrendIndicator } from "@/components/PriceTrendIndicator";
 import { VerifiedStationBadge } from "@/components/VerifiedStationBadge";
-import {
-	fuelTypes,
-	fuelTypeTextColorClassNames,
-} from "@/lib/fuel-prices";
+import { fuelTypes, fuelTypeTextColorClassNames } from "@/lib/fuel-prices";
 const statusColors: Record<StationStatus, string> = {
 	Available: "#22c55e",
 	Low: "#f59e0b",
 	Out: "#ef4444",
 };
 
-export function StationMarkerInfoWindow({
-	station,
-}: {
-	station: GasStation;
-}) {
+export function StationMarkerInfoWindow({ station }: { station: GasStation }) {
 	return (
-		<div className="flex min-w-[220px] flex-col gap-1.5 text-sm">
-			<span className="font-semibold !text-black">{station.name}</span>
+		<div className="flex w-[248px] flex-col gap-1.5 text-sm">
+			<span className="font-semibold !text-black pr-4">
+				{station.name}
+			</span>
 			<span className="text-xs text-gray-500">{station.address}</span>
 			{(station.isLguVerified || station.isVerified) && (
 				<div className="mt-1 flex flex-wrap items-center gap-1.5">
@@ -42,7 +37,7 @@ export function StationMarkerInfoWindow({
 				return (
 					<div
 						key={`station-info-${station.id}-${fuelType}`}
-						className="mt-1 flex items-center justify-between"
+						className={`mt-3 flex items-center justify-between ${hasPrice ? "" : "hidden"}`}
 					>
 						<span
 							className={`w-[45%] text-xs font-semibold ${fuelTypeTextColorClassNames[fuelType]}`}
@@ -52,20 +47,23 @@ export function StationMarkerInfoWindow({
 						<div
 							className={`w-[30%] text-right text-sm font-bold ${fuelTypeTextColorClassNames[fuelType]}`}
 						>
-							<div className="flex flex-col items-end">
+							<div className="flex items-center relative">
+								<div className="absolute -bottom-4">
+									<PriceTrendIndicator
+										delta={
+											station.status === "Out" ||
+											!hasPrice
+												? null
+												: station.priceTrends[fuelType]
+										}
+										className="mt-0.5 text-[10px]"
+									/>
+								</div>
 								<span>
 									{station.status === "Out"
 										? "—"
 										: `₱${hasPrice ? price.toFixed(2) : "--.--"}`}
 								</span>
-								<PriceTrendIndicator
-									delta={
-										station.status === "Out" || !hasPrice
-											? null
-											: station.priceTrends[fuelType]
-									}
-									className="mt-0.5 text-[10px]"
-								/>
 							</div>
 						</div>
 						<span

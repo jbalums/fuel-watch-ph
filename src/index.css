@@ -221,3 +221,19 @@
 		font-variant-numeric: tabular-nums;
 	}
 }
+
+.gm-style-iw-chr {
+	margin-bottom: -4px;
+	position: relative;
+}
+
+.gm-style-iw-chr button {
+	position: absolute !important;
+	right: 8px;
+	top: 8px;
+	@apply !outline-none !border-red-600 !h-6 !w-6 !p-0 rounded-full flex items-center justify-center;
+}
+
+.gm-style-iw-chr button > span {
+	@apply bg-red-600 !m-0 !p-0 !absolute top-0;
+}

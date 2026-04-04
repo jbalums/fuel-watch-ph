@@ -371,10 +371,10 @@ function GoogleReportLocationPicker({
 				<GoogleMap
 					mapContainerStyle={{
 						...GOOGLE_MAPS_CONTAINER_STYLE,
-						height: "360px",
+						height: "460px",
 					}}
 					center={activePosition ?? viewportCenter}
-					zoom={16}
+					zoom={15}
 					onLoad={(map) => {
 						mapRef.current = map;
 					}}
@@ -491,7 +491,9 @@ function GoogleReportLocationPicker({
 				)}
 
 				{addressError && <p className="text-warning">{addressError}</p>}
-				{locationError && <p className="text-warning">{locationError}</p>}
+				{locationError && (
+					<p className="text-warning">{locationError}</p>
+				)}
 			</div>
 		</div>
 	);
