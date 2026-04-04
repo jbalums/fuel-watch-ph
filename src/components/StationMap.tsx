@@ -220,7 +220,10 @@ function GoogleStationMap({
 							position={{ lat: station.lat, lng: station.lng }}
 							onCloseClick={() => setSelectedStationId(null)}
 						>
-							<StationMarkerInfoWindow station={station} />
+							<StationMarkerInfoWindow
+								station={station}
+								showDirectionsAction
+							/>
 						</InfoWindowF>
 					)}
 				</MarkerF>

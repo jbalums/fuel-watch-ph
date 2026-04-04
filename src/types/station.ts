@@ -13,6 +13,7 @@ export interface GasStation {
   address: string;
   lat: number;
   lng: number;
+  googlePlaceId: string | null;
   provinceCode: string | null;
   cityMunicipalityCode: string | null;
   prices: Record<FuelType, number | null>;

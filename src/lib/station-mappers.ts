@@ -61,6 +61,7 @@ export function mapGasStationRow(station: Tables<"gas_stations">): GasStation {
 		address: station.address,
 		lat: station.lat,
 		lng: station.lng,
+		googlePlaceId: station.google_place_id,
 		provinceCode: station.province_code,
 		cityMunicipalityCode: station.city_municipality_code,
 		prices,

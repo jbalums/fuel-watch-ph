@@ -1,0 +1,106 @@
+import { fireEvent, render, screen } from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { StationMarkerInfoWindow } from "@/components/StationMarkerInfoWindow";
+import type { GasStation } from "@/types/station";
+
+const station: GasStation = {
+	id: "station-1",
+	name: "FuelWatch Central",
+	address: "Carlos P. Garcia Ave, Tagbilaran City",
+	lat: 9.647,
+	lng: 123.855,
+	googlePlaceId: null,
+	provinceCode: "PH-BOH",
+	cityMunicipalityCode: "PH-BOH-TAGBILARAN-CITY",
+	prices: {
+		Unleaded: 60.5,
+		Premium: 63.25,
+		Diesel: 54.75,
+		"Premium Diesel": null,
+	},
+	previousPrices: {
+		Unleaded: null,
+		Premium: null,
+		Diesel: null,
+		"Premium Diesel": null,
+	},
+	priceTrends: {
+		Unleaded: null,
+		Premium: null,
+		Diesel: null,
+		"Premium Diesel": null,
+	},
+	isVerified: false,
+	isLguVerified: false,
+	lguVerifiedAt: null,
+	lguVerifiedBy: null,
+	lguVerifiedRole: null,
+	verifiedAt: null,
+	managerUserId: null,
+	status: "Available",
+	fuelType: "Unleaded",
+	pricePerLiter: 60.5,
+	updatedAt: new Date().toISOString(),
+	lastUpdated: "2 hours ago",
+	reportCount: 4,
+};
+
+describe("StationMarkerInfoWindow", () => {
+	beforeEach(() => {
+		Object.defineProperty(window, "open", {
+			writable: true,
+			value: vi.fn(),
+		});
+	});
+
+	it("shows directions only when explicitly enabled", () => {
+		const { rerender } = render(
+			<StationMarkerInfoWindow station={station} />,
+		);
+
+		expect(
+			screen.queryByRole("button", { name: /get directions/i }),
+		).not.toBeInTheDocument();
+
+		rerender(
+			<StationMarkerInfoWindow
+				station={station}
+				showDirectionsAction
+			/>,
+		);
+
+		expect(
+			screen.getByRole("button", { name: /get directions/i }),
+		).toBeEnabled();
+	});
+
+	it("disables directions safely when coordinates are invalid", () => {
+		render(
+			<StationMarkerInfoWindow
+				station={{ ...station, lng: Number.NaN }}
+				showDirectionsAction
+			/>,
+		);
+
+		expect(
+			screen.getByRole("button", { name: /get directions/i }),
+		).toBeDisabled();
+	});
+
+	it("opens Google Maps when the directions action is clicked", () => {
+		render(
+			<StationMarkerInfoWindow
+				station={station}
+				showDirectionsAction
+			/>,
+		);
+
+		fireEvent.click(screen.getByRole("button", { name: /get directions/i }));
+
+		expect(window.open).toHaveBeenCalledWith(
+			"https://www.google.com/maps/dir/?api=1&destination=9.647%2C123.855&travelmode=driving",
+			"_blank",
+			"noopener,noreferrer",
+		);
+	});
+});

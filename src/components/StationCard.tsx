@@ -1,14 +1,16 @@
-import { useMemo } from "react";
+import { type MouseEvent, useMemo } from "react";
 import { GasStation } from "@/types/station";
 import { StatusBadge } from "./StatusBadge";
 import { motion } from "framer-motion";
-import { MapPin, Clock, Users } from "lucide-react";
+import { Clock, MapPin, Navigation, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useLocation, useNavigate } from "react-router-dom";
+import { fuelTypes, fuelTypeTextColorClassNames } from "@/lib/fuel-prices";
+import { Button } from "@/components/ui/button";
 import {
-	fuelTypes,
-	fuelTypeTextColorClassNames,
-} from "@/lib/fuel-prices";
+	buildGoogleMapsDirectionsUrl,
+	openGoogleMapsDirections,
+} from "@/lib/google-maps-directions";
 import { calculateDistanceKm } from "@/utils/distance";
 import { LguVerifiedBadge } from "./LguVerifiedBadge";
 import { PriceTrendIndicator } from "./PriceTrendIndicator";
@@ -58,6 +60,15 @@ export function StationCard({
 
 		return `${distanceKm.toFixed(1)} km away`;
 	}, [station.lat, station.lng, userLocation]);
+	const directionsUrl = useMemo(
+		() =>
+			buildGoogleMapsDirectionsUrl({
+				lat: station.lat,
+				lng: station.lng,
+				placeId: station.googlePlaceId,
+			}),
+		[station.googlePlaceId, station.lat, station.lng],
+	);
 
 	const handleOpenOnMap = () => {
 		const searchParams = new URLSearchParams(location.search);
@@ -75,6 +86,15 @@ export function StationCard({
 		navigate({
 			pathname: "/map",
 			search: searchParams.toString(),
+		});
+	};
+	const handleGetDirections = (event: MouseEvent<HTMLButtonElement>) => {
+		event.preventDefault();
+		event.stopPropagation();
+		openGoogleMapsDirections({
+			lat: station.lat,
+			lng: station.lng,
+			placeId: station.googlePlaceId,
 		});
 	};
 
@@ -118,7 +138,7 @@ export function StationCard({
 						</div>
 						<div className="mt-1 flex items-start gap-1.5 text-muted-foreground">
 							<MapPin className="h-3.5 w-3.5 mt-[3px] shrink-0" />
-							<span className=" text-sm pr-4">
+							<span className=" text-sm pr-4 line-clamp-1">
 								{station.address}
 							</span>
 						</div>
@@ -141,11 +161,16 @@ export function StationCard({
 								price > 0;
 
 							return (
-								<div key={`${station.id}-${fuelType}`} className="min-w-0">
+								<div
+									key={`${station.id}-${fuelType}`}
+									className="min-w-0"
+								>
 									<span
 										className={cn(
 											"text-label",
-											fuelTypeTextColorClassNames[fuelType],
+											fuelTypeTextColorClassNames[
+												fuelType
+											],
 										)}
 									>
 										{fuelType}
@@ -157,7 +182,8 @@ export function StationCard({
 									</p>
 									<PriceTrendIndicator
 										delta={
-											station.status === "Out" || !hasPrice
+											station.status === "Out" ||
+											!hasPrice
 												? null
 												: station.priceTrends[fuelType]
 										}
@@ -167,6 +193,25 @@ export function StationCard({
 						})}
 					</div>
 					<div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+						<Button
+							type="button"
+							variant="outline"
+							size="sm"
+							className="h-6 px-2 text-xs sm:text-sm"
+							onClick={handleGetDirections}
+							onKeyDown={(event) => {
+								if (
+									event.key === "Enter" ||
+									event.key === " "
+								) {
+									event.stopPropagation();
+								}
+							}}
+							disabled={!directionsUrl}
+						>
+							<Navigation className="h-4 w-4" />
+							Get Directions
+						</Button>
 						{!hideDistanceLabel ? (
 							<span className="flex items-center gap-1">
 								<MapPin className="h-3 w-3" />

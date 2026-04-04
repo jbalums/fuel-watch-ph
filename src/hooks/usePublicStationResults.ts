@@ -46,6 +46,7 @@ function mapBrowseStationRow(row: BrowseStationRow) {
 		lng: row.lng,
 		province_code: row.province_code,
 		city_municipality_code: row.city_municipality_code,
+		google_place_id: row.google_place_id,
 		prices: row.prices ?? {},
 		previous_prices: row.previous_prices ?? {},
 		price_trends: row.price_trends ?? {},

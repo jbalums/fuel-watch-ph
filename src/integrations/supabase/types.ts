@@ -116,6 +116,7 @@ export type Database = {
           city_municipality_code: string | null
           created_at: string
           fuel_type: string
+          google_place_id: string | null
           id: string
           is_lgu_verified: boolean
           is_verified: boolean
@@ -141,6 +142,7 @@ export type Database = {
           city_municipality_code?: string | null
           created_at?: string
           fuel_type?: string
+          google_place_id?: string | null
           id?: string
           is_lgu_verified?: boolean
           is_verified?: boolean
@@ -166,6 +168,7 @@ export type Database = {
           city_municipality_code?: string | null
           created_at?: string
           fuel_type?: string
+          google_place_id?: string | null
           id?: string
           is_lgu_verified?: boolean
           is_verified?: boolean
@@ -693,6 +696,7 @@ export type Database = {
           city_municipality_code: string | null
           created_at: string | null
           fuel_type: string | null
+          google_place_id: string | null
           id: string | null
           is_lgu_verified: boolean | null
           is_verified: boolean | null
