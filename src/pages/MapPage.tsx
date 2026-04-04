@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useSearchParams } from "react-router-dom";
 import { GeoScopeFields } from "@/components/GeoScopeFields";
 import { StationMap } from "@/components/StationMap";
@@ -6,7 +6,9 @@ import { useGeoReferences } from "@/hooks/useGeoReferences";
 import { useCurrentUserScope } from "@/hooks/useCurrentUserScope";
 import { useStations } from "@/hooks/useStations";
 import { useUserAccess } from "@/hooks/useUserAccess";
+import { cn } from "@/lib/utils";
 import type { CoordinatePair } from "@/lib/google-maps";
+import { ChevronDown, ChevronUp, MapPinned } from "lucide-react";
 
 type MapPageLocationState = {
 	reportLocation?: CoordinatePair & {
@@ -25,6 +27,8 @@ export default function MapPage() {
 	const provinceCode = searchParams.get("provinceCode") ?? "";
 	const cityMunicipalityCode = searchParams.get("cityMunicipalityCode") ?? "";
 	const hasInitializedScopeFilters = useRef(false);
+	const hasActiveGeoFilter = !!provinceCode || !!cityMunicipalityCode;
+	const [locationFiltersOpen, setLocationFiltersOpen] = useState(false);
 	const reportLocation = useMemo(() => {
 		const state = location.state as MapPageLocationState | null;
 		const candidate = state?.reportLocation;
@@ -71,6 +75,12 @@ export default function MapPage() {
 			? stationParam
 			: null;
 	}, [filteredStations, stationParam]);
+
+	useEffect(() => {
+		if (hasActiveGeoFilter) {
+			setLocationFiltersOpen(true);
+		}
+	}, [hasActiveGeoFilter]);
 
 	useEffect(() => {
 		if (
@@ -130,33 +140,62 @@ export default function MapPage() {
 	return (
 		<div className="flex flex-col gap-4">
 			<div className="rounded-2xl bg-card p-4 shadow-sovereign">
-				<div className="mb-3">
-					<h2 className="text-lg font-semibold text-foreground">
-						Location Filter
-					</h2>
-					<p className="text-sm text-muted-foreground">
-						Filter visible stations on the map by province and city
-						or municipality.
-					</p>
+				<div className="flex items-center justify-between gap-3">
+					<div>
+						<h2 className="text-base md:text-lg font-semibold text-foreground">
+							Location Filter
+						</h2>
+						<p className="text-xs md:text-sm text-muted-foreground">
+							Filter visible stations on the map by province and
+							city or municipality.
+						</p>
+					</div>
+					<button
+						type="button"
+						onClick={() =>
+							setLocationFiltersOpen((current) => !current)
+						}
+						className={cn(
+							"inline-flex h-10 shrink-0 items-center gap-2 rounded-lg border px-3 text-xs font-medium sovereign-ease transition-colors",
+							hasActiveGeoFilter || locationFiltersOpen
+								? "border-accent/30 bg-accent/10 text-accent"
+								: "border-border bg-surface-alt text-muted-foreground hover:text-foreground",
+						)}
+					>
+						<MapPinned className="h-4 w-4" />
+						<span className="hidden sm:inline">Location</span>
+						{hasActiveGeoFilter ? (
+							<span className="h-1.5 w-1.5 rounded-full bg-current" />
+						) : null}
+						{locationFiltersOpen ? (
+							<ChevronUp className="h-3.5 w-3.5" />
+						) : (
+							<ChevronDown className="h-3.5 w-3.5" />
+						)}
+					</button>
 				</div>
-				<GeoScopeFields
-					provinces={provinces}
-					cities={availableCities}
-					provinceCode={provinceCode}
-					cityMunicipalityCode={cityMunicipalityCode}
-					provincePlaceholder="All Provinces"
-					cityPlaceholder="All Cities / Municipalities"
-					cityRequired={false}
-					onProvinceChange={(nextProvinceCode) => {
-						updateLocationFilters(nextProvinceCode, "");
-					}}
-					onCityChange={(nextCityMunicipalityCode) => {
-						updateLocationFilters(
-							provinceCode,
-							nextCityMunicipalityCode,
-						);
-					}}
-				/>
+				{locationFiltersOpen ? (
+					<div className="mt-3">
+						<GeoScopeFields
+							provinces={provinces}
+							cities={availableCities}
+							provinceCode={provinceCode}
+							cityMunicipalityCode={cityMunicipalityCode}
+							provincePlaceholder="All Provinces"
+							cityPlaceholder="All Cities / Municipalities"
+							cityRequired={false}
+							onProvinceChange={(nextProvinceCode) => {
+								updateLocationFilters(nextProvinceCode, "");
+							}}
+							onCityChange={(nextCityMunicipalityCode) => {
+								updateLocationFilters(
+									provinceCode,
+									nextCityMunicipalityCode,
+								);
+							}}
+						/>
+					</div>
+				) : null}
 			</div>
 
 			<StationMap

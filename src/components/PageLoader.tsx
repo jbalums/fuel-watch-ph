@@ -1,5 +1,5 @@
 import Lottie from "lottie-react";
-import fuelwatchLoaderAnimation from "@/assets/lottie/json/fuelwatch-ph-lottie-no-bg.json";
+import fuelwatchLoaderAnimation from "@/assets/lottie/json/fuelwatch-ph-lottie-nobg.json";
 
 interface PageLoaderProps {
 	visible: boolean;
@@ -26,9 +26,6 @@ export function PageLoader({ visible }: PageLoaderProps) {
 					/>
 				</div>
 				<div className="min-w-0 text-center">
-					{/* <p className="text-sm font-semibold text-foreground">
-						Loading page
-					</p> */}
 					<div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
 						<span>Preparing the next view...</span>
 					</div>
