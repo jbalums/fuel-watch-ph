@@ -1283,7 +1283,9 @@ BEGIN
 END;
 $$;
 
-CREATE OR REPLACE FUNCTION public.get_public_station_summary()
+DROP FUNCTION IF EXISTS public.get_public_station_summary();
+
+CREATE FUNCTION public.get_public_station_summary()
 RETURNS TABLE (
   total_stations bigint,
   average_unleaded double precision,
