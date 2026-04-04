@@ -570,6 +570,7 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: {
           average_diesel: number | null
+          average_kerosene: number | null
           average_premium_diesel: number | null
           average_premium: number | null
           average_unleaded: number | null

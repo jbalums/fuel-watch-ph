@@ -41,7 +41,7 @@ export function HeroStatus({ summary }: HeroStatusProps) {
 				⚠️ Fuel prices are crowd-sourced and may not reflect real-time
 				changes. Verify at the station before refueling.
 			</p>
-			<div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+			<div className="grid grid-cols-2 gap-4 md:grid-cols-5">
 				{fuelTypes.map((fuelType) => (
 					<div key={fuelType}>
 						<p

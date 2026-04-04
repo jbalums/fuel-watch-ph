@@ -256,7 +256,7 @@ export default function StationManagerDashboard() {
                     Primary: <b>{fuelType}</b>
                   </span>
                 </div>
-                <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
                   {fuelTypes.map((type) => (
                     <div key={type} className="flex flex-col gap-1.5">
                       <label className="text-xs font-medium text-muted-foreground">

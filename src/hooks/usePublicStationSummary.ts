@@ -17,6 +17,7 @@ async function fetchPublicStationSummary(): Promise<PublicStationSummary> {
 			average_premium: null,
 			average_diesel: null,
 			average_premium_diesel: null,
+			average_kerosene: null,
 		},
 	);
 }

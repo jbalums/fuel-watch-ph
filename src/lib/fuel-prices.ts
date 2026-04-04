@@ -9,6 +9,7 @@ export const fuelTypes = [
   "Premium",
   "Diesel",
   "Premium Diesel",
+  "Kerosene",
 ] as const satisfies readonly FuelType[];
 
 export const fuelTypeTextColorClassNames: Record<FuelType, string> = {
@@ -16,6 +17,7 @@ export const fuelTypeTextColorClassNames: Record<FuelType, string> = {
   Premium: "text-red-600",
   Diesel: "text-amber-600",
   "Premium Diesel": "text-sky-600",
+  Kerosene: "text-violet-600",
 };
 
 export const stationStatuses = [

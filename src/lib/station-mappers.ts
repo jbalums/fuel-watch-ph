@@ -102,6 +102,7 @@ export function mapPublicStationSummaryRow(summaryRow: {
 	average_premium: number | null;
 	average_diesel: number | null;
 	average_premium_diesel: number | null;
+	average_kerosene: number | null;
 }): PublicStationSummary {
 	return {
 		totalStations: Number(summaryRow.total_stations ?? 0),
@@ -110,6 +111,7 @@ export function mapPublicStationSummaryRow(summaryRow: {
 			Premium: safeNumber(summaryRow.average_premium),
 			Diesel: safeNumber(summaryRow.average_diesel),
 			"Premium Diesel": safeNumber(summaryRow.average_premium_diesel),
+			Kerosene: safeNumber(summaryRow.average_kerosene),
 		},
 	};
 }

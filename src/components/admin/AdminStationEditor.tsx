@@ -200,7 +200,7 @@ function EditorForm({
 								Primary: <b>{form.fuelType}</b>
 							</span>
 						</div>
-						<div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+						<div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
 							{fuelTypes.map((fuelType) => (
 								<div
 									key={fuelType}
@@ -280,7 +280,7 @@ function EditorForm({
 								to seed or correct trend comparisons.
 							</p>
 						</div>
-						<div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+						<div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
 							{fuelTypes.map((fuelType) => (
 								<div
 									key={`previous-${fuelType}`}

@@ -2,7 +2,8 @@ export type FuelType =
   | "Unleaded"
   | "Premium"
   | "Diesel"
-  | "Premium Diesel";
+  | "Premium Diesel"
+  | "Kerosene";
 export type StationStatus = "Available" | "Low" | "Out";
 export type FuelAvailabilityMap = Record<FuelType, StationStatus | null>;
 export type FuelReportReviewStatus = "pending" | "approved" | "rejected";
