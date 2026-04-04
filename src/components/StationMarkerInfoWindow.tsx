@@ -7,7 +7,11 @@ import {
 	buildGoogleMapsDirectionsUrl,
 	openGoogleMapsDirections,
 } from "@/lib/google-maps-directions";
-import { fuelTypes, fuelTypeTextColorClassNames } from "@/lib/fuel-prices";
+import {
+	fuelTypes,
+	fuelTypeTextColorClassNames,
+	isFuelSellable,
+} from "@/lib/fuel-prices";
 import { Navigation } from "lucide-react";
 const statusColors: Record<StationStatus, string> = {
 	Available: "#22c55e",
@@ -55,12 +59,15 @@ export function StationMarkerInfoWindow({
 					typeof price === "number" &&
 					Number.isFinite(price) &&
 					price > 0;
-				const priceStatus = hasPrice ? station.status : "Out";
+				const priceStatus =
+					station.fuelAvailability[fuelType] ??
+					(hasPrice ? station.status : null);
+				const shouldShowRow = priceStatus !== null || hasPrice;
 
 				return (
 					<div
 						key={`station-info-${station.id}-${fuelType}`}
-						className={`mt-3 flex items-center justify-between ${hasPrice ? "" : "hidden"}`}
+						className={`mt-3 flex items-center justify-between ${shouldShowRow ? "" : "hidden"}`}
 					>
 						<span
 							className={`w-[45%] text-xs font-semibold ${fuelTypeTextColorClassNames[fuelType]}`}
@@ -74,7 +81,7 @@ export function StationMarkerInfoWindow({
 								<div className="absolute -bottom-4">
 									<PriceTrendIndicator
 										delta={
-											station.status === "Out" ||
+											!isFuelSellable(priceStatus) ||
 											!hasPrice
 												? null
 												: station.priceTrends[fuelType]
@@ -83,21 +90,25 @@ export function StationMarkerInfoWindow({
 									/>
 								</div>
 								<span>
-									{station.status === "Out"
+									{priceStatus === "Out"
 										? "—"
-										: `₱${hasPrice ? price.toFixed(2) : "--.--"}`}
+										: hasPrice
+											? `₱${price.toFixed(2)}`
+											: "--.--"}
 								</span>
 							</div>
 						</div>
-						<span
-							className="min-w-16 rounded-full px-2 py-0.5 text-xs"
-							style={{
-								backgroundColor: `${statusColors[priceStatus]}22`,
-								color: statusColors[priceStatus],
-							}}
-						>
-							{hasPrice ? station.status : ""}
-						</span>
+						{priceStatus ? (
+							<span
+								className="min-w-16 rounded-full px-2 py-0.5 text-xs"
+								style={{
+									backgroundColor: `${statusColors[priceStatus]}22`,
+									color: statusColors[priceStatus],
+								}}
+							>
+								{priceStatus}
+							</span>
+						) : null}
 					</div>
 				);
 			})}

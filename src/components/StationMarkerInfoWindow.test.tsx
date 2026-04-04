@@ -18,6 +18,12 @@ const station: GasStation = {
 		Diesel: 54.75,
 		"Premium Diesel": null,
 	},
+	fuelAvailability: {
+		Unleaded: "Available",
+		Premium: "Low",
+		Diesel: "Available",
+		"Premium Diesel": null,
+	},
 	previousPrices: {
 		Unleaded: null,
 		Premium: null,

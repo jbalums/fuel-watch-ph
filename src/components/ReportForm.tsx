@@ -1,6 +1,4 @@
 import { useEffect, useRef, useState } from "react";
-import { StationStatus } from "@/types/station";
-import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 import {
   CheckCircle,
@@ -22,15 +20,19 @@ import {
 } from "@/lib/fuel-report-photo-upload";
 import { ReportLocationPicker } from "@/components/ReportLocationPicker";
 import {
+  createEmptyFuelAvailabilityFormMap,
   createEmptyFuelPriceFormMap,
-  getPrimaryFuelPriceSelection,
+  getFuelSummarySelection,
+  hasAnyFuelAvailability,
+  parseFuelAvailabilityForm,
   parseFuelPriceForm,
+  stationStatuses,
+  validateFuelPriceAvailability,
   fuelTypes,
+  type FuelAvailabilityFormMap,
   type FuelPriceFormMap,
 } from "@/lib/fuel-prices";
 import { GeoScopeFields } from "@/components/GeoScopeFields";
-
-const statuses: StationStatus[] = ["Available", "Low", "Out"];
 
 type UploadedPhoto = {
   path: string;
@@ -46,7 +48,9 @@ export function ReportForm() {
   const [prices, setPrices] = useState<FuelPriceFormMap>(
     createEmptyFuelPriceFormMap(),
   );
-  const [status, setStatus] = useState<StationStatus>("Available");
+  const [fuelAvailability, setFuelAvailability] = useState<FuelAvailabilityFormMap>(
+    createEmptyFuelAvailabilityFormMap(),
+  );
   const [selectedStationId, setSelectedStationId] = useState<string | null>(
     null,
   );
@@ -91,7 +95,7 @@ export function ReportForm() {
   const clearReportForm = () => {
     setStationName("");
     setPrices(createEmptyFuelPriceFormMap());
-    setStatus("Available");
+    setFuelAvailability(createEmptyFuelAvailabilityFormMap());
     setSelectedStationId(null);
     setProvinceCode("");
     setCityMunicipalityCode("");
@@ -217,9 +221,25 @@ export function ReportForm() {
       return;
     }
 
-    const primarySelection = getPrimaryFuelPriceSelection(normalizedPrices);
-    if (!primarySelection) {
-      toast.error("Add at least one valid fuel price");
+    let normalizedAvailability;
+    try {
+      normalizedAvailability = parseFuelAvailabilityForm(fuelAvailability);
+      validateFuelPriceAvailability(normalizedPrices, normalizedAvailability);
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Invalid fuel availability",
+      );
+      return;
+    }
+
+    const summarySelection = getFuelSummarySelection(
+      normalizedPrices,
+      normalizedAvailability,
+      selectedStation?.fuelType,
+    );
+
+    if (!summarySelection || !hasAnyFuelAvailability(normalizedAvailability)) {
+      toast.error("Add at least one fuel availability or price");
       return;
     }
 
@@ -241,10 +261,11 @@ export function ReportForm() {
     const { error } = await supabase.from("fuel_reports").insert({
       user_id: user.id,
       station_name: stationName.trim(),
-      price: primarySelection.price,
-      fuel_type: primarySelection.fuelType,
+      price: summarySelection.price,
+      fuel_type: summarySelection.fuelType,
       prices: normalizedPrices,
-      status,
+      fuel_availability: normalizedAvailability,
+      status: summarySelection.status,
       station_id: selectedStationId,
       province_code: provinceCode.trim(),
       city_municipality_code: cityMunicipalityCode.trim(),
@@ -413,38 +434,42 @@ export function ReportForm() {
                 placeholder="0.00"
                 className="rounded-xl bg-surface-alt px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:bg-card focus:ring-2 focus:ring-primary/20 sovereign-ease transition-all tabular-nums"
               />
+              <select
+                value={fuelAvailability[fuelType]}
+                onChange={(event) => {
+                  const nextStatus = event.target.value as
+                    | ""
+                    | "Available"
+                    | "Low"
+                    | "Out";
+                  setFuelAvailability((current) => ({
+                    ...current,
+                    [fuelType]: nextStatus,
+                  }));
+
+                  if (nextStatus === "Out") {
+                    setPrices((current) => ({
+                      ...current,
+                      [fuelType]: "",
+                    }));
+                  }
+                }}
+                className="rounded-xl bg-background px-4 py-3 text-sm text-foreground outline-none focus:ring-2 focus:ring-primary/20 sovereign-ease transition-all"
+              >
+                <option value="">No data</option>
+                {stationStatuses.map((status) => (
+                  <option key={status} value={status}>
+                    {status}
+                  </option>
+                ))}
+              </select>
             </div>
           ))}
         </div>
         <p className="text-xs text-muted-foreground">
-          Add at least one fuel price. Leave any unreported fuel blank.
+          Mark each reported fuel as Available, Low, or Out. Leave both fields
+          blank when you have no data for that fuel.
         </p>
-      </div>
-
-      {/* Status */}
-      <div className="flex flex-col gap-1.5">
-        <label className="text-label text-muted-foreground">Availability</label>
-        <div className="flex gap-2">
-          {statuses.map((s) => (
-            <button
-              key={s}
-              type="button"
-              onClick={() => setStatus(s)}
-              className={cn(
-                "flex-1 rounded-xl py-2.5 text-ui sovereign-ease transition-colors",
-                status === s
-                  ? s === "Available"
-                    ? "bg-success/20 text-success"
-                    : s === "Low"
-                    ? "bg-warning/20 text-warning"
-                    : "bg-destructive/20 text-destructive"
-                  : "bg-surface-alt text-muted-foreground hover:text-foreground"
-              )}
-            >
-              {s}
-            </button>
-          ))}
-        </div>
       </div>
 
       <div className="flex flex-col gap-1.5">

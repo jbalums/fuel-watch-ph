@@ -4,6 +4,7 @@ export type FuelType =
   | "Diesel"
   | "Premium Diesel";
 export type StationStatus = "Available" | "Low" | "Out";
+export type FuelAvailabilityMap = Record<FuelType, StationStatus | null>;
 export type FuelReportReviewStatus = "pending" | "approved" | "rejected";
 export type StationClaimReviewStatus = "pending" | "approved" | "rejected";
 
@@ -17,6 +18,7 @@ export interface GasStation {
   provinceCode: string | null;
   cityMunicipalityCode: string | null;
   prices: Record<FuelType, number | null>;
+  fuelAvailability: FuelAvailabilityMap;
   previousPrices: Record<FuelType, number | null>;
   priceTrends: Record<FuelType, number | null>;
   isVerified: boolean;
@@ -69,6 +71,7 @@ export interface FuelReport {
   photoFilename: string | null;
   photoUrl: string | null;
   prices: Record<FuelType, number | null>;
+  fuelAvailability: FuelAvailabilityMap;
   price: number;
   fuelType: FuelType;
   status: StationStatus;

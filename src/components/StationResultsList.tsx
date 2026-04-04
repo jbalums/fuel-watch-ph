@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
-import type { GasStation } from "@/types/station";
+import type { FilterFuelType, GasStation } from "@/types/station";
 import { StationCard } from "@/components/StationCard";
 import { useUserLocation } from "@/hooks/useUserLocation";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,7 @@ interface StationResultsListProps {
 	onPageChange?: (page: number) => void;
 	openOnMapInNewTab?: boolean;
 	hideDistanceLabel?: boolean;
+	activeFuelFilter?: FilterFuelType;
 }
 
 export function StationResultsList({
@@ -25,6 +26,7 @@ export function StationResultsList({
 	onPageChange,
 	openOnMapInNewTab = false,
 	hideDistanceLabel = false,
+	activeFuelFilter = "All",
 }: StationResultsListProps) {
 	const { latitude, longitude } = useUserLocation();
 	const userLocation = useMemo(
@@ -99,6 +101,7 @@ export function StationResultsList({
 							userLocation={userLocation}
 							openOnMapInNewTab={openOnMapInNewTab}
 							hideDistanceLabel={hideDistanceLabel}
+							activeFuelFilter={activeFuelFilter}
 						/>
 					))}
 					{stations.length === 0 && (

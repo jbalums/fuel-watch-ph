@@ -51,9 +51,12 @@ export default function EmbeddedStationsPage() {
 	const fuelFilter = isFuelFilter(searchParams.get("fuel"))
 		? searchParams.get("fuel")!
 		: "All";
-	const statusFilter = isStatusFilter(searchParams.get("status"))
-		? searchParams.get("status")!
-		: "All";
+	const statusFilter =
+		fuelFilter === "All"
+			? "All"
+			: isStatusFilter(searchParams.get("status"))
+				? searchParams.get("status")!
+				: "All";
 	const sortBy = isSortOption(searchParams.get("sort"))
 		? searchParams.get("sort")!
 		: "price_asc";
@@ -272,6 +275,10 @@ export default function EmbeddedStationsPage() {
 								onFuelFilterChange={(value) =>
 									updateSearchParams({
 										fuel: value === "All" ? null : value,
+										status:
+											value === "All"
+												? null
+												: searchParams.get("status"),
 									})
 								}
 								statusFilter={statusFilter}
@@ -317,6 +324,7 @@ export default function EmbeddedStationsPage() {
 					onPageChange={handlePageChange}
 					openOnMapInNewTab
 					hideDistanceLabel
+					activeFuelFilter={fuelFilter}
 					emptyMessage="No stations match the embedded location filters."
 				/>
 			</div>

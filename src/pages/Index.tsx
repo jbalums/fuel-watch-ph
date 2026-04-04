@@ -109,6 +109,7 @@ export default function Index() {
 				currentPage={currentPage}
 				totalPages={totalPages}
 				onPageChange={setCurrentPage}
+				activeFuelFilter={fuelFilter}
 			/>
 		</>
 	);

@@ -3,6 +3,7 @@ import type { Tables } from "@/integrations/supabase/types";
 import {
 	createEmptyFuelPriceMap,
 	fuelTypes,
+	normalizeFuelAvailability,
 	normalizeFuelPrices,
 } from "@/lib/fuel-prices";
 import type { FuelType, GasStation, PublicStationSummary } from "@/types/station";
@@ -65,6 +66,11 @@ export function mapGasStationRow(station: Tables<"gas_stations">): GasStation {
 		provinceCode: station.province_code,
 		cityMunicipalityCode: station.city_municipality_code,
 		prices,
+		fuelAvailability: normalizeFuelAvailability(
+			station.fuel_availability,
+			fuelType,
+			station.status as GasStation["status"],
+		),
 		previousPrices: normalizeFuelPrices(station.previous_prices),
 		priceTrends: normalizeFuelPrices(station.price_trends),
 		isVerified: station.is_verified,

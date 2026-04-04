@@ -2,11 +2,19 @@ import { useQuery, type QueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
 import {
+	createEmptyFuelAvailabilityFormMap,
 	createEmptyFuelPriceFormMap,
 	createEmptyFuelPriceMap,
 	fuelTypes,
-	getPrimaryFuelPriceSelection,
+	getFuelSummarySelection,
+	normalizeFuelAvailability,
 	normalizeFuelPrices,
+	parseFuelAvailabilityForm,
+	parseFuelPriceForm,
+	type FuelAvailabilityFormMap,
+	type FuelAvailabilityFormValue,
+	isFuelSellable,
+	validateFuelPriceAvailability,
 } from "@/lib/fuel-prices";
 import type {
 	FuelReport,
@@ -27,6 +35,7 @@ type ProfileRow = Pick<
 export type ReportFilter = FuelReportReviewStatus | "all";
 export type ClaimFilter = StationClaimReviewStatus | "all";
 export type StationPricesFormState = Record<FuelType, string>;
+export type StationAvailabilityFormState = FuelAvailabilityFormMap;
 
 export type StationFormState = {
 	name: string;
@@ -37,8 +46,8 @@ export type StationFormState = {
 	cityMunicipalityCode: string;
 	prices: StationPricesFormState;
 	previousPrices: StationPricesFormState;
+	fuelAvailability: StationAvailabilityFormState;
 	fuelType: FuelType;
-	status: StationStatus;
 };
 
 export const reportFilters: { value: ReportFilter; label: string }[] = [
@@ -64,8 +73,8 @@ export const initialStationForm: StationFormState = {
 	cityMunicipalityCode: "",
 	prices: createEmptyFuelPriceFormMap(),
 	previousPrices: createEmptyFuelPriceFormMap(),
+	fuelAvailability: createEmptyFuelAvailabilityFormMap(),
 	fuelType: "Diesel",
-	status: "Available",
 };
 
 function formatReportedByLabel(
@@ -94,10 +103,20 @@ function mapFuelReport(
 		report.fuel_type as FuelType,
 		Number(report.price) || 0,
 	);
+	const fuelAvailability = normalizeFuelAvailability(
+		report.fuel_availability,
+		report.fuel_type as FuelType,
+		report.status as StationStatus,
+	);
 	const reportedBy = report.user_id;
-	const primarySelection = getPrimaryFuelPriceSelection(prices) ?? {
+	const primarySelection = getFuelSummarySelection(
+		prices,
+		fuelAvailability,
+		report.fuel_type as FuelType,
+	) ?? {
 		fuelType: report.fuel_type as FuelType,
 		price: Number(report.price) || 0,
+		status: report.status as StationStatus,
 	};
 
 	return {
@@ -113,9 +132,10 @@ function mapFuelReport(
 		photoFilename: report.photo_filename,
 		photoUrl: null,
 		prices,
+		fuelAvailability,
 		price: primarySelection.price,
 		fuelType: primarySelection.fuelType,
-		status: report.status as StationStatus,
+		status: primarySelection.status,
 		reportedAt: report.created_at,
 		reportedBy,
 		reportedByLabel: formatReportedByLabel(
@@ -301,15 +321,39 @@ export async function refreshAdminData(queryClient: QueryClient) {
 	]);
 }
 
-export function formatReportedPrices(prices: Record<FuelType, number | null>) {
+function formatFuelAvailabilitySummaryValue(
+	price: number | null,
+	status: StationStatus | null,
+) {
+	if (status === "Out") {
+		return "Out";
+	}
+
+	if (typeof price === "number" && Number.isFinite(price) && price > 0) {
+		if (status === "Low") {
+			return `₱${price.toFixed(2)} (Low)`;
+		}
+
+		return `₱${price.toFixed(2)}`;
+	}
+
+	return null;
+}
+
+export function formatReportedPrices(
+	prices: Record<FuelType, number | null>,
+	fuelAvailability?: Record<FuelType, StationStatus | null>,
+) {
 	return fuelTypes
-		.filter((fuelType) => {
-			const price = prices[fuelType];
-			return (
-				typeof price === "number" && Number.isFinite(price) && price > 0
+		.map((fuelType) => {
+			const value = formatFuelAvailabilitySummaryValue(
+				prices[fuelType],
+				fuelAvailability?.[fuelType] ?? null,
 			);
+
+			return value ? `${fuelType}: ${value}` : null;
 		})
-		.map((fuelType) => `${fuelType}: P${prices[fuelType]!.toFixed(2)}`)
+		.filter((value): value is string => Boolean(value))
 		.join(" • ");
 }
 
@@ -317,21 +361,30 @@ export function formatStationPricesSummary(
 	rawPrices: unknown,
 	fallbackFuelType?: FuelType,
 	fallbackPricePerLiter?: number,
+	rawFuelAvailability?: unknown,
+	fallbackStatus?: StationStatus,
 ) {
 	const prices = normalizeFuelPrices(
 		rawPrices,
 		fallbackFuelType,
 		fallbackPricePerLiter,
 	);
+	const fuelAvailability = normalizeFuelAvailability(
+		rawFuelAvailability,
+		fallbackFuelType,
+		fallbackStatus,
+	);
 
 	return fuelTypes
-		.filter((fuelType) => {
-			const price = prices[fuelType];
-			return (
-				typeof price === "number" && Number.isFinite(price) && price > 0
+		.map((fuelType) => {
+			const value = formatFuelAvailabilitySummaryValue(
+				prices[fuelType],
+				fuelAvailability[fuelType],
 			);
+
+			return value ? `${fuelType}: ${value}` : null;
 		})
-		.map((fuelType) => `${fuelType}: ₱${prices[fuelType]!.toFixed(2)}`)
+		.filter((value): value is string => Boolean(value))
 		.join(" • ");
 }
 
@@ -359,29 +412,6 @@ export function ReviewStatusBadge({
 		>
 			{formatReviewStatusLabel(status as FuelReportReviewStatus)}
 		</span>
-	);
-}
-
-function parseStationPriceFormMap(
-	priceForm: StationPricesFormState,
-) {
-	return fuelTypes.reduce<Record<FuelType, number | null>>(
-		(accumulator, fuelType) => {
-			const rawValue = priceForm[fuelType].trim();
-			if (!rawValue) {
-				accumulator[fuelType] = null;
-				return accumulator;
-			}
-
-			const parsedValue = Number.parseFloat(rawValue);
-			if (Number.isNaN(parsedValue)) {
-				throw new Error(`${fuelType} price must be a valid number`);
-			}
-
-			accumulator[fuelType] = parsedValue;
-			return accumulator;
-		},
-		createEmptyFuelPriceMap(),
 	);
 }
 
@@ -434,10 +464,14 @@ export function buildStationPayload(
 		throw new Error("City or municipality is required");
 	}
 
-	const prices = parseStationPriceFormMap(stationForm.prices);
-	const submittedPreviousPrices = parseStationPriceFormMap(
+	const prices = parseFuelPriceForm(stationForm.prices);
+	const submittedPreviousPrices = parseFuelPriceForm(
 		stationForm.previousPrices,
 	);
+	const fuelAvailability = parseFuelAvailabilityForm(
+		stationForm.fuelAvailability,
+	);
+	validateFuelPriceAvailability(prices, fuelAvailability);
 	const previousPrices = existingStation
 		? normalizeFuelPrices(existingStation.previous_prices)
 		: createEmptyFuelPriceMap();
@@ -451,9 +485,10 @@ export function buildStationPayload(
 	const nextPreviousPrices = { ...previousPrices, ...submittedPreviousPrices };
 
 	const pricePerLiter = prices[stationForm.fuelType];
-	if (pricePerLiter === null) {
+	const primaryFuelAvailability = fuelAvailability[stationForm.fuelType];
+	if (!isFuelSellable(primaryFuelAvailability) || pricePerLiter === null) {
 		throw new Error(
-			`Add a ${stationForm.fuelType} price to match the selected fuel type`,
+			`The selected fuel type must be marked Available or Low and include a valid price`,
 		);
 	}
 
@@ -489,11 +524,12 @@ export function buildStationPayload(
 		province_code: stationForm.provinceCode.trim(),
 		city_municipality_code: stationForm.cityMunicipalityCode.trim(),
 		prices,
+		fuel_availability: fuelAvailability,
 		previous_prices: nextPreviousPrices,
 		price_trends: priceTrends,
 		fuel_type: stationForm.fuelType,
 		price_per_liter: pricePerLiter,
-		status: stationForm.status,
+		status: primaryFuelAvailability,
 	};
 }
 
@@ -552,4 +588,22 @@ export function normalizeStationPricesForForm(
 	}
 
 	return prices;
+}
+
+export function normalizeStationAvailabilityForForm(
+	rawAvailability: unknown,
+	fuelType: FuelType,
+	fallbackStatus: StationStatus,
+): StationAvailabilityFormState {
+	const availability = normalizeFuelAvailability(
+		rawAvailability,
+		fuelType,
+		fallbackStatus,
+	);
+
+	return fuelTypes.reduce<StationAvailabilityFormState>((accumulator, key) => {
+		accumulator[key] =
+			(availability[key] as FuelAvailabilityFormValue | null) ?? "";
+		return accumulator;
+	}, createEmptyFuelAvailabilityFormMap());
 }

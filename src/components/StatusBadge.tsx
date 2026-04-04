@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 interface StatusBadgeProps {
 	status: StationStatus;
 	className?: string;
+	compact?: boolean;
 }
 
 const statusConfig: Record<
@@ -13,18 +14,22 @@ const statusConfig: Record<
 	Available: {
 		bg: "bg-success/15",
 		text: "text-success",
-		label: "Available",
+		label: "Avbl",
 	},
-	Low: { bg: "bg-warning/15", text: "text-warning", label: "Low Stock" },
+	Low: { bg: "bg-warning/15", text: "text-warning", label: "Low" },
 	Out: { bg: "bg-destructive/15", text: "text-destructive", label: "Out" },
 };
 
-export function StatusBadge({ status, className }: StatusBadgeProps) {
+export function StatusBadge({
+	status,
+	className,
+	compact = false,
+}: StatusBadgeProps) {
 	const config = statusConfig[status];
 	return (
 		<span
 			className={cn(
-				"inline-flex text-xs items-center gap-1.5 rounded-full px-3 py-1 text-ui",
+				"inline-flex text-xs items-center gap-0.5 rounded-full px-1 py-0.5 text-ui",
 				config.bg,
 				config.text,
 				className,
@@ -32,7 +37,7 @@ export function StatusBadge({ status, className }: StatusBadgeProps) {
 		>
 			<span
 				className={cn(
-					"h-1.5 w-1.5 rounded-full",
+					"h-1 w-1 rounded-full",
 					status === "Available"
 						? "bg-success"
 						: status === "Low"
@@ -41,7 +46,11 @@ export function StatusBadge({ status, className }: StatusBadgeProps) {
 					status !== "Out" && "animate-pulse-status",
 				)}
 			/>
-			{config.label}
+			{compact
+				? status === "Available"
+					? "Avbl"
+					: status
+				: config.label}
 		</span>
 	);
 }

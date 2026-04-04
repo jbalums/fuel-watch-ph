@@ -48,6 +48,7 @@ function mapBrowseStationRow(row: BrowseStationRow) {
 		city_municipality_code: row.city_municipality_code,
 		google_place_id: row.google_place_id,
 		prices: row.prices ?? {},
+		fuel_availability: row.fuel_availability ?? {},
 		previous_prices: row.previous_prices ?? {},
 		price_trends: row.price_trends ?? {},
 		is_verified: row.is_verified ?? false,

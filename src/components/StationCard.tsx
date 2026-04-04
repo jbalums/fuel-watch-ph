@@ -1,5 +1,5 @@
 import { type MouseEvent, useMemo } from "react";
-import { GasStation } from "@/types/station";
+import { FilterFuelType, GasStation, StationStatus } from "@/types/station";
 import { StatusBadge } from "./StatusBadge";
 import { motion } from "framer-motion";
 import { Clock, MapPin, Navigation, Users } from "lucide-react";
@@ -15,6 +15,7 @@ import { calculateDistanceKm } from "@/utils/distance";
 import { LguVerifiedBadge } from "./LguVerifiedBadge";
 import { PriceTrendIndicator } from "./PriceTrendIndicator";
 import { VerifiedStationBadge } from "./VerifiedStationBadge";
+import { isFuelSellable } from "@/lib/fuel-prices";
 
 interface StationCardProps {
 	station: GasStation;
@@ -25,6 +26,7 @@ interface StationCardProps {
 	} | null;
 	openOnMapInNewTab?: boolean;
 	hideDistanceLabel?: boolean;
+	activeFuelFilter?: FilterFuelType;
 }
 
 export function StationCard({
@@ -33,13 +35,20 @@ export function StationCard({
 	userLocation,
 	openOnMapInNewTab = false,
 	hideDistanceLabel = false,
+	activeFuelFilter = "All",
 }: StationCardProps) {
 	const navigate = useNavigate();
 	const location = useLocation();
+	const selectedFuelStatus =
+		activeFuelFilter === "All"
+			? null
+			: (station.fuelAvailability[activeFuelFilter] ?? station.status);
+	const displayStatus = (selectedFuelStatus ??
+		station.status) as StationStatus;
 	const statusBarColor =
-		station.status === "Available"
+		displayStatus === "Available"
 			? "status-bar-available"
-			: station.status === "Low"
+			: displayStatus === "Low"
 				? "status-bar-low"
 				: "status-bar-out";
 	const distanceLabel = useMemo(() => {
@@ -131,10 +140,13 @@ export function StationCard({
 							<h3 className=" font-semibold text-foreground max-w-[calc(100%-90px)]">
 								{station.name}
 							</h3>
-							<StatusBadge
-								className="h-6"
-								status={station.status}
-							/>
+							{activeFuelFilter !== "All" &&
+							selectedFuelStatus ? (
+								<StatusBadge
+									className="h-6"
+									status={selectedFuelStatus}
+								/>
+							) : null}
 						</div>
 						<div className="mt-1 flex items-start gap-1.5 text-muted-foreground">
 							<MapPin className="h-3.5 w-3.5 mt-[3px] shrink-0" />
@@ -159,30 +171,45 @@ export function StationCard({
 								typeof price === "number" &&
 								Number.isFinite(price) &&
 								price > 0;
+							const availability =
+								station.fuelAvailability[fuelType] ??
+								(hasPrice ? station.status : null);
+							const shouldShowRow =
+								availability !== null || hasPrice;
 
 							return (
 								<div
 									key={`${station.id}-${fuelType}`}
-									className={`min-w-0 ${hasPrice ? "" : "hidden"}`}
+									className={`min-w-0 ${shouldShowRow ? "" : "hidden"}`}
 								>
 									<span
 										className={cn(
-											"text-label",
+											"text-label flex items-center relative",
 											fuelTypeTextColorClassNames[
 												fuelType
 											],
 										)}
 									>
 										{fuelType}
+										{availability ? (
+											<StatusBadge
+												status={availability}
+												compact
+												className="ml-1 px-1 !rounded-sm !py-1 text-[8px]"
+											/>
+										) : null}
 									</span>
 									<p className="mt-0.5 text-lg font-bold tabular-nums text-foreground md:text-2xl">
-										{station.status === "Out"
+										{availability === "Out"
 											? "—"
-											: `₱ ${hasPrice ? price.toFixed(2) : "-"}`}
+											: hasPrice
+												? `₱ ${price.toFixed(2)}`
+												: "—"}
 									</p>
+
 									<PriceTrendIndicator
 										delta={
-											station.status === "Out" ||
+											!isFuelSellable(availability) ||
 											!hasPrice
 												? null
 												: station.priceTrends[fuelType]

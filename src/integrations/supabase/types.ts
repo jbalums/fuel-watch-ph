@@ -19,6 +19,7 @@ export type Database = {
           applied_station_id: string | null
           city_municipality_code: string | null
           created_at: string
+          fuel_availability: Json | null
           fuel_type: string
           id: string
           lat: number | null
@@ -45,6 +46,7 @@ export type Database = {
           applied_station_id?: string | null
           city_municipality_code?: string | null
           created_at?: string
+          fuel_availability?: Json | null
           fuel_type: string
           id?: string
           lat?: number | null
@@ -71,6 +73,7 @@ export type Database = {
           applied_station_id?: string | null
           city_municipality_code?: string | null
           created_at?: string
+          fuel_availability?: Json | null
           fuel_type?: string
           id?: string
           lat?: number | null
@@ -115,6 +118,7 @@ export type Database = {
           address: string
           city_municipality_code: string | null
           created_at: string
+          fuel_availability: Json
           fuel_type: string
           google_place_id: string | null
           id: string
@@ -141,6 +145,7 @@ export type Database = {
           address: string
           city_municipality_code?: string | null
           created_at?: string
+          fuel_availability?: Json
           fuel_type?: string
           google_place_id?: string | null
           id?: string
@@ -167,6 +172,7 @@ export type Database = {
           address?: string
           city_municipality_code?: string | null
           created_at?: string
+          fuel_availability?: Json
           fuel_type?: string
           google_place_id?: string | null
           id?: string
@@ -695,6 +701,7 @@ export type Database = {
           address: string | null
           city_municipality_code: string | null
           created_at: string | null
+          fuel_availability: Json | null
           fuel_type: string | null
           google_place_id: string | null
           id: string | null
@@ -839,10 +846,10 @@ export type Database = {
       update_managed_station: {
         Args: {
           _address: string
+          _fuel_availability: Json
           _fuel_type: string
           _prices: Json
           _station_id: string
-          _status: string
         }
         Returns: string
       }

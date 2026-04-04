@@ -8,13 +8,20 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useManagedStation } from "@/hooks/useManagedStation";
 import { supabase } from "@/integrations/supabase/client";
 import {
+  createEmptyFuelAvailabilityFormMap,
   createEmptyFuelPriceFormMap,
-  createEmptyFuelPriceMap,
   fuelTypes,
+  parseFuelAvailabilityForm,
+  parseFuelPriceForm,
+  stationStatuses,
+  validateFuelPriceAvailability,
+  isFuelSellable,
+  type FuelAvailabilityFormMap,
 } from "@/lib/fuel-prices";
-import type { FuelType, StationStatus } from "@/types/station";
+import type { FuelType } from "@/types/station";
 
 type StationPricesFormState = Record<FuelType, string>;
+type StationAvailabilityFormState = FuelAvailabilityFormMap;
 
 function normalizePrices(
   prices: Record<FuelType, number | null>,
@@ -27,6 +34,15 @@ function normalizePrices(
   }, createEmptyFuelPriceFormMap());
 }
 
+function normalizeAvailability(
+  availability: Record<FuelType, "Available" | "Low" | "Out" | null>,
+): StationAvailabilityFormState {
+  return fuelTypes.reduce((formattedAvailability, fuelType) => {
+    formattedAvailability[fuelType] = availability[fuelType] ?? "";
+    return formattedAvailability;
+  }, createEmptyFuelAvailabilityFormMap());
+}
+
 export default function StationManagerDashboard() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -34,10 +50,13 @@ export default function StationManagerDashboard() {
   const { data: station, isLoading } = useManagedStation();
   const [address, setAddress] = useState("");
   const [fuelType, setFuelType] = useState<FuelType>("Diesel");
-  const [status, setStatus] = useState<StationStatus>("Available");
   const [prices, setPrices] = useState<StationPricesFormState>(
     createEmptyFuelPriceFormMap(),
   );
+  const [fuelAvailability, setFuelAvailability] =
+    useState<StationAvailabilityFormState>(
+      createEmptyFuelAvailabilityFormMap(),
+    );
 
   useEffect(() => {
     if (authLoading) {
@@ -56,8 +75,8 @@ export default function StationManagerDashboard() {
 
     setAddress(station.address);
     setFuelType(station.fuelType);
-    setStatus(station.status);
     setPrices(normalizePrices(station.prices));
+    setFuelAvailability(normalizeAvailability(station.fuelAvailability));
   }, [station]);
 
   const saveStation = useMutation({
@@ -66,31 +85,34 @@ export default function StationManagerDashboard() {
         throw new Error("No managed station found");
       }
 
-      const payload = fuelTypes.reduce((fuelPrices, currentFuelType) => {
-        fuelPrices[currentFuelType] = prices[currentFuelType].trim()
-          ? Number(prices[currentFuelType])
-          : null;
-        return fuelPrices;
-      }, createEmptyFuelPriceMap());
+      const payload = parseFuelPriceForm(prices);
+      const normalizedAvailability = parseFuelAvailabilityForm(fuelAvailability);
+      validateFuelPriceAvailability(payload, normalizedAvailability);
 
       const selectedPrice = payload[fuelType];
+      const selectedAvailability = normalizedAvailability[fuelType];
 
       if (!address.trim()) {
         throw new Error("Station address is required");
       }
 
-      if (selectedPrice === null || Number.isNaN(selectedPrice) || selectedPrice <= 0) {
+      if (
+        !isFuelSellable(selectedAvailability) ||
+        selectedPrice === null ||
+        Number.isNaN(selectedPrice) ||
+        selectedPrice <= 0
+      ) {
         throw new Error(
-          `Add a valid ${fuelType} price to match the selected fuel type`,
+          `The selected fuel type must be marked Available or Low and include a valid price`,
         );
       }
 
       const { error } = await supabase.rpc("update_managed_station", {
         _station_id: station.id,
         _address: address.trim(),
-        _status: status,
         _fuel_type: fuelType,
         _prices: payload,
+        _fuel_availability: normalizedAvailability,
       });
 
       if (error) {
@@ -214,17 +236,9 @@ export default function StationManagerDashboard() {
                     </option>
                   ))}
                 </select>
-                <select
-                  value={status}
-                  onChange={(event) =>
-                    setStatus(event.target.value as StationStatus)
-                  }
-                  className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
-                >
-                  <option value="Available">Available</option>
-                  <option value="Low">Low</option>
-                  <option value="Out">Out</option>
-                </select>
+                <div className="flex items-center rounded-lg border border-border bg-muted px-3 py-2 text-sm text-muted-foreground">
+                  Primary fuel must be marked Available or Low.
+                </div>
               </div>
 
               <div className="mt-5 rounded-xl border border-border bg-background p-4">
@@ -234,7 +248,8 @@ export default function StationManagerDashboard() {
                       Fuel Prices
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      Update the latest prices for your station.
+                      Update each fuel's price and availability for your
+                      station.
                     </p>
                   </div>
                   <span className="rounded-full bg-accent/10 px-3 py-1 text-sm font-medium text-accent">
@@ -260,9 +275,42 @@ export default function StationManagerDashboard() {
                         }
                         className="rounded-lg border border-border bg-surface-alt px-3 py-2 text-sm text-foreground"
                       />
+                      <select
+                        value={fuelAvailability[type]}
+                        onChange={(event) => {
+                          const nextStatus = event.target.value as
+                            | ""
+                            | "Available"
+                            | "Low"
+                            | "Out";
+                          setFuelAvailability((current) => ({
+                            ...current,
+                            [type]: nextStatus,
+                          }));
+
+                          if (nextStatus === "Out") {
+                            setPrices((current) => ({
+                              ...current,
+                              [type]: "",
+                            }));
+                          }
+                        }}
+                        className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
+                      >
+                        <option value="">No data</option>
+                        {stationStatuses.map((status) => (
+                          <option key={status} value={status}>
+                            {status}
+                          </option>
+                        ))}
+                      </select>
                     </div>
                   ))}
                 </div>
+                <p className="mt-3 text-xs text-muted-foreground">
+                  Mark a fuel as Out only when it has no price. Leave both
+                  fields blank when you have no data for that fuel.
+                </p>
               </div>
 
               <button

@@ -1,4 +1,8 @@
-import type { FuelType } from "@/types/station";
+import type {
+  FuelAvailabilityMap,
+  FuelType,
+  StationStatus,
+} from "@/types/station";
 
 export const fuelTypes = [
   "Unleaded",
@@ -14,8 +18,16 @@ export const fuelTypeTextColorClassNames: Record<FuelType, string> = {
   "Premium Diesel": "text-sky-600",
 };
 
+export const stationStatuses = [
+  "Available",
+  "Low",
+  "Out",
+] as const satisfies readonly StationStatus[];
+
 export type FuelPriceMap = Record<FuelType, number | null>;
 export type FuelPriceFormMap = Record<FuelType, string>;
+export type FuelAvailabilityFormValue = StationStatus | "";
+export type FuelAvailabilityFormMap = Record<FuelType, FuelAvailabilityFormValue>;
 
 export function createEmptyFuelPriceMap(): FuelPriceMap {
   return fuelTypes.reduce((prices, fuelType) => {
@@ -24,11 +36,25 @@ export function createEmptyFuelPriceMap(): FuelPriceMap {
   }, {} as FuelPriceMap);
 }
 
+export function createEmptyFuelAvailabilityMap(): FuelAvailabilityMap {
+  return fuelTypes.reduce((availability, fuelType) => {
+    availability[fuelType] = null;
+    return availability;
+  }, {} as FuelAvailabilityMap);
+}
+
 export function createEmptyFuelPriceFormMap(): FuelPriceFormMap {
   return fuelTypes.reduce((prices, fuelType) => {
     prices[fuelType] = "";
     return prices;
   }, {} as FuelPriceFormMap);
+}
+
+export function createEmptyFuelAvailabilityFormMap(): FuelAvailabilityFormMap {
+  return fuelTypes.reduce((availability, fuelType) => {
+    availability[fuelType] = "";
+    return availability;
+  }, {} as FuelAvailabilityFormMap);
 }
 
 export function normalizeFuelPrices(
@@ -66,6 +92,39 @@ export function normalizeFuelPrices(
   return prices;
 }
 
+export function normalizeFuelAvailability(
+  rawAvailability: unknown,
+  fallbackFuelType?: FuelType,
+  fallbackStatus?: StationStatus,
+): FuelAvailabilityMap {
+  const availability = createEmptyFuelAvailabilityMap();
+
+  if (
+    rawAvailability &&
+    typeof rawAvailability === "object" &&
+    !Array.isArray(rawAvailability)
+  ) {
+    for (const fuelType of fuelTypes) {
+      const value = rawAvailability[fuelType as keyof typeof rawAvailability];
+      availability[fuelType] =
+        typeof value === "string" && stationStatuses.includes(value as StationStatus)
+          ? (value as StationStatus)
+          : null;
+    }
+  }
+
+  if (
+    fallbackFuelType &&
+    fallbackStatus &&
+    stationStatuses.includes(fallbackStatus) &&
+    availability[fallbackFuelType] === null
+  ) {
+    availability[fallbackFuelType] = fallbackStatus;
+  }
+
+  return availability;
+}
+
 export function parseFuelPriceForm(
   rawPrices: FuelPriceFormMap,
 ): FuelPriceMap {
@@ -93,11 +152,78 @@ export function parseFuelPriceForm(
   return prices;
 }
 
-export function getPrimaryFuelPriceSelection(prices: FuelPriceMap) {
+export function parseFuelAvailabilityForm(
+  rawAvailability: FuelAvailabilityFormMap,
+): FuelAvailabilityMap {
+  const availability = createEmptyFuelAvailabilityMap();
+
+  for (const fuelType of fuelTypes) {
+    const value = rawAvailability[fuelType];
+    availability[fuelType] =
+      value && stationStatuses.includes(value) ? value : null;
+  }
+
+  return availability;
+}
+
+export function isFuelSellable(
+  status: StationStatus | null | undefined,
+): status is Extract<StationStatus, "Available" | "Low"> {
+  return status === "Available" || status === "Low";
+}
+
+export function validateFuelPriceAvailability(
+  prices: FuelPriceMap,
+  fuelAvailability: FuelAvailabilityMap,
+) {
+  for (const fuelType of fuelTypes) {
+    const price = prices[fuelType];
+    const status = fuelAvailability[fuelType];
+
+    if (isFuelSellable(status)) {
+      if (
+        typeof price !== "number" ||
+        !Number.isFinite(price) ||
+        price <= 0
+      ) {
+        throw new Error(
+          `${fuelType} must have a valid price when marked ${status}`,
+        );
+      }
+
+      continue;
+    }
+
+    if (status === "Out") {
+      if (price !== null) {
+        throw new Error(`${fuelType} must not have a price when marked Out`);
+      }
+
+      continue;
+    }
+
+    if (price !== null) {
+      throw new Error(
+        `Select an availability for ${fuelType} when a price is entered`,
+      );
+    }
+  }
+}
+
+export function getPrimaryFuelPriceSelection(
+  prices: FuelPriceMap,
+  fuelAvailability?: FuelAvailabilityMap | null,
+) {
   let selection: { fuelType: FuelType; price: number } | null = null;
 
   for (const fuelType of fuelTypes) {
     const price = prices[fuelType];
+    const status = fuelAvailability?.[fuelType] ?? null;
+
+    if (fuelAvailability && !isFuelSellable(status)) {
+      continue;
+    }
+
     if (typeof price !== "number" || !Number.isFinite(price) || price <= 0) {
       continue;
     }
@@ -110,9 +236,49 @@ export function getPrimaryFuelPriceSelection(prices: FuelPriceMap) {
   return selection;
 }
 
+export function getFuelSummarySelection(
+  prices: FuelPriceMap,
+  fuelAvailability: FuelAvailabilityMap,
+  fallbackFuelType?: FuelType,
+) {
+  const primarySelection = getPrimaryFuelPriceSelection(prices, fuelAvailability);
+  if (primarySelection) {
+    return {
+      ...primarySelection,
+      status: fuelAvailability[primarySelection.fuelType] ?? "Available",
+    };
+  }
+
+  const fallbackOrder = [
+    ...(fallbackFuelType ? [fallbackFuelType] : []),
+    ...fuelTypes,
+  ].filter(
+    (fuelType, index, array) => array.indexOf(fuelType) === index,
+  ) as FuelType[];
+
+  for (const fuelType of fallbackOrder) {
+    const status = fuelAvailability[fuelType];
+    if (!status) {
+      continue;
+    }
+
+    return {
+      fuelType,
+      price: prices[fuelType] ?? 0,
+      status,
+    };
+  }
+
+  return null;
+}
+
 export function hasAnyFuelPrice(prices: FuelPriceMap) {
   return fuelTypes.some((fuelType) => {
     const price = prices[fuelType];
     return typeof price === "number" && Number.isFinite(price) && price > 0;
   });
+}
+
+export function hasAnyFuelAvailability(availability: FuelAvailabilityMap) {
+  return fuelTypes.some((fuelType) => availability[fuelType] !== null);
 }

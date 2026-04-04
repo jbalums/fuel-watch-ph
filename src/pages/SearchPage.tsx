@@ -58,6 +58,7 @@ export default function SearchPage() {
 					currentPage={currentPage}
 					totalPages={totalPages}
 					onPageChange={setCurrentPage}
+					activeFuelFilter={fuelFilter}
 				/>
 			</div>
 		</div>

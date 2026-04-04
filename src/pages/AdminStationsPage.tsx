@@ -29,6 +29,7 @@ import {
 	formatStationPricesSummary,
 	type GasStationRow,
 	initialStationForm,
+	normalizeStationAvailabilityForForm,
 	type StationFormState,
 	normalizeStationPricesForForm,
 	refreshAdminData,
@@ -180,8 +181,12 @@ export default function AdminStationsPage() {
 				station.fuel_type as FuelType,
 				0,
 			),
+			fuelAvailability: normalizeStationAvailabilityForForm(
+				station.fuel_availability,
+				station.fuel_type as FuelType,
+				station.status as StationStatus,
+			),
 			fuelType: station.fuel_type as FuelType,
-			status: station.status as StationStatus,
 		};
 
 		initialEditorFormRef.current = nextForm;
@@ -300,6 +305,8 @@ export default function AdminStationsPage() {
 												station.prices,
 												station.fuel_type as FuelType,
 												Number(station.price_per_liter) || 0,
+												station.fuel_availability,
+												station.status as StationStatus,
 											) || "No valid prices"}{" "}
 											• {station.report_count} reports
 										</p>
@@ -417,6 +424,8 @@ export default function AdminStationsPage() {
 									stationToDelete.prices,
 									stationToDelete.fuel_type as FuelType,
 									Number(stationToDelete.price_per_liter) || 0,
+									stationToDelete.fuel_availability,
+									stationToDelete.status as StationStatus,
 								) || "No valid prices"}
 							</p>
 							<p className="text-xs text-muted-foreground">

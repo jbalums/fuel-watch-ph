@@ -16,8 +16,8 @@ import {
 } from "@/components/ui/sheet";
 import { Loader2 } from "lucide-react";
 import { useGeoReferences } from "@/hooks/useGeoReferences";
-import { fuelTypes } from "@/lib/fuel-prices";
-import type { FuelType, StationStatus } from "@/types/station";
+import { fuelTypes, stationStatuses } from "@/lib/fuel-prices";
+import type { FuelType } from "@/types/station";
 import type { GasStationRow, StationFormState } from "./admin-shared";
 
 interface AdminStationEditorProps {
@@ -181,20 +181,9 @@ function EditorForm({
 							</option>
 						))}
 					</select>
-					<select
-						value={form.status}
-						onChange={(event) =>
-							onFormChange((current) => ({
-								...current,
-								status: event.target.value as StationStatus,
-							}))
-						}
-						className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
-					>
-						<option value="Available">Available</option>
-						<option value="Low">Low</option>
-						<option value="Out">Out</option>
-					</select>
+					<div className="flex items-center rounded-lg border border-border bg-muted px-3 py-2 text-sm text-muted-foreground">
+						Primary fuel must be marked Available or Low.
+					</div>
 					<div className="rounded-lg border border-border bg-background p-3 md:col-span-2">
 						<div className="mb-3 flex items-center justify-between gap-3">
 							<div>
@@ -202,8 +191,9 @@ function EditorForm({
 									Current Prices
 								</p>
 								<p className="text-xs text-muted-foreground">
-									Add each available fuel price. The selected
-									fuel type becomes the main displayed price.
+									Set each fuel's price and availability. The
+									selected primary fuel becomes the main
+									displayed price.
 								</p>
 							</div>
 							<span className="rounded-full bg-accent/10 px-3 py-1 text-sm font-medium text-accent">
@@ -236,6 +226,35 @@ function EditorForm({
 										}
 										className="rounded-lg border border-border bg-surface-alt px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground"
 									/>
+									<select
+										value={form.fuelAvailability[fuelType]}
+										onChange={(event) =>
+											onFormChange((current) => ({
+												...current,
+												prices:
+													event.target.value === "Out"
+														? {
+																...current.prices,
+																[fuelType]: "",
+															}
+														: current.prices,
+												fuelAvailability: {
+													...current.fuelAvailability,
+													[fuelType]: event.target
+														.value as
+														"" | "Available" | "Low" | "Out",
+												},
+											}))
+										}
+										className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
+									>
+										<option value="">No data</option>
+										{stationStatuses.map((status) => (
+											<option key={status} value={status}>
+												{status}
+											</option>
+										))}
+									</select>
 								</div>
 							))}
 						</div>
@@ -243,7 +262,12 @@ function EditorForm({
 							Current display price:{" "}
 							{form.prices[form.fuelType]
 								? `₱${Number(form.prices[form.fuelType]).toFixed(2)}`
-								: "Set a price for the selected fuel type"}
+								: "Set a price and Available or Low status for the selected fuel type"}
+						</p>
+						<p className="mt-1 text-xs text-muted-foreground">
+							Mark a fuel as Out only when it has no price.
+							Leave both fields blank when you have no data for
+							that fuel.
 						</p>
 					</div>
 					<div className="rounded-lg border border-border bg-background p-3 md:col-span-2">

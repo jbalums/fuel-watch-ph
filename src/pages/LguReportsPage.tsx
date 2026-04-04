@@ -244,7 +244,10 @@ export default function LguReportsPage() {
 											<StatusBadge status={report.status} />
 										</div>
 										<p className="mt-1 text-sm text-muted-foreground">
-											{formatReportedPrices(report.prices) ||
+											{formatReportedPrices(
+												report.prices,
+												report.fuelAvailability,
+											) ||
 												"No valid prices"}{" "}
 											• {new Date(report.reportedAt).toLocaleString()}
 										</p>
@@ -389,7 +392,10 @@ export default function LguReportsPage() {
 								{reportToApprove.stationName}
 							</p>
 							<p className="mt-1 text-muted-foreground">
-								{formatReportedPrices(reportToApprove.prices) ||
+								{formatReportedPrices(
+									reportToApprove.prices,
+									reportToApprove.fuelAvailability,
+								) ||
 									"No valid prices"}
 							</p>
 							<p className="mt-1 text-muted-foreground">
@@ -444,7 +450,10 @@ export default function LguReportsPage() {
 								{reportToReject.stationName}
 							</p>
 							<p className="mt-1 text-muted-foreground">
-								{formatReportedPrices(reportToReject.prices) ||
+								{formatReportedPrices(
+									reportToReject.prices,
+									reportToReject.fuelAvailability,
+								) ||
 									"No valid prices"}
 							</p>
 							<p className="mt-1 text-muted-foreground">

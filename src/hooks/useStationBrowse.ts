@@ -38,9 +38,12 @@ export function useStationBrowse({
 	const fuelFilter = isFuelFilter(searchParams.get("fuel"))
 		? searchParams.get("fuel")!
 		: "All";
-	const statusFilter = isStatusFilter(searchParams.get("status"))
-		? searchParams.get("status")!
-		: "All";
+	const statusFilter =
+		fuelFilter === "All"
+			? "All"
+			: isStatusFilter(searchParams.get("status"))
+				? searchParams.get("status")!
+				: "All";
 	const sortBy = isSortOption(searchParams.get("sort"))
 		? searchParams.get("sort")!
 		: "price_asc";
@@ -85,6 +88,7 @@ export function useStationBrowse({
 		setFuelFilter: (value: FilterFuelType) =>
 			updateSearchParams({
 				fuel: value === "All" ? null : value,
+				status: value === "All" ? null : searchParams.get("status"),
 			}),
 		setStatusFilter: (value: StatusFilter) =>
 			updateSearchParams({

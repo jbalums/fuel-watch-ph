@@ -50,6 +50,7 @@ export function SearchFilter({
 	onCityChange,
 }: SearchFilterProps) {
 	const priceSortEnabled = fuelFilter !== "All";
+	const showStatusFilter = fuelFilter !== "All";
 	const showGeoFilters =
 		!!provinces && !!cities && !!onProvinceChange && !!onCityChange;
 	const hasActiveGeoFilter = !!provinceCode || !!cityMunicipalityCode;
@@ -135,19 +136,21 @@ export function SearchFilter({
 				))}
 
 				<div className="md:ml-auto flex shrink-0 items-center gap-2">
-					<select
-						value={statusFilter}
-						onChange={(e) =>
-							onStatusFilterChange(e.target.value as StatusFilter)
-						}
-						className="rounded-full bg-surface-alt px-3 py-1.5 text-sm text-foreground outline-none focus:ring-2 focus:ring-primary/20 sovereign-ease transition-all"
-					>
-						{statusOptions.map((status) => (
-							<option key={status} value={status}>
-								{status === "All" ? "All Statuses" : status}
-							</option>
-						))}
-					</select>
+					{showStatusFilter ? (
+						<select
+							value={statusFilter}
+							onChange={(e) =>
+								onStatusFilterChange(e.target.value as StatusFilter)
+							}
+							className="rounded-full bg-surface-alt px-3 py-1.5 text-sm text-foreground outline-none focus:ring-2 focus:ring-primary/20 sovereign-ease transition-all"
+						>
+							{statusOptions.map((status) => (
+								<option key={status} value={status}>
+									{status === "All" ? "All Statuses" : status}
+								</option>
+							))}
+						</select>
+					) : null}
 
 					<div className="flex shrink-0 items-center gap-1">
 						<ArrowDownUp
