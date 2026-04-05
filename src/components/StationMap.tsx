@@ -44,7 +44,8 @@ function GoogleStationMap({
 	const [map, setMap] = useState<google.maps.Map | null>(null);
 	const lastAutoFitKeyRef = useRef<string | null>(null);
 	const { coordinates: currentLocation } = useCurrentLocation();
-	const googleMaps = typeof window !== "undefined" ? window.google?.maps : undefined;
+	const googleMaps =
+		typeof window !== "undefined" ? window.google?.maps : undefined;
 	const selectedStationId =
 		focusedStationId !== undefined
 			? focusedStationId
@@ -54,10 +55,14 @@ function GoogleStationMap({
 		[stations],
 	);
 	const focusedStation = useMemo(
-		() => (selectedStationId ? stationById.get(selectedStationId) ?? null : null),
+		() =>
+			selectedStationId
+				? (stationById.get(selectedStationId) ?? null)
+				: null,
 		[selectedStationId, stationById],
 	);
-	const mapCenter = focusedStation ?? highlightLocation ?? currentLocation ?? MANILA_CENTER;
+	const mapCenter =
+		focusedStation ?? highlightLocation ?? currentLocation ?? MANILA_CENTER;
 	const markerIcons = useMemo(() => {
 		if (!googleMaps) {
 			return null;
@@ -307,8 +312,8 @@ function GoogleStationMap({
 						mapPaneName="overlayMouseTarget"
 						zIndex={10_001}
 					>
-						<div className="pointer-events-none -translate-x-1/2 -translate-y-full pb-4">
-							<div className="rounded-full bg-red-600 px-3 py-1 text-xs font-semibold text-white shadow-lg">
+						<div className="pointer-events-none -translate-x-1/2 -translate-y-full pb-3.5">
+							<div className="rounded-full bg-red-600 px-3 py-1 text-[10px] font-semibold text-white shadow-lg">
 								You are here
 							</div>
 						</div>
