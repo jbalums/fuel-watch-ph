@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
 	GoogleMap,
 	InfoWindowF,
 	LoadScriptNext,
 	MarkerF,
+	MarkerClustererF,
 	OverlayViewF,
 } from "@react-google-maps/api";
 import { Loader2, MapPinned } from "lucide-react";
@@ -41,23 +42,146 @@ function GoogleStationMap({
 		string | null
 	>(null);
 	const [map, setMap] = useState<google.maps.Map | null>(null);
+	const lastAutoFitKeyRef = useRef<string | null>(null);
 	const { coordinates: currentLocation } = useCurrentLocation();
+	const googleMaps = typeof window !== "undefined" ? window.google?.maps : undefined;
 	const selectedStationId =
 		focusedStationId !== undefined
 			? focusedStationId
 			: internalSelectedStationId;
-	const focusedStation = useMemo(
-		() =>
-			selectedStationId
-				? (stations.find(
-						(station) => station.id === selectedStationId,
-					) ?? null)
-				: null,
-		[selectedStationId, stations],
+	const stationById = useMemo(
+		() => new Map(stations.map((station) => [station.id, station])),
+		[stations],
 	);
-	const mapCenter = focusedStation
-		? { lat: focusedStation.lat, lng: focusedStation.lng }
-		: (highlightLocation ?? currentLocation ?? MANILA_CENTER);
+	const focusedStation = useMemo(
+		() => (selectedStationId ? stationById.get(selectedStationId) ?? null : null),
+		[selectedStationId, stationById],
+	);
+	const mapCenter = focusedStation ?? highlightLocation ?? currentLocation ?? MANILA_CENTER;
+	const markerIcons = useMemo(() => {
+		if (!googleMaps) {
+			return null;
+		}
+
+		return {
+			Available: {
+				path: googleMaps.SymbolPath.CIRCLE,
+				scale: 12,
+				fillColor: statusColors.Available,
+				fillOpacity: 1,
+				strokeColor: "#ffffff",
+				strokeWeight: 1,
+			},
+			Low: {
+				path: googleMaps.SymbolPath.CIRCLE,
+				scale: 12,
+				fillColor: statusColors.Low,
+				fillOpacity: 1,
+				strokeColor: "#ffffff",
+				strokeWeight: 1,
+			},
+			Out: {
+				path: googleMaps.SymbolPath.CIRCLE,
+				scale: 12,
+				fillColor: statusColors.Out,
+				fillOpacity: 1,
+				strokeColor: "#ffffff",
+				strokeWeight: 1,
+			},
+		} satisfies Record<StationStatus, google.maps.Symbol>;
+	}, [googleMaps]);
+	const currentLocationIcon = useMemo(() => {
+		if (!googleMaps) {
+			return null;
+		}
+
+		return {
+			path: googleMaps.SymbolPath.CIRCLE,
+			scale: 12,
+			fillColor: "#1d4fd7",
+			fillOpacity: 1,
+			strokeColor: "#d97706",
+			strokeWeight: 2,
+		} satisfies google.maps.Symbol;
+	}, [googleMaps]);
+	const highlightedLocationIcon = useMemo(() => {
+		if (!googleMaps) {
+			return null;
+		}
+
+		return {
+			path: googleMaps.SymbolPath.CIRCLE,
+			scale: 10,
+			fillColor: "#f97316",
+			fillOpacity: 1,
+			strokeColor: "#ffffff",
+			strokeWeight: 3,
+		} satisfies google.maps.Symbol;
+	}, [googleMaps]);
+	const clusteredStations = useMemo(
+		() =>
+			stations.map((station) => ({
+				id: station.id,
+				station,
+				position: {
+					lat: station.lat,
+					lng: station.lng,
+				},
+				icon: markerIcons?.[station.status],
+			})),
+		[markerIcons, stations],
+	);
+	const selectedStationPosition = useMemo(
+		() =>
+			focusedStation
+				? {
+						lat: focusedStation.lat,
+						lng: focusedStation.lng,
+					}
+				: null,
+		[focusedStation],
+	);
+	const stationBoundsKey = useMemo(
+		() =>
+			stations
+				.map(
+					(station) =>
+						`${station.id}:${station.lat.toFixed(6)},${station.lng.toFixed(6)}`,
+				)
+				.join("|"),
+		[stations],
+	);
+	const highlightLocationKey = useMemo(
+		() =>
+			highlightLocation
+				? `${highlightLocation.lat.toFixed(6)},${highlightLocation.lng.toFixed(6)}:${highlightLocation.label ?? ""}`
+				: "none",
+		[highlightLocation],
+	);
+	const currentLocationKey = useMemo(
+		() =>
+			currentLocation
+				? `${currentLocation.lat.toFixed(6)},${currentLocation.lng.toFixed(6)}`
+				: "none",
+		[currentLocation],
+	);
+	const mapOptions = useMemo(
+		() => ({
+			fullscreenControl: true,
+			mapTypeControl: true,
+			streetViewControl: true,
+			gestureHandling: "greedy" as const,
+		}),
+		[],
+	);
+	const clustererOptions = useMemo(
+		() => ({
+			gridSize: 56,
+			maxZoom: 16,
+			minimumClusterSize: 2,
+		}),
+		[],
+	);
 
 	const setSelectedStationId = (stationId: string | null) => {
 		if (onFocusedStationChange) {
@@ -77,36 +201,51 @@ function GoogleStationMap({
 			return;
 		}
 
-		if (highlightLocation) {
-			map.setCenter(highlightLocation);
-			// map.setZoom(15);
+		const nextAutoFitKey = `${stationBoundsKey}|${highlightLocationKey}|${stations.length === 0 ? currentLocationKey : "stations-present"}`;
+		if (lastAutoFitKeyRef.current === nextAutoFitKey) {
 			return;
 		}
 
-		if (currentLocation) {
-			map.setCenter(currentLocation);
-			// map.setZoom(15);
+		lastAutoFitKeyRef.current = nextAutoFitKey;
+
+		if (highlightLocation) {
+			map.setCenter(highlightLocation);
+			map.setZoom(15);
 			return;
 		}
 
 		if (stations.length === 0) {
-			map.setCenter(MANILA_CENTER);
-			// map.setZoom(14);
+			map.setCenter(currentLocation ?? MANILA_CENTER);
+			map.setZoom(14);
 			return;
 		}
 
 		if (stations.length === 1) {
 			map.panTo({ lat: stations[0].lat, lng: stations[0].lng });
-			// map.setZoom(15);
+			map.setZoom(15);
 			return;
 		}
 
-		const bounds = new window.google.maps.LatLngBounds();
+		if (!googleMaps) {
+			return;
+		}
+
+		const bounds = new googleMaps.LatLngBounds();
 		for (const station of stations) {
 			bounds.extend({ lat: station.lat, lng: station.lng });
 		}
 		map.fitBounds(bounds, 80);
-	}, [currentLocation, focusedStation, highlightLocation, map, stations]);
+	}, [
+		currentLocation,
+		focusedStation,
+		googleMaps,
+		highlightLocation,
+		highlightLocationKey,
+		currentLocationKey,
+		map,
+		stationBoundsKey,
+		stations,
+	]);
 
 	useEffect(() => {
 		if (!focusedStation || !map) {
@@ -120,59 +259,27 @@ function GoogleStationMap({
 		map.setZoom(17);
 	}, [focusedStation, map]);
 
-	const createMarkerIcon = (status: StationStatus): google.maps.Symbol => ({
-		path: window.google.maps.SymbolPath.CIRCLE,
-		scale: 12,
-		fillColor: statusColors[status],
-		fillOpacity: 1,
-		strokeColor: "#ffffff",
-		strokeWeight: 1,
-	});
-
-	const createCurrentLocationIcon = (): google.maps.Symbol => ({
-		path: window.google.maps.SymbolPath.CIRCLE,
-		scale: 12,
-		fillColor: "#1d4fd7",
-		fillOpacity: 1,
-		strokeColor: "#d97706",
-		strokeWeight: 2,
-	});
-
-	const createHighlightedLocationIcon = (): google.maps.Symbol => ({
-		path: window.google.maps.SymbolPath.CIRCLE,
-		scale: 10,
-		fillColor: "#f97316",
-		fillOpacity: 1,
-		strokeColor: "#ffffff",
-		strokeWeight: 3,
-	});
-
 	return (
 		<GoogleMap
 			mapContainerStyle={{
 				...GOOGLE_MAPS_CONTAINER_STYLE,
 				height: "calc(100dvh - 185px)",
 			}}
-			center={mapCenter}
-			zoom={focusedStation ? 15 : 14}
+			defaultCenter={mapCenter}
+			defaultZoom={focusedStation ? 15 : 14}
 			onLoad={(map) => {
 				setMap(map);
 			}}
 			onUnmount={() => {
 				setMap(null);
 			}}
-			options={{
-				fullscreenControl: true,
-				mapTypeControl: true,
-				streetViewControl: true,
-				gestureHandling: "greedy",
-			}}
+			options={mapOptions}
 		>
 			{highlightLocation && (
 				<>
 					<MarkerF
 						position={highlightLocation}
-						icon={createHighlightedLocationIcon()}
+						icon={highlightedLocationIcon ?? undefined}
 						zIndex={9_000}
 					/>
 					<OverlayViewF
@@ -192,7 +299,7 @@ function GoogleStationMap({
 				<>
 					<MarkerF
 						position={currentLocation}
-						icon={createCurrentLocationIcon()}
+						icon={currentLocationIcon ?? undefined}
 						zIndex={10_000}
 					/>
 					<OverlayViewF
@@ -208,26 +315,34 @@ function GoogleStationMap({
 					</OverlayViewF>
 				</>
 			)}
-			{stations.map((station) => (
-				<MarkerF
-					key={station.id}
-					position={{ lat: station.lat, lng: station.lng }}
-					icon={createMarkerIcon(station.status)}
-					onClick={() => setSelectedStationId(station.id)}
-				>
-					{selectedStationId === station.id && (
-						<InfoWindowF
-							position={{ lat: station.lat, lng: station.lng }}
-							onCloseClick={() => setSelectedStationId(null)}
-						>
-							<StationMarkerInfoWindow
-								station={station}
-								showDirectionsAction
+			<MarkerClustererF options={clustererOptions}>
+				{(clusterer) => (
+					<>
+						{clusteredStations.map((stationMarker) => (
+							<MarkerF
+								key={stationMarker.id}
+								clusterer={clusterer}
+								position={stationMarker.position}
+								icon={stationMarker.icon ?? undefined}
+								onClick={() =>
+									setSelectedStationId(stationMarker.id)
+								}
 							/>
-						</InfoWindowF>
-					)}
-				</MarkerF>
-			))}
+						))}
+					</>
+				)}
+			</MarkerClustererF>
+			{focusedStation && selectedStationPosition ? (
+				<InfoWindowF
+					position={selectedStationPosition}
+					onCloseClick={() => setSelectedStationId(null)}
+				>
+					<StationMarkerInfoWindow
+						station={focusedStation}
+						showDirectionsAction
+					/>
+				</InfoWindowF>
+			) : null}
 		</GoogleMap>
 	);
 }

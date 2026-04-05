@@ -1,3 +1,4 @@
+import { memo } from "react";
 import type { GasStation, StationStatus } from "@/types/station";
 import { Button } from "@/components/ui/button";
 import { LguVerifiedBadge } from "@/components/LguVerifiedBadge";
@@ -24,7 +25,7 @@ interface StationMarkerInfoWindowProps {
 	showDirectionsAction?: boolean;
 }
 
-export function StationMarkerInfoWindow({
+export const StationMarkerInfoWindow = memo(function StationMarkerInfoWindow({
 	station,
 	showDirectionsAction = false,
 }: StationMarkerInfoWindowProps) {
@@ -134,4 +135,4 @@ export function StationMarkerInfoWindow({
 			<span className="text-xs text-gray-400">{station.lastUpdated}</span>
 		</div>
 	);
-}
+});
