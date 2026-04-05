@@ -4,6 +4,7 @@ import {
 	ChevronDown,
 	ChevronUp,
 	Expand,
+	Map,
 	Minimize2,
 	SlidersHorizontal,
 } from "lucide-react";
@@ -91,6 +92,20 @@ export default function EmbeddedStationsPage() {
 		1,
 		Math.ceil(totalCount / EMBED_STATIONS_PER_PAGE),
 	);
+	const mapUrl = useMemo(() => {
+		const nextSearchParams = new URLSearchParams();
+
+		if (provinceCode) {
+			nextSearchParams.set("provinceCode", provinceCode);
+		}
+
+		if (cityMunicipalityCode) {
+			nextSearchParams.set("cityMunicipalityCode", cityMunicipalityCode);
+		}
+
+		const queryString = nextSearchParams.toString();
+		return queryString ? `/map?${queryString}` : "/map";
+	}, [cityMunicipalityCode, provinceCode]);
 	const fullscreenSupported =
 		typeof document !== "undefined" &&
 		typeof document.documentElement.requestFullscreen === "function";
@@ -189,6 +204,7 @@ export default function EmbeddedStationsPage() {
 					<a
 						href="https://fuelwatchph.com/"
 						target="_blank"
+						rel="noreferrer"
 						className="flex"
 					>
 						<div className="flex h-8 w-8 items-center justify-center">
@@ -204,25 +220,38 @@ export default function EmbeddedStationsPage() {
 							</p>
 						</div>
 					</a>
-					{fullscreenSupported ? (
-						<button
-							type="button"
-							onClick={() => void toggleFullscreen()}
-							className={cn(
-								"inline-flex ml-auto h-8 shrink-0 items-center gap-2 rounded-lg border px-3 text-xs font-medium sovereign-ease transition-colors",
-								isFullscreen
-									? "border-accent/30 bg-accent/10 text-accent"
-									: "border-border bg-surface-alt text-muted-foreground hover:text-foreground",
-							)}
+					<div className="ml-auto flex items-center gap-2">
+						<a
+							href={mapUrl}
+							target="_blank"
+							rel="noreferrer"
+							className="inline-flex h-8 shrink-0 items-center gap-2 rounded-sm border border-primary dark:border-border bg-surface-alt px-2 text-xs font-medium text-primary dark:text-muted-foreground sovereign-ease transition-colors hover:text-foreground"
 						>
-							{isFullscreen ? (
-								<Minimize2 className="h-4 w-4" />
-							) : (
-								<Expand className="h-4 w-4" />
-							)}
-							{isFullscreen ? "Exit fullscreen" : "Fullscreen"}
-						</button>
-					) : null}
+							<Map className="h-4 w-4" />
+							Map
+						</a>
+						{fullscreenSupported ? (
+							<button
+								type="button"
+								onClick={() => void toggleFullscreen()}
+								className={cn(
+									"inline-flex h-8 shrink-0 items-center gap-2 rounded-sm border px-2 text-xs font-medium sovereign-ease transition-colors",
+									isFullscreen
+										? "border-accent/30 bg-accent/10 text-accent"
+										: "border-border bg-surface-alt text-muted-foreground hover:text-foreground",
+								)}
+							>
+								{isFullscreen ? (
+									<Minimize2 className="h-4 w-4" />
+								) : (
+									<Expand className="h-4 w-4" />
+								)}
+								{isFullscreen
+									? "Exit fullscreen"
+									: "Fullscreen"}
+							</button>
+						) : null}
+					</div>
 				</div>
 				<div className="mb-4 rounded-2xl border border-border bg-card/95 p-3 shadow-sovereign">
 					<div className="flex items-center justify-between gap-3">
