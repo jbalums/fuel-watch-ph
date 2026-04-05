@@ -117,7 +117,7 @@ export function StationMarkerInfoWindow({
 					type="button"
 					variant="default"
 					size="sm"
-					className="mt-2 h-6 w-full justify-center text-xs"
+					className="mt-2 h-8 w-full justify-center text-xs"
 					onClick={() => {
 						openGoogleMapsDirections({
 							lat: station.lat,

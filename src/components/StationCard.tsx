@@ -222,7 +222,7 @@ export function StationCard({
 					<div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
 						<Button
 							type="button"
-							variant="outline"
+							variant="outlineprimary"
 							size="sm"
 							className="py-1 px-2 text-xs sm:text-sm"
 							onClick={handleGetDirections}
