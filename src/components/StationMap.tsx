@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
 	GoogleMap,
 	InfoWindowF,
@@ -25,6 +25,11 @@ const statusColors: Record<StationStatus, string> = {
 	Low: "#f59e0b",
 	Out: "#ef4444",
 };
+const DEFAULT_HIGHLIGHT_ZOOM = 15;
+const DEFAULT_CURRENT_LOCATION_ZOOM = 15;
+const DEFAULT_EMPTY_MAP_ZOOM = 15;
+const DEFAULT_SINGLE_STATION_ZOOM = 15;
+const FOCUSED_STATION_ZOOM = 17;
 interface StationMapProps {
 	stations: GasStation[];
 	focusedStationId?: string | null;
@@ -197,6 +202,48 @@ function GoogleStationMap({
 		setInternalSelectedStationId(stationId);
 	};
 
+	const restoreDefaultMapView = useCallback(() => {
+		if (!map) {
+			return;
+		}
+
+		lastAutoFitKeyRef.current = null;
+
+		if (highlightLocation) {
+			map.panTo(highlightLocation);
+			map.setZoom(DEFAULT_HIGHLIGHT_ZOOM);
+			return;
+		}
+
+		if (currentLocation) {
+			map.panTo(currentLocation);
+			map.setZoom(DEFAULT_CURRENT_LOCATION_ZOOM);
+			return;
+		}
+
+		if (stations.length === 0) {
+			map.setCenter(MANILA_CENTER);
+			map.setZoom(DEFAULT_EMPTY_MAP_ZOOM);
+			return;
+		}
+
+		if (stations.length === 1) {
+			map.panTo({ lat: stations[0].lat, lng: stations[0].lng });
+			map.setZoom(DEFAULT_SINGLE_STATION_ZOOM);
+			return;
+		}
+
+		if (!googleMaps) {
+			return;
+		}
+
+		// const bounds = new googleMaps.LatLngBounds();
+		// for (const station of stations) {
+		// 	bounds.extend({ lat: station.lat, lng: station.lng });
+		// }
+		// map.fitBounds(bounds, 80);
+	}, [currentLocation, googleMaps, highlightLocation, map, stations]);
+
 	useEffect(() => {
 		if (!map) {
 			return;
@@ -215,19 +262,19 @@ function GoogleStationMap({
 
 		if (highlightLocation) {
 			map.setCenter(highlightLocation);
-			map.setZoom(15);
+			map.setZoom(DEFAULT_HIGHLIGHT_ZOOM);
 			return;
 		}
 
 		if (stations.length === 0) {
 			map.setCenter(currentLocation ?? MANILA_CENTER);
-			map.setZoom(14);
+			map.setZoom(DEFAULT_EMPTY_MAP_ZOOM);
 			return;
 		}
 
 		if (stations.length === 1) {
 			map.panTo({ lat: stations[0].lat, lng: stations[0].lng });
-			map.setZoom(15);
+			map.setZoom(DEFAULT_SINGLE_STATION_ZOOM);
 			return;
 		}
 
@@ -235,11 +282,11 @@ function GoogleStationMap({
 			return;
 		}
 
-		const bounds = new googleMaps.LatLngBounds();
-		for (const station of stations) {
-			bounds.extend({ lat: station.lat, lng: station.lng });
-		}
-		map.fitBounds(bounds, 80);
+		// const bounds = new googleMaps.LatLngBounds();
+		// for (const station of stations) {
+		// 	bounds.extend({ lat: station.lat, lng: station.lng });
+		// }
+		// map.fitBounds(bounds, 80);
 	}, [
 		currentLocation,
 		focusedStation,
@@ -261,7 +308,7 @@ function GoogleStationMap({
 			lat: focusedStation.lat,
 			lng: focusedStation.lng,
 		});
-		map.setZoom(17);
+		map.setZoom(FOCUSED_STATION_ZOOM);
 	}, [focusedStation, map]);
 
 	return (
@@ -271,7 +318,9 @@ function GoogleStationMap({
 				height: "calc(100dvh - 185px)",
 			}}
 			defaultCenter={mapCenter}
-			defaultZoom={focusedStation ? 15 : 14}
+			defaultZoom={
+				focusedStation ? FOCUSED_STATION_ZOOM : DEFAULT_EMPTY_MAP_ZOOM
+			}
 			onLoad={(map) => {
 				setMap(map);
 			}}
@@ -340,7 +389,10 @@ function GoogleStationMap({
 			{focusedStation && selectedStationPosition ? (
 				<InfoWindowF
 					position={selectedStationPosition}
-					onCloseClick={() => setSelectedStationId(null)}
+					onCloseClick={() => {
+						setSelectedStationId(null);
+						restoreDefaultMapView();
+					}}
 				>
 					<StationMarkerInfoWindow
 						station={focusedStation}
