@@ -5,6 +5,14 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "@/lib/app-toast";
 import { AdminListPagination } from "@/components/admin/AdminListPagination";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+	Table,
+	TableBody,
+	TableCell,
+	TableHead,
+	TableHeader,
+	TableRow,
+} from "@/components/ui/table";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePaginatedList } from "@/hooks/usePaginatedList";
@@ -17,6 +25,8 @@ type ManageableUser = {
 	displayName: string | null;
 	avatarUrl: string | null;
 	accessLevel: ManagedAccessLevel;
+	createdAt: string | null;
+	lastLoginAt: string | null;
 };
 
 function formatAccessLevelLabel(accessLevel: ManagedAccessLevel) {
@@ -58,6 +68,21 @@ function getAvatarFallback(displayName: string | null, email: string) {
 	return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
 }
 
+function formatDateTime(value: string | null) {
+	if (!value) {
+		return "Never";
+	}
+
+	return new Date(value).toLocaleString(undefined, {
+		month: "short",
+		day: "numeric",
+		year: "numeric",
+		hour: "numeric",
+		minute: "2-digit",
+		hour12: true,
+	});
+}
+
 export default function AdminUsersPage() {
 	const navigate = useNavigate();
 	const queryClient = useQueryClient();
@@ -88,6 +113,8 @@ export default function AdminUsersPage() {
 				displayName: userRow.display_name,
 				avatarUrl: userRow.avatar_url,
 				accessLevel: userRow.access_level as ManagedAccessLevel,
+				createdAt: userRow.created_at,
+				lastLoginAt: userRow.last_login_at,
 			}));
 		},
 	});
@@ -239,43 +266,64 @@ export default function AdminUsersPage() {
 						No users match the current search.
 					</p>
 				) : (
-					paginatedUsers.map((managedUser) => {
-						const selectedAccessLevel =
-							selectedAccessByUserId[managedUser.userId] ??
-							managedUser.accessLevel;
-						const isSaving = updatingUserId === managedUser.userId;
-						const hasPendingChange =
-							selectedAccessLevel !== managedUser.accessLevel;
+					<div className="overflow-hidden rounded-xl border border-border bg-secondary/20">
+						<Table>
+							<TableHeader>
+								<TableRow>
+									<TableHead className="w-[84px]">Profile Photo</TableHead>
+									<TableHead>User</TableHead>
+									<TableHead>Access</TableHead>
+									<TableHead>Created At</TableHead>
+									<TableHead>Last Login</TableHead>
+									<TableHead className="w-[230px]">Actions</TableHead>
+								</TableRow>
+							</TableHeader>
+							<TableBody>
+								{paginatedUsers.map((managedUser) => {
+									const selectedAccessLevel =
+										selectedAccessByUserId[managedUser.userId] ??
+										managedUser.accessLevel;
+									const isSaving =
+										updatingUserId === managedUser.userId;
+									const hasPendingChange =
+										selectedAccessLevel !== managedUser.accessLevel;
 
-						return (
-							<div
-								key={managedUser.userId}
-								className="rounded-xl border border-border bg-secondary/40 p-4"
-							>
-								<div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-									<div className="flex min-w-0 items-center gap-3">
-										<Avatar className="h-11 w-11 ring-1 ring-border">
-											<AvatarImage
-												src={managedUser.avatarUrl ?? undefined}
-											/>
-											<AvatarFallback className="bg-primary text-xs font-semibold text-primary-foreground">
-												{getAvatarFallback(
-													managedUser.displayName,
-													managedUser.email,
-												)}
-											</AvatarFallback>
-										</Avatar>
-										<div className="min-w-0">
-											<div className="flex flex-wrap items-center gap-2">
-												<p className="truncate font-semibold text-foreground">
-													{managedUser.displayName ||
-														managedUser.email}
-												</p>
-												{managedUser.userId === user?.id && (
-													<span className="rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">
-														You
-													</span>
-												)}
+									return (
+										<TableRow key={managedUser.userId}>
+											<TableCell>
+												<Avatar className="h-11 w-11 ring-1 ring-border">
+													<AvatarImage
+														src={managedUser.avatarUrl ?? undefined}
+													/>
+													<AvatarFallback className="bg-primary text-xs font-semibold text-primary-foreground">
+														{getAvatarFallback(
+															managedUser.displayName,
+															managedUser.email,
+														)}
+													</AvatarFallback>
+												</Avatar>
+											</TableCell>
+											<TableCell>
+												<div className="flex min-w-0 items-center gap-3">
+													<div className="min-w-0">
+														<div className="flex flex-wrap items-center gap-2">
+															<p className="truncate font-semibold text-foreground">
+																{managedUser.displayName ||
+																	managedUser.email}
+															</p>
+															{managedUser.userId === user?.id && (
+																<span className="rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">
+																	You
+																</span>
+															)}
+														</div>
+														<p className="mt-1 truncate text-sm text-muted-foreground">
+															{managedUser.email}
+														</p>
+													</div>
+												</div>
+											</TableCell>
+											<TableCell>
 												<span
 													className={`inline-flex rounded-full px-3 py-1 text-xs font-medium ${getAccessLevelStyles(
 														managedUser.accessLevel,
@@ -285,60 +333,69 @@ export default function AdminUsersPage() {
 														managedUser.accessLevel,
 													)}
 												</span>
-											</div>
-											<p className="mt-1 truncate text-sm text-muted-foreground">
-												{managedUser.email}
-											</p>
-										</div>
-									</div>
-
-									<div className="flex flex-col gap-2 md:min-w-[230px]">
-										<select
-											value={selectedAccessLevel}
-											onChange={(event) =>
-												setSelectedAccessByUserId(
-													(current) => ({
-														...current,
-														[managedUser.userId]:
-															event.target
-																.value as ManagedAccessLevel,
-													}),
-												)
-											}
-											disabled={isSaving}
-											className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
-										>
-											<option value="user">User</option>
-											<option value="admin">Admin</option>
-											<option value="super_admin">
-												Super Admin
-											</option>
-										</select>
-										<button
-											type="button"
-											onClick={() => {
-												setUpdatingUserId(managedUser.userId);
-												updateUserAccess.mutate({
-													userId: managedUser.userId,
-													accessLevel: selectedAccessLevel,
-													email: managedUser.email,
-												});
-											}}
-											disabled={!hasPendingChange || isSaving}
-											className="flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
-										>
-											{isSaving ? (
-												<Loader2 className="h-4 w-4 animate-spin" />
-											) : null}
-											{hasPendingChange
-												? "Update access"
-												: "Current access"}
-										</button>
-									</div>
-								</div>
-							</div>
-						);
-						})
+											</TableCell>
+											<TableCell className="text-sm text-muted-foreground">
+												{formatDateTime(managedUser.createdAt)}
+											</TableCell>
+											<TableCell className="text-sm text-muted-foreground">
+												{formatDateTime(managedUser.lastLoginAt)}
+											</TableCell>
+											<TableCell>
+												<div className="flex flex-col gap-2">
+													<select
+														value={selectedAccessLevel}
+														onChange={(event) =>
+															setSelectedAccessByUserId(
+																(current) => ({
+																	...current,
+																	[managedUser.userId]:
+																		event.target
+																			.value as ManagedAccessLevel,
+																}),
+															)
+														}
+														disabled={isSaving}
+														className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
+													>
+														<option value="user">User</option>
+														<option value="admin">Admin</option>
+														<option value="super_admin">
+															Super Admin
+														</option>
+													</select>
+													<button
+														type="button"
+														onClick={() => {
+															setUpdatingUserId(
+																managedUser.userId,
+															);
+															updateUserAccess.mutate({
+																userId: managedUser.userId,
+																accessLevel:
+																	selectedAccessLevel,
+																email: managedUser.email,
+															});
+														}}
+														disabled={
+															!hasPendingChange || isSaving
+														}
+														className="flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
+													>
+														{isSaving ? (
+															<Loader2 className="h-4 w-4 animate-spin" />
+														) : null}
+														{hasPendingChange
+															? "Update access"
+															: "Current access"}
+													</button>
+												</div>
+											</TableCell>
+										</TableRow>
+									);
+								})}
+							</TableBody>
+						</Table>
+					</div>
 				)}
 			</div>
 			<AdminListPagination

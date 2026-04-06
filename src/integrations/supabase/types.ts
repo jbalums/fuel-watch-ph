@@ -740,8 +740,10 @@ export type Database = {
         Returns: {
           access_level: Database["public"]["Enums"]["app_role"]
           avatar_url: string | null
+          created_at: string
           display_name: string | null
           email: string | null
+          last_login_at: string | null
           user_id: string
         }[]
       }
