@@ -4,7 +4,6 @@ import {
 	InfoWindowF,
 	LoadScriptNext,
 	MarkerF,
-	MarkerClustererF,
 	OverlayViewF,
 } from "@react-google-maps/api";
 import { Loader2, MapPinned } from "lucide-react";
@@ -19,7 +18,7 @@ import {
 } from "@/lib/google-maps";
 import { useCurrentLocation } from "@/hooks/useCurrentLocation";
 import { StationMarkerInfoWindow } from "./StationMarkerInfoWindow";
-
+import fuelwatchicon from "@/assets/images/map-pin-icon.png";
 const statusColors: Record<StationStatus, string> = {
 	Available: "#22c55e",
 	Low: "#f59e0b",
@@ -30,6 +29,14 @@ const DEFAULT_CURRENT_LOCATION_ZOOM = 15;
 const DEFAULT_EMPTY_MAP_ZOOM = 15;
 const DEFAULT_SINGLE_STATION_ZOOM = 15;
 const FOCUSED_STATION_ZOOM = 17;
+
+type MapBounds = {
+	north: number;
+	south: number;
+	east: number;
+	west: number;
+};
+
 interface StationMapProps {
 	stations: GasStation[];
 	focusedStationId?: string | null;
@@ -47,6 +54,7 @@ function GoogleStationMap({
 		string | null
 	>(null);
 	const [map, setMap] = useState<google.maps.Map | null>(null);
+	const [visibleBounds, setVisibleBounds] = useState<MapBounds | null>(null);
 	const lastAutoFitKeyRef = useRef<string | null>(null);
 	const { coordinates: currentLocation } = useCurrentLocation();
 	const googleMaps =
@@ -79,7 +87,7 @@ function GoogleStationMap({
 				scale: 12,
 				fillColor: statusColors.Available,
 				fillOpacity: 1,
-				strokeColor: "#ffffff",
+				strokeColor: "#1d4fd7",
 				strokeWeight: 1,
 			},
 			Low: {
@@ -128,19 +136,43 @@ function GoogleStationMap({
 			strokeWeight: 3,
 		} satisfies google.maps.Symbol;
 	}, [googleMaps]);
-	const clusteredStations = useMemo(
-		() =>
-			stations.map((station) => ({
+	const visibleStations = useMemo(() => {
+		if (!visibleBounds) {
+			return stations.map((station) => ({
 				id: station.id,
-				station,
 				position: {
 					lat: station.lat,
 					lng: station.lng,
 				},
 				icon: markerIcons?.[station.status],
-			})),
-		[markerIcons, stations],
-	);
+			}));
+		}
+
+		return stations
+			.filter((station) => {
+				const { lat, lng } = station;
+
+				return (
+					lat <= visibleBounds.north &&
+					lat >= visibleBounds.south &&
+					lng <= visibleBounds.east &&
+					lng >= visibleBounds.west
+				);
+			})
+			.map((station) => ({
+				id: station.id,
+				position: {
+					lat: station.lat,
+					lng: station.lng,
+				},
+				icon: {
+					url: fuelwatchicon,
+					scaledSize: new googleMaps.Size(45, 40),
+					anchor: new googleMaps.Point(22.5, 35),
+				},
+				// icon: markerIcons?.[station.status],
+			}));
+	}, [markerIcons, stations, visibleBounds]);
 	const selectedStationPosition = useMemo(
 		() =>
 			focusedStation
@@ -181,14 +213,6 @@ function GoogleStationMap({
 			mapTypeControl: true,
 			streetViewControl: true,
 			gestureHandling: "greedy" as const,
-		}),
-		[],
-	);
-	const clustererOptions = useMemo(
-		() => ({
-			gridSize: 56,
-			maxZoom: 16,
-			minimumClusterSize: 2,
 		}),
 		[],
 	);
@@ -237,12 +261,50 @@ function GoogleStationMap({
 			return;
 		}
 
-		// const bounds = new googleMaps.LatLngBounds();
-		// for (const station of stations) {
-		// 	bounds.extend({ lat: station.lat, lng: station.lng });
-		// }
-		// map.fitBounds(bounds, 80);
+		/* * * * commenting out auto-fit for now as it causes unwanted zooming when the station list updates or when the user clicks on a marker to view the info window. We can revisit this in the future and maybe add a button to allow users to manually trigger auto-fit if they want to. 
+		 * Auto-fit to station markers *
+
+		const bounds = new googleMaps.LatLngBounds();
+		for (const station of stations) {
+			bounds.extend({ lat: station.lat, lng: station.lng });
+		}
+		map.fitBounds(bounds, 80);
+		* * * */
 	}, [currentLocation, googleMaps, highlightLocation, map, stations]);
+
+	const updateVisibleBounds = useCallback(() => {
+		if (!map) {
+			return;
+		}
+
+		const nextBounds = map.getBounds();
+		if (!nextBounds) {
+			return;
+		}
+
+		const northEast = nextBounds.getNorthEast();
+		const southWest = nextBounds.getSouthWest();
+		setVisibleBounds((currentBounds) => {
+			const resolvedBounds = {
+				north: northEast.lat(),
+				south: southWest.lat(),
+				east: northEast.lng(),
+				west: southWest.lng(),
+			};
+
+			if (
+				currentBounds &&
+				currentBounds.north === resolvedBounds.north &&
+				currentBounds.south === resolvedBounds.south &&
+				currentBounds.east === resolvedBounds.east &&
+				currentBounds.west === resolvedBounds.west
+			) {
+				return currentBounds;
+			}
+
+			return resolvedBounds;
+		});
+	}, [map]);
 
 	useEffect(() => {
 		if (!map) {
@@ -282,11 +344,14 @@ function GoogleStationMap({
 			return;
 		}
 
-		// const bounds = new googleMaps.LatLngBounds();
-		// for (const station of stations) {
-		// 	bounds.extend({ lat: station.lat, lng: station.lng });
-		// }
-		// map.fitBounds(bounds, 80);
+		/* * * * commenting out auto-fit for now as it causes unwanted zooming when the station list updates or when the user clicks on a marker to view the info window. We can revisit this in the future and maybe add a button to allow users to manually trigger auto-fit if they want to. 
+		 * Auto-fit to station markers *
+		const bounds = new googleMaps.LatLngBounds();
+		for (const station of stations) {
+			bounds.extend({ lat: station.lat, lng: station.lng });
+		}
+		map.fitBounds(bounds, 80);
+		* * * */
 	}, [
 		currentLocation,
 		focusedStation,
@@ -311,6 +376,10 @@ function GoogleStationMap({
 		map.setZoom(FOCUSED_STATION_ZOOM);
 	}, [focusedStation, map]);
 
+	useEffect(() => {
+		updateVisibleBounds();
+	}, [updateVisibleBounds, stations, highlightLocation]);
+
 	return (
 		<GoogleMap
 			mapContainerStyle={{
@@ -327,6 +396,7 @@ function GoogleStationMap({
 			onUnmount={() => {
 				setMap(null);
 			}}
+			onIdle={updateVisibleBounds}
 			options={mapOptions}
 		>
 			{highlightLocation && (
@@ -369,23 +439,14 @@ function GoogleStationMap({
 					</OverlayViewF>
 				</>
 			)}
-			<MarkerClustererF options={clustererOptions}>
-				{(clusterer) => (
-					<>
-						{clusteredStations.map((stationMarker) => (
-							<MarkerF
-								key={stationMarker.id}
-								clusterer={clusterer}
-								position={stationMarker.position}
-								icon={stationMarker.icon ?? undefined}
-								onClick={() =>
-									setSelectedStationId(stationMarker.id)
-								}
-							/>
-						))}
-					</>
-				)}
-			</MarkerClustererF>
+			{visibleStations.map((stationMarker) => (
+				<MarkerF
+					key={stationMarker.id}
+					position={stationMarker.position}
+					icon={stationMarker.icon ?? undefined}
+					onClick={() => setSelectedStationId(stationMarker.id)}
+				/>
+			))}
 			{focusedStation && selectedStationPosition ? (
 				<InfoWindowF
 					position={selectedStationPosition}
