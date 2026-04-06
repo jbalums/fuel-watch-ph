@@ -94,6 +94,24 @@ export type LguStaffInviteRecord = {
 	createdAt: string;
 };
 
+export type AdminLguUserRecord = {
+	userId: string;
+	email: string;
+	displayName: string | null;
+	avatarUrl: string | null;
+	username: string | null;
+	role: "province_admin" | "city_admin" | "lgu_staff";
+	scopeType: "province" | "city";
+	provinceCode: string;
+	provinceName: string;
+	cityMunicipalityCode: string | null;
+	cityMunicipalityName: string | null;
+	invitedBy: string | null;
+	invitedByName: string | null;
+	createdAt: string;
+	lastLoginAt: string | null;
+};
+
 export function useAdminAccessRequests(enabled = true) {
 	return useQuery({
 		queryKey: ["admin", "access_requests"],
@@ -301,6 +319,38 @@ export function useLguStaffInvites(enabled = true) {
 				usedBy: row.used_by,
 				usedByName: row.used_by_name,
 				createdAt: row.created_at,
+			}));
+		},
+	});
+}
+
+export function useAdminLguUsers(enabled = true) {
+	return useQuery({
+		queryKey: ["admin", "lgu_users"],
+		enabled,
+		queryFn: async (): Promise<AdminLguUserRecord[]> => {
+			const { data, error } = await supabase.rpc("list_admin_lgu_users");
+
+			if (error) {
+				throw error;
+			}
+
+			return (data ?? []).map((row) => ({
+				userId: row.user_id,
+				email: row.email ?? "",
+				displayName: row.display_name,
+				avatarUrl: row.avatar_url,
+				username: row.username,
+				role: row.role as AdminLguUserRecord["role"],
+				scopeType: row.scope_type as AdminLguUserRecord["scopeType"],
+				provinceCode: row.province_code,
+				provinceName: row.province_name,
+				cityMunicipalityCode: row.city_municipality_code,
+				cityMunicipalityName: row.city_municipality_name,
+				invitedBy: row.invited_by,
+				invitedByName: row.invited_by_name,
+				createdAt: row.created_at,
+				lastLoginAt: row.last_login_at,
 			}));
 		},
 	});

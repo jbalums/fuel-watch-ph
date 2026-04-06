@@ -16,6 +16,7 @@ export function AdminLayout() {
 		...(isSuperAdmin
 			? [
 					{ label: "Users", to: "/admin/users" },
+					{ label: "LGU Users", to: "/admin/lgu-users" },
 					{
 						label: "Access Requests",
 						to: "/admin/access-requests",

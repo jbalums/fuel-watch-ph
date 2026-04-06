@@ -131,6 +131,13 @@ export default function AdminPage() {
 						icon: Users,
 					},
 					{
+						label: "LGU Users",
+						description:
+							"View province admins, city admins, and LGU staff accounts across all scopes.",
+						path: "/admin/lgu-users",
+						icon: Users,
+					},
+					{
 						label: "Access Requests",
 						description:
 							"Review official LGU access requests and generate invite links.",

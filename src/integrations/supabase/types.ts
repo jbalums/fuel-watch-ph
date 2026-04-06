@@ -664,6 +664,26 @@ export type Database = {
           updated_at: string
         }[]
       }
+      list_admin_lgu_users: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          avatar_url: string | null
+          city_municipality_code: string | null
+          city_municipality_name: string | null
+          created_at: string
+          display_name: string | null
+          email: string | null
+          invited_by: string | null
+          invited_by_name: string | null
+          last_login_at: string | null
+          province_code: string
+          province_name: string
+          role: Database["public"]["Enums"]["app_role"]
+          scope_type: string
+          user_id: string
+          username: string | null
+        }[]
+      }
       list_admin_invites: {
         Args: Record<PropertyKey, never>
         Returns: {
