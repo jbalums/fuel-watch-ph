@@ -128,10 +128,10 @@ export function StationCard({
 			}}
 			role="button"
 			tabIndex={0}
-			className="group relative flex overflow-hidden rounded-lg bg-card shadow-sovereign cursor-pointer sovereign-ease"
+			className="group relative flex overflow-hidden rounded-lg bg-card shadow-sovereign cursor-pointer sovereign-ease border-[0.5px] border-primary"
 		>
 			{/* Status bar */}
-			<div className={cn("w-1 shrink-0 rounded-lg", statusBarColor)} />
+			{/* <div className={cn("w-1 shrink-0 rounded-lg", statusBarColor)} /> */}
 
 			<div className="flex flex-1 flex-col gap-3 p-5">
 				<div className="flex items-start justify-between gap-3 flex-wrap">
