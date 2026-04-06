@@ -1,6 +1,13 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Loader2, Search, ShieldAlert } from "lucide-react";
+import {
+	ArrowUpDown,
+	ChevronDown,
+	ChevronUp,
+	Loader2,
+	Search,
+	ShieldAlert,
+} from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "@/lib/app-toast";
 import { AdminListPagination } from "@/components/admin/AdminListPagination";
@@ -28,6 +35,14 @@ type ManageableUser = {
 	createdAt: string | null;
 	lastLoginAt: string | null;
 };
+
+type UserSortKey =
+	| "user"
+	| "access"
+	| "createdAt"
+	| "lastLoginAt";
+
+type SortDirection = "asc" | "desc";
 
 function formatAccessLevelLabel(accessLevel: ManagedAccessLevel) {
 	if (accessLevel === "super_admin") {
@@ -83,12 +98,39 @@ function formatDateTime(value: string | null) {
 	});
 }
 
+function compareTextValues(a: string, b: string, direction: SortDirection) {
+	const result = a.localeCompare(b, undefined, { sensitivity: "base" });
+	return direction === "asc" ? result : -result;
+}
+
+function compareNumberValues(
+	a: number,
+	b: number,
+	direction: SortDirection,
+) {
+	const result = a - b;
+	return direction === "asc" ? result : -result;
+}
+
+function getAccessLevelRank(accessLevel: ManagedAccessLevel) {
+	switch (accessLevel) {
+		case "super_admin":
+			return 3;
+		case "admin":
+			return 2;
+		default:
+			return 1;
+	}
+}
+
 export default function AdminUsersPage() {
 	const navigate = useNavigate();
 	const queryClient = useQueryClient();
 	const { user } = useAuth();
 	const { isSuperAdmin, isLoading: accessLoading } = useUserAccess();
 	const [searchQuery, setSearchQuery] = useState("");
+	const [sortKey, setSortKey] = useState<UserSortKey>("createdAt");
+	const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
 	const [selectedAccessByUserId, setSelectedAccessByUserId] = useState<
 		Record<string, ManagedAccessLevel>
 	>({});
@@ -134,12 +176,66 @@ export default function AdminUsersPage() {
 			);
 		});
 	}, [searchQuery, users]);
+	const sortedUsers = useMemo(() => {
+		const nextUsers = [...filteredUsers];
+
+		nextUsers.sort((leftUser, rightUser) => {
+			if (sortKey === "user") {
+				const leftLabel =
+					leftUser.displayName?.trim() || leftUser.email;
+				const rightLabel =
+					rightUser.displayName?.trim() || rightUser.email;
+
+				return compareTextValues(
+					leftLabel,
+					rightLabel,
+					sortDirection,
+				);
+			}
+
+			if (sortKey === "access") {
+				const accessComparison = compareNumberValues(
+					getAccessLevelRank(leftUser.accessLevel),
+					getAccessLevelRank(rightUser.accessLevel),
+					sortDirection,
+				);
+
+				if (accessComparison !== 0) {
+					return accessComparison;
+				}
+
+				return compareTextValues(
+					leftUser.email,
+					rightUser.email,
+					"asc",
+				);
+			}
+
+			const leftTimestamp = leftUser[sortKey]
+				? new Date(leftUser[sortKey] as string).getTime()
+				: Number.NEGATIVE_INFINITY;
+			const rightTimestamp = rightUser[sortKey]
+				? new Date(rightUser[sortKey] as string).getTime()
+				: Number.NEGATIVE_INFINITY;
+
+			return compareNumberValues(
+				leftTimestamp,
+				rightTimestamp,
+				sortDirection,
+			);
+		});
+
+		return nextUsers;
+	}, [filteredUsers, sortDirection, sortKey]);
 	const {
 		currentPage,
 		totalPages,
 		paginatedItems: paginatedUsers,
 		setCurrentPage,
-	} = usePaginatedList(filteredUsers, searchQuery);
+	} = usePaginatedList(
+		sortedUsers,
+		`${searchQuery}|${sortKey}|${sortDirection}`,
+	);
 
 	const updateUserAccess = useMutation({
 		mutationFn: async ({
@@ -200,6 +296,30 @@ export default function AdminUsersPage() {
 			setUpdatingUserId(null);
 		},
 	});
+
+	const toggleSort = (nextSortKey: UserSortKey) => {
+		if (sortKey === nextSortKey) {
+			setSortDirection((currentDirection) =>
+				currentDirection === "asc" ? "desc" : "asc",
+			);
+			return;
+		}
+
+		setSortKey(nextSortKey);
+		setSortDirection(nextSortKey === "createdAt" ? "desc" : "asc");
+	};
+
+	const renderSortIcon = (columnKey: UserSortKey) => {
+		if (sortKey !== columnKey) {
+			return <ArrowUpDown className="h-3.5 w-3.5" />;
+		}
+
+		return sortDirection === "asc" ? (
+			<ChevronUp className="h-3.5 w-3.5" />
+		) : (
+			<ChevronDown className="h-3.5 w-3.5" />
+		);
+	};
 
 	if (accessLoading) {
 		return (
@@ -271,10 +391,46 @@ export default function AdminUsersPage() {
 							<TableHeader>
 								<TableRow>
 									<TableHead className="w-[84px]">Profile Photo</TableHead>
-									<TableHead>User</TableHead>
-									<TableHead>Access</TableHead>
-									<TableHead>Created At</TableHead>
-									<TableHead>Last Login</TableHead>
+									<TableHead>
+										<button
+											type="button"
+											onClick={() => toggleSort("user")}
+											className="inline-flex items-center gap-2 text-left font-medium text-muted-foreground transition-colors hover:text-foreground"
+										>
+											User
+											{renderSortIcon("user")}
+										</button>
+									</TableHead>
+									<TableHead>
+										<button
+											type="button"
+											onClick={() => toggleSort("access")}
+											className="inline-flex items-center gap-2 text-left font-medium text-muted-foreground transition-colors hover:text-foreground"
+										>
+											Access
+											{renderSortIcon("access")}
+										</button>
+									</TableHead>
+									<TableHead>
+										<button
+											type="button"
+											onClick={() => toggleSort("createdAt")}
+											className="inline-flex items-center gap-2 text-left font-medium text-muted-foreground transition-colors hover:text-foreground"
+										>
+											Created At
+											{renderSortIcon("createdAt")}
+										</button>
+									</TableHead>
+									<TableHead>
+										<button
+											type="button"
+											onClick={() => toggleSort("lastLoginAt")}
+											className="inline-flex items-center gap-2 text-left font-medium text-muted-foreground transition-colors hover:text-foreground"
+										>
+											Last Login
+											{renderSortIcon("lastLoginAt")}
+										</button>
+									</TableHead>
 									<TableHead className="w-[230px]">Actions</TableHead>
 								</TableRow>
 							</TableHeader>
