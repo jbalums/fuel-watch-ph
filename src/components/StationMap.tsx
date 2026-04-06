@@ -28,7 +28,7 @@ const DEFAULT_HIGHLIGHT_ZOOM = 15;
 const DEFAULT_CURRENT_LOCATION_ZOOM = 15;
 const DEFAULT_EMPTY_MAP_ZOOM = 15;
 const DEFAULT_SINGLE_STATION_ZOOM = 15;
-const FOCUSED_STATION_ZOOM = 17;
+const FOCUSED_STATION_ZOOM = 16;
 
 type MapBounds = {
 	north: number;
@@ -230,7 +230,8 @@ function GoogleStationMap({
 		if (!map) {
 			return;
 		}
-
+		map.setZoom(DEFAULT_CURRENT_LOCATION_ZOOM);
+		return;
 		lastAutoFitKeyRef.current = null;
 
 		if (highlightLocation) {
