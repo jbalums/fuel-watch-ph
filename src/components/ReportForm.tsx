@@ -356,8 +356,23 @@ export function ReportForm() {
 			station_name: isEasyReport ? null : stationName.trim(),
 			price: isEasyReport ? null : summarySelection!.price,
 			fuel_type: isEasyReport ? null : summarySelection!.fuelType,
-			prices: isEasyReport ? null : normalizedPrices,
-			fuel_availability: isEasyReport ? null : normalizedAvailability,
+			prices: isEasyReport
+				? {
+						Unleaded: null,
+						Premium: null,
+						Diesel: null,
+						"Premium Diesel": null,
+						Kerosene: null,
+					}
+				: normalizedPrices,
+			fuel_availability: isEasyReport
+				? {
+						Unleaded: null,
+						Premium: null,
+						Diesel: null,
+						"Premium Diesel": null,
+					}
+				: normalizedAvailability,
 			status: isEasyReport ? null : summarySelection!.status,
 			station_id: isEasyReport ? null : selectedStationId,
 			province_code: provinceCode.trim() || null,

@@ -67,14 +67,14 @@ export function BottomNav({
 							});
 						}}
 						className={cn(
-							"flex flex-col items-center gap-0.5 rounded-md px-4 md:px-5 py-2 text-xs font-medium sovereign-ease transition-colors duration-300",
+							"flex flex-col items-center gap-0.5 rounded-md px-4 md:px-5 py-2 text-xs font-medium sovereign-ease transition-colors duration-300 relative",
 							isActivePath(path)
-								? "bg-primary text-primary-foreground"
+								? "bg-primary text-primary-foreground border border-amber-500"
 								: "text-muted-foreground hover:text-foreground",
 						)}
 					>
 						<Icon className="h-5 w-5" />
-						<span>{label}</span>
+						<span className="">{label}</span>
 					</button>
 				))}
 			</nav>
