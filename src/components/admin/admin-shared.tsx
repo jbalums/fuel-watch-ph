@@ -18,6 +18,7 @@ import {
 } from "@/lib/fuel-prices";
 import type {
 	FuelReport,
+	FuelReportSubmissionMode,
 	FuelReportReviewStatus,
 	FuelType,
 	StationClaimReviewStatus,
@@ -36,6 +37,15 @@ export type ReportFilter = FuelReportReviewStatus | "all";
 export type ClaimFilter = StationClaimReviewStatus | "all";
 export type StationPricesFormState = Record<FuelType, string>;
 export type StationAvailabilityFormState = FuelAvailabilityFormMap;
+export type EasyReportApprovalFormState = {
+	stationId: string;
+	stationName: string;
+	reportedAddress: string;
+	provinceCode: string;
+	cityMunicipalityCode: string;
+	prices: StationPricesFormState;
+	fuelAvailability: StationAvailabilityFormState;
+};
 
 export type StationFormState = {
 	name: string;
@@ -94,30 +104,44 @@ function formatReportedByLabel(
 	return reportedBy.slice(0, 8);
 }
 
+function isFuelType(value: string | null): value is FuelType {
+	return Boolean(value && fuelTypes.includes(value as FuelType));
+}
+
+function isStationStatus(
+	value: string | null,
+): value is StationStatus {
+	return value === "Available" || value === "Low" || value === "Out";
+}
+
 function mapFuelReport(
 	report: FuelReportRow,
 	reporterProfiles: Map<string, ProfileRow>,
 ): FuelReport {
+	const fallbackFuelType = isFuelType(report.fuel_type)
+		? report.fuel_type
+		: undefined;
+	const fallbackStatus = isStationStatus(report.status)
+		? report.status
+		: undefined;
 	const prices = normalizeFuelPrices(
 		report.prices,
-		report.fuel_type as FuelType,
-		Number(report.price) || 0,
+		fallbackFuelType,
+		typeof report.price === "number" ? report.price : undefined,
 	);
 	const fuelAvailability = normalizeFuelAvailability(
 		report.fuel_availability,
-		report.fuel_type as FuelType,
-		report.status as StationStatus,
+		fallbackFuelType,
+		fallbackStatus,
 	);
 	const reportedBy = report.user_id;
 	const primarySelection = getFuelSummarySelection(
 		prices,
 		fuelAvailability,
-		report.fuel_type as FuelType,
-	) ?? {
-		fuelType: report.fuel_type as FuelType,
-		price: Number(report.price) || 0,
-		status: report.status as StationStatus,
-	};
+		fallbackFuelType,
+	);
+	const submissionMode: FuelReportSubmissionMode =
+		report.submission_mode === "easy" ? "easy" : "standard";
 
 	return {
 		id: report.id,
@@ -133,15 +157,16 @@ function mapFuelReport(
 		photoUrl: null,
 		prices,
 		fuelAvailability,
-		price: primarySelection.price,
-		fuelType: primarySelection.fuelType,
-		status: primarySelection.status,
+		price: primarySelection?.price ?? null,
+		fuelType: primarySelection?.fuelType ?? fallbackFuelType ?? null,
+		status: primarySelection?.status ?? fallbackStatus ?? null,
 		reportedAt: report.created_at,
 		reportedBy,
 		reportedByLabel: formatReportedByLabel(
 			reportedBy,
 			reporterProfiles.get(reportedBy),
 		),
+		submissionMode,
 		reviewStatus: (report.review_status ??
 			"pending") as FuelReportReviewStatus,
 		reviewedAt: report.reviewed_at,
@@ -156,6 +181,58 @@ function mapFuelReport(
 				| "lgu_staff"
 				| null) ?? null,
 		appliedStationId: report.applied_station_id,
+	};
+}
+
+export function getFuelReportDisplayName(report: Pick<FuelReport, "stationName" | "submissionMode">) {
+	const stationName = report.stationName?.trim();
+	if (stationName) {
+		return stationName;
+	}
+
+	return report.submissionMode === "easy"
+		? "Easy Report"
+		: "Unnamed Report";
+}
+
+export function getFuelReportModeLabel(
+	submissionMode: FuelReportSubmissionMode,
+) {
+	return submissionMode === "easy" ? "Easy Report" : "Standard Report";
+}
+
+export function createEasyReportApprovalForm(
+	report: Pick<
+		FuelReport,
+		| "stationId"
+		| "stationName"
+		| "reportedAddress"
+		| "provinceCode"
+		| "cityMunicipalityCode"
+		| "prices"
+		| "fuelAvailability"
+	>,
+) : EasyReportApprovalFormState {
+	const prices = createEmptyFuelPriceFormMap();
+	const fuelAvailability = createEmptyFuelAvailabilityFormMap();
+
+	for (const fuelType of fuelTypes) {
+		const price = report.prices[fuelType];
+		prices[fuelType] =
+			typeof price === "number" && Number.isFinite(price) && price > 0
+				? price.toFixed(2)
+				: "";
+		fuelAvailability[fuelType] = report.fuelAvailability[fuelType] ?? "";
+	}
+
+	return {
+		stationId: report.stationId ?? "",
+		stationName: report.stationName ?? "",
+		reportedAddress: report.reportedAddress ?? "",
+		provinceCode: report.provinceCode ?? "",
+		cityMunicipalityCode: report.cityMunicipalityCode ?? "",
+		prices,
+		fuelAvailability,
 	};
 }
 

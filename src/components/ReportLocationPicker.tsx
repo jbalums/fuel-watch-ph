@@ -37,6 +37,7 @@ interface ReportLocationPickerProps {
 	selectedStationId: string | null;
 	selectedPosition: CoordinatePair | null;
 	selectedAddress: string | null;
+	autoPinCurrentLocation?: boolean;
 	onSelectExistingStation: (station: GasStation) => void;
 	onSelectNewLocation: (selection: ReportLocationSelection) => void;
 	onClearSelection: () => void;
@@ -58,6 +59,7 @@ function GoogleReportLocationPicker({
 	selectedStationId,
 	selectedPosition,
 	selectedAddress,
+	autoPinCurrentLocation = false,
 	onSelectExistingStation,
 	onSelectNewLocation,
 	onClearSelection,
@@ -92,6 +94,7 @@ function GoogleReportLocationPicker({
 	const [isResolvingAddress, setIsResolvingAddress] = useState(false);
 	const [addressError, setAddressError] = useState<string | null>(null);
 	const [locationError, setLocationError] = useState<string | null>(null);
+	const hasAttemptedAutoPinRef = useRef(false);
 	const mapRef = useRef<google.maps.Map | null>(null);
 	const geocoderRef = useRef<google.maps.Geocoder | null>(null);
 
@@ -320,6 +323,30 @@ function GoogleReportLocationPicker({
 		);
 	}, [resolveAddress]);
 
+	useEffect(() => {
+		if (!autoPinCurrentLocation) {
+			hasAttemptedAutoPinRef.current = false;
+			return;
+		}
+
+		if (hasAttemptedAutoPinRef.current) {
+			return;
+		}
+
+		if (selectedStationId || selectedPosition || isLocatingCurrentPosition) {
+			return;
+		}
+
+		hasAttemptedAutoPinRef.current = true;
+		handlePinCurrentLocation();
+	}, [
+		autoPinCurrentLocation,
+		handlePinCurrentLocation,
+		isLocatingCurrentPosition,
+		selectedPosition,
+		selectedStationId,
+	]);
+
 	return (
 		<div className="rounded-2xl border border-border bg-background p-4">
 			<div className="mb-3 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
@@ -353,7 +380,7 @@ function GoogleReportLocationPicker({
 						type="button"
 						onClick={handlePinCurrentLocation}
 						disabled={isLocatingCurrentPosition}
-						className="inline-flex items-center gap-2 rounded-full bg-surface-alt px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground disabled:cursor-not-allowed disabled:opacity-60"
+						className="inline-flex items-center gap-2 rounded-full bg-background px-3 py-1.5 text-xs font-medium border border-primary text-primary transition-colors hover:text-white hover:bg-primary disabled:cursor-not-allowed disabled:opacity-60"
 					>
 						{isLocatingCurrentPosition ? (
 							<>

@@ -12,6 +12,7 @@ import {
 	uploadFuelReportPhoto,
 	validateFuelReportPhoto,
 } from "@/lib/fuel-report-photo-upload";
+import { detectGeoScopeFromAddress } from "@/lib/geo-detection";
 import { ReportLocationPicker } from "@/components/ReportLocationPicker";
 import {
 	createEmptyFuelAvailabilityFormMap,
@@ -27,6 +28,7 @@ import {
 	type FuelPriceFormMap,
 } from "@/lib/fuel-prices";
 import { GeoScopeFields } from "@/components/GeoScopeFields";
+import type { FuelReportSubmissionMode } from "@/types/station";
 
 type UploadedPhoto = {
 	path: string;
@@ -36,8 +38,10 @@ type UploadedPhoto = {
 export function ReportForm() {
 	const { user } = useAuth();
 	const { data: stations = [] } = useStations();
-	const { provinces, citiesByProvince } = useGeoReferences();
+	const { provinces, cities, citiesByProvince } = useGeoReferences();
 	const fileInputRef = useRef<HTMLInputElement | null>(null);
+	const [submissionMode, setSubmissionMode] =
+		useState<FuelReportSubmissionMode>("easy");
 	const [stationName, setStationName] = useState("");
 	const [prices, setPrices] = useState<FuelPriceFormMap>(
 		createEmptyFuelPriceFormMap(),
@@ -64,6 +68,9 @@ export function ReportForm() {
 	const [photoUploadError, setPhotoUploadError] = useState<string | null>(
 		null,
 	);
+	const [autoDetectScopeMessage, setAutoDetectScopeMessage] = useState<
+		string | null
+	>(null);
 
 	useEffect(() => {
 		if (!photoFile) {
@@ -106,12 +113,24 @@ export function ReportForm() {
 	const selectedStation = selectedStationId
 		? (stations.find((station) => station.id === selectedStationId) ?? null)
 		: null;
+	const isEasyReport = submissionMode === "easy";
 	const selectedStationHasScope = Boolean(
-		selectedStation?.provinceCode && selectedStation?.cityMunicipalityCode,
+		!isEasyReport &&
+		selectedStation?.provinceCode &&
+		selectedStation?.cityMunicipalityCode,
 	);
 	const availableCities = provinceCode
 		? (citiesByProvince.get(provinceCode) ?? [])
 		: [];
+
+	useEffect(() => {
+		if (!isEasyReport) {
+			return;
+		}
+
+		setSelectedStationId(null);
+		setStationName("");
+	}, [isEasyReport]);
 
 	const uploadSelectedPhoto = async (file: File) => {
 		if (!user) {
@@ -192,6 +211,51 @@ export function ReportForm() {
 		resetPhotoState();
 	};
 
+	useEffect(() => {
+		if (!isEasyReport || !reportedAddress?.trim()) {
+			setAutoDetectScopeMessage(null);
+			return;
+		}
+
+		const detectedScope = detectGeoScopeFromAddress({
+			address: reportedAddress,
+			provinces,
+			cities,
+		});
+
+		if (!detectedScope) {
+			setAutoDetectScopeMessage(
+				"We couldn't auto-detect the province and city from this address yet.",
+			);
+			return;
+		}
+
+		const nextProvinceCode = detectedScope.provinceCode ?? "";
+		const nextCityMunicipalityCode =
+			detectedScope.cityMunicipalityCode ?? "";
+
+		if (
+			provinceCode !== nextProvinceCode ||
+			cityMunicipalityCode !== nextCityMunicipalityCode
+		) {
+			setProvinceCode(nextProvinceCode);
+			setCityMunicipalityCode(nextCityMunicipalityCode);
+		}
+
+		setAutoDetectScopeMessage(
+			nextCityMunicipalityCode
+				? "Province and city were auto-detected from the pinned location."
+				: "Province was auto-detected from the pinned location.",
+		);
+	}, [
+		cities,
+		cityMunicipalityCode,
+		isEasyReport,
+		provinceCode,
+		provinces,
+		reportedAddress,
+	]);
+
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
 		if (!user) return;
@@ -201,60 +265,66 @@ export function ReportForm() {
 			return;
 		}
 
-		if (!stationName.trim()) {
+		if (!isEasyReport && !stationName.trim()) {
 			toast.error("Station name is required");
 			return;
 		}
 
-		if (!provinceCode.trim()) {
+		if (!isEasyReport && !provinceCode.trim()) {
 			toast.error("Select the report province");
 			return;
 		}
 
-		if (!cityMunicipalityCode.trim()) {
+		if (!isEasyReport && !cityMunicipalityCode.trim()) {
 			toast.error("Select the report city or municipality");
 			return;
 		}
 
-		let normalizedPrices;
-		try {
-			normalizedPrices = parseFuelPriceForm(prices);
-		} catch (error) {
-			toast.error(
-				error instanceof Error ? error.message : "Invalid fuel price",
-			);
-			return;
-		}
+		let normalizedPrices = null;
+		let normalizedAvailability = null;
+		let summarySelection = null;
 
-		let normalizedAvailability;
-		try {
-			normalizedAvailability =
-				parseFuelAvailabilityForm(fuelAvailability);
-			validateFuelPriceAvailability(
+		if (!isEasyReport) {
+			try {
+				normalizedPrices = parseFuelPriceForm(prices);
+			} catch (error) {
+				toast.error(
+					error instanceof Error
+						? error.message
+						: "Invalid fuel price",
+				);
+				return;
+			}
+
+			try {
+				normalizedAvailability =
+					parseFuelAvailabilityForm(fuelAvailability);
+				validateFuelPriceAvailability(
+					normalizedPrices,
+					normalizedAvailability,
+				);
+			} catch (error) {
+				toast.error(
+					error instanceof Error
+						? error.message
+						: "Invalid fuel availability",
+				);
+				return;
+			}
+
+			summarySelection = getFuelSummarySelection(
 				normalizedPrices,
 				normalizedAvailability,
+				selectedStation?.fuelType,
 			);
-		} catch (error) {
-			toast.error(
-				error instanceof Error
-					? error.message
-					: "Invalid fuel availability",
-			);
-			return;
-		}
 
-		const summarySelection = getFuelSummarySelection(
-			normalizedPrices,
-			normalizedAvailability,
-			selectedStation?.fuelType,
-		);
-
-		if (
-			!summarySelection ||
-			!hasAnyFuelAvailability(normalizedAvailability)
-		) {
-			toast.error("Add at least one fuel availability or price");
-			return;
+			if (
+				!summarySelection ||
+				!hasAnyFuelAvailability(normalizedAvailability)
+			) {
+				toast.error("Add at least one fuel availability or price");
+				return;
+			}
 		}
 
 		setSubmitting(true);
@@ -274,17 +344,24 @@ export function ReportForm() {
 			}
 		}
 
+		if (isEasyReport && !photoAttachment) {
+			toast.error("Upload a fuel price photo for Easy Report");
+			setSubmitting(false);
+			return;
+		}
+
 		const { error } = await supabase.from("fuel_reports").insert({
 			user_id: user.id,
-			station_name: stationName.trim(),
-			price: summarySelection.price,
-			fuel_type: summarySelection.fuelType,
-			prices: normalizedPrices,
-			fuel_availability: normalizedAvailability,
-			status: summarySelection.status,
-			station_id: selectedStationId,
-			province_code: provinceCode.trim(),
-			city_municipality_code: cityMunicipalityCode.trim(),
+			submission_mode: submissionMode,
+			station_name: isEasyReport ? null : stationName.trim(),
+			price: isEasyReport ? null : summarySelection!.price,
+			fuel_type: isEasyReport ? null : summarySelection!.fuelType,
+			prices: isEasyReport ? null : normalizedPrices,
+			fuel_availability: isEasyReport ? null : normalizedAvailability,
+			status: isEasyReport ? null : summarySelection!.status,
+			station_id: isEasyReport ? null : selectedStationId,
+			province_code: provinceCode.trim() || null,
+			city_municipality_code: cityMunicipalityCode.trim() || null,
 			reported_address:
 				reportedAddress ??
 				`Pinned location (${coords.lat.toFixed(6)}, ${coords.lng.toFixed(6)})`,
@@ -326,7 +403,9 @@ export function ReportForm() {
 					Report Submitted
 				</h2>
 				<p className="text-sm text-muted-foreground">
-					Thank you for helping fellow motorists!
+					{isEasyReport
+						? "Your photo-first report is now pending manual review."
+						: "Thank you for helping fellow motorists!"}
 				</p>
 			</motion.div>
 		);
@@ -342,161 +421,143 @@ export function ReportForm() {
 		>
 			<h2 className="text-headline text-foreground">Report Fuel Price</h2>
 
-			{/* Station name */}
-			<div className="flex flex-col gap-1.5">
-				<label className="text-label text-muted-foreground">
-					Station Name
-				</label>
-				<input
-					type="text"
-					value={stationName}
-					onChange={(e) => setStationName(e.target.value)}
-					readOnly={selectedStationId !== null}
-					placeholder="e.g. Petron EDSA Cubao"
-					className="rounded-xl bg-surface-alt px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:bg-card focus:ring-2 focus:ring-primary/20 sovereign-ease transition-all"
-				/>
-				<p className="text-xs text-muted-foreground">
-					{selectedStationId
-						? "Station name is locked because you selected an existing station marker."
-						: "Select an existing station on the map or enter a new station name for a pinned location."}
-				</p>
+			<div className="grid gap-3 md:grid-cols-2">
+				<button
+					type="button"
+					onClick={() => setSubmissionMode("easy")}
+					className={`!rounded-sm border px-4 py-4 text-left transition-colors ${
+						submissionMode === "easy"
+							? "border-amber-600 bg-amber-600/5"
+							: "border-border bg-background hover:bg-secondary/40"
+					}`}
+				>
+					<p className="text-sm font-semibold text-amber-600">
+						Easy Report
+					</p>
+					<p className="mt-1 text-xs text-amber-900/70 dark:text-amber-700">
+						Just upload a fuel-price photo, pin your location, and
+						confirm the province and city. Admin or LGU reviewers
+						will enter the prices manually.
+					</p>
+				</button>
+				<button
+					type="button"
+					onClick={() => setSubmissionMode("standard")}
+					className={`!rounded-sm border px-4 py-4 text-left transition-colors ${
+						submissionMode === "standard"
+							? "border-primary bg-primary/5"
+							: "border-border bg-background hover:bg-secondary/40"
+					}`}
+				>
+					<p className="text-sm font-semibold text-primary">
+						Standard Report
+					</p>
+					<p className="mt-1 text-xs text-muted-foreground">
+						Enter the station name, fuel prices, and per-fuel
+						availability yourself.
+					</p>
+				</button>
 			</div>
 
-			{/* Location */}
-			<div className="flex flex-col gap-1.5">
-				<label className="text-label text-muted-foreground">
-					Location
-				</label>
-				<ReportLocationPicker
-					stations={stations}
-					selectedStationId={selectedStationId}
-					selectedPosition={coords}
-					selectedAddress={reportedAddress}
-					onSelectExistingStation={(station) => {
-						setSelectedStationId(station.id);
-						setStationName(station.name);
-						setReportedAddress(station.address);
-						setProvinceCode(station.provinceCode ?? "");
-						setCityMunicipalityCode(
-							station.cityMunicipalityCode ?? "",
-						);
-						setCoords({
-							lat: station.lat,
-							lng: station.lng,
-						});
-					}}
-					onSelectNewLocation={(selection) => {
-						setCoords({
-							lat: selection.lat,
-							lng: selection.lng,
-						});
-						setReportedAddress(selection.reportedAddress);
-						setSelectedStationId(null);
-						setStationName((current) =>
-							selectedStationId ? "" : current,
-						);
-					}}
-					onClearSelection={() => {
-						setCoords(null);
-						setReportedAddress(null);
-						setProvinceCode("");
-						setCityMunicipalityCode("");
-						setStationName((current) =>
-							selectedStationId ? "" : current,
-						);
-						setSelectedStationId(null);
-					}}
-				/>
-			</div>
+			{!isEasyReport ? (
+				<div className="flex flex-col gap-1.5">
+					<label className="text-label text-muted-foreground">
+						Station Name
+					</label>
+					<input
+						type="text"
+						value={stationName}
+						onChange={(e) => setStationName(e.target.value)}
+						readOnly={selectedStationId !== null}
+						placeholder="e.g. Petron EDSA Cubao"
+						className="rounded-xl bg-surface-alt px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:bg-card focus:ring-2 focus:ring-primary/20 sovereign-ease transition-all"
+					/>
+					<p className="text-xs text-muted-foreground">
+						{selectedStationId
+							? "Station name is locked because you selected an existing station marker."
+							: "Select an existing station on the map or enter a new station name for a pinned location."}
+					</p>
+				</div>
+			) : (
+				<div className="">
+					<p className="text-sm font-medium text-amber-600">
+						Easy Report keeps this fast.
+					</p>
+					<p className="mt-1 text-xs text-muted-foreground">
+						Take a clear photo of the fuel price board or pump, pin
+						where you are, and confirm the report scope. Admin or
+						LGU officers will review the image and enter the prices
+						manually.
+					</p>
+				</div>
+			)}
 
-			<div className="flex flex-col gap-1.5">
-				<label className="text-label text-muted-foreground">
-					Geographic Scope
-				</label>
-				<GeoScopeFields
-					provinces={provinces}
-					cities={availableCities}
-					provinceCode={provinceCode}
-					cityMunicipalityCode={cityMunicipalityCode}
-					requestedRole="city_admin"
-					provinceDisabled={selectedStationHasScope}
-					cityDisabled={selectedStationHasScope}
-					onProvinceChange={(nextProvinceCode) => {
-						setProvinceCode(nextProvinceCode);
-						setCityMunicipalityCode("");
-					}}
-					onCityChange={setCityMunicipalityCode}
-				/>
-				<p className="text-xs text-muted-foreground">
-					{selectedStationHasScope
-						? "This scope is inherited from the selected station."
-						: selectedStationId
-							? "This station still needs a province and city assignment for approval."
-							: "Pick the province and city or municipality for this report."}
-				</p>
-			</div>
-
-			{/* Price */}
-			<div className="flex flex-col gap-1.5">
-				<label className="text-label text-muted-foreground">
-					Prices per Liter (₱)
-				</label>
-				<div className="grid gap-3 grid-cols-2 xl:grid-cols-5">
-					{fuelTypes.map((fuelType) => (
-						<div key={fuelType} className="flex flex-col gap-1.5">
-							<label className="text-xs font-medium text-muted-foreground">
-								{fuelType}
-							</label>
-							<input
-								type="number"
-								step="0.01"
-								value={prices[fuelType]}
-								onChange={(event) =>
-									setPrices((current) => ({
-										...current,
-										[fuelType]: event.target.value,
-									}))
-								}
-								placeholder="0.00"
-								className="rounded-xl bg-surface-alt px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:bg-card focus:ring-2 focus:ring-primary/20 sovereign-ease transition-all tabular-nums"
-							/>
-							<select
-								value={fuelAvailability[fuelType]}
-								onChange={(event) => {
-									const nextStatus = event.target.value as
-										| ""
-										| "Available"
-										| "Low"
-										| "Out";
-									setFuelAvailability((current) => ({
-										...current,
-										[fuelType]: nextStatus,
-									}));
-
-									if (nextStatus === "Out") {
+			{!isEasyReport ? (
+				<div className="flex flex-col gap-1.5">
+					<label className="text-label text-muted-foreground">
+						Prices per Liter (₱)
+					</label>
+					<div className="grid gap-3 grid-cols-2 xl:grid-cols-5">
+						{fuelTypes.map((fuelType) => (
+							<div
+								key={fuelType}
+								className="flex flex-col gap-1.5"
+							>
+								<label className="text-xs font-medium text-muted-foreground">
+									{fuelType}
+								</label>
+								<input
+									type="number"
+									step="0.01"
+									value={prices[fuelType]}
+									onChange={(event) =>
 										setPrices((current) => ({
 											...current,
-											[fuelType]: "",
-										}));
+											[fuelType]: event.target.value,
+										}))
 									}
-								}}
-								className="rounded-xl bg-background px-4 py-3 text-sm text-foreground outline-none focus:ring-2 focus:ring-primary/20 sovereign-ease transition-all"
-							>
-								<option value="">No data</option>
-								{stationStatuses.map((status) => (
-									<option key={status} value={status}>
-										{status}
-									</option>
-								))}
-							</select>
-						</div>
-					))}
+									placeholder="0.00"
+									className="rounded-xl bg-surface-alt px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:bg-card focus:ring-2 focus:ring-primary/20 sovereign-ease transition-all tabular-nums"
+								/>
+								<select
+									value={fuelAvailability[fuelType]}
+									onChange={(event) => {
+										const nextStatus = event.target
+											.value as
+											| ""
+											| "Available"
+											| "Low"
+											| "Out";
+										setFuelAvailability((current) => ({
+											...current,
+											[fuelType]: nextStatus,
+										}));
+
+										if (nextStatus === "Out") {
+											setPrices((current) => ({
+												...current,
+												[fuelType]: "",
+											}));
+										}
+									}}
+									className="rounded-xl bg-background px-4 py-3 text-sm text-foreground outline-none focus:ring-2 focus:ring-primary/20 sovereign-ease transition-all"
+								>
+									<option value="">No data</option>
+									{stationStatuses.map((status) => (
+										<option key={status} value={status}>
+											{status}
+										</option>
+									))}
+								</select>
+							</div>
+						))}
+					</div>
+					<p className="text-xs text-muted-foreground">
+						Mark each reported fuel as Available, Low, or Out. Leave
+						both fields blank when you have no data for that fuel.
+					</p>
 				</div>
-				<p className="text-xs text-muted-foreground">
-					Mark each reported fuel as Available, Low, or Out. Leave
-					both fields blank when you have no data for that fuel.
-				</p>
-			</div>
+			) : null}
 
 			<div className="flex flex-col gap-1.5">
 				<label className="text-label text-muted-foreground">
@@ -509,8 +570,9 @@ export function ReportForm() {
 								Upload a pump, price board, or receipt photo
 							</p>
 							<p className="text-xs text-muted-foreground">
-								Optional. Used for admin verification of your
-								report.
+								{isEasyReport
+									? "Required. Admin or LGU reviewers will use this image to complete the report."
+									: "Optional. Used for admin verification of your report."}
 							</p>
 						</div>
 						{photoFile ? (
@@ -575,6 +637,87 @@ export function ReportForm() {
 				</div>
 			</div>
 
+			<div className="flex flex-col gap-1.5">
+				<label className="text-label text-muted-foreground">
+					{isEasyReport ? "Pin Current Location" : "Location"}
+				</label>
+				<ReportLocationPicker
+					stations={isEasyReport ? [] : stations}
+					selectedStationId={selectedStationId}
+					selectedPosition={coords}
+					selectedAddress={reportedAddress}
+					autoPinCurrentLocation={isEasyReport}
+					onSelectExistingStation={(station) => {
+						setSelectedStationId(station.id);
+						setStationName(station.name);
+						setReportedAddress(station.address);
+						setProvinceCode(station.provinceCode ?? "");
+						setCityMunicipalityCode(
+							station.cityMunicipalityCode ?? "",
+						);
+						setCoords({
+							lat: station.lat,
+							lng: station.lng,
+						});
+					}}
+					onSelectNewLocation={(selection) => {
+						setCoords({
+							lat: selection.lat,
+							lng: selection.lng,
+						});
+						setReportedAddress(selection.reportedAddress);
+						setSelectedStationId(null);
+						if (!isEasyReport) {
+							setStationName((current) =>
+								selectedStationId ? "" : current,
+							);
+						}
+					}}
+					onClearSelection={() => {
+						setCoords(null);
+						setReportedAddress(null);
+						setProvinceCode("");
+						setCityMunicipalityCode("");
+						if (!isEasyReport) {
+							setStationName((current) =>
+								selectedStationId ? "" : current,
+							);
+						}
+						setSelectedStationId(null);
+					}}
+				/>
+			</div>
+
+			<div className="flex flex-col gap-1.5">
+				<label className="text-label text-muted-foreground">
+					Geographic Scope
+				</label>
+				<GeoScopeFields
+					provinces={provinces}
+					cities={availableCities}
+					provinceCode={provinceCode}
+					cityMunicipalityCode={cityMunicipalityCode}
+					requestedRole={isEasyReport ? undefined : "city_admin"}
+					provinceDisabled={selectedStationHasScope}
+					cityDisabled={selectedStationHasScope}
+					onProvinceChange={(nextProvinceCode) => {
+						setProvinceCode(nextProvinceCode);
+						setCityMunicipalityCode("");
+					}}
+					onCityChange={setCityMunicipalityCode}
+				/>
+				<p className="text-xs text-muted-foreground">
+					{isEasyReport
+						? (autoDetectScopeMessage ??
+							"Optional, but helpful for routing your report to the right LGU queue faster.")
+						: selectedStationHasScope
+							? "This scope is inherited from the selected station."
+							: selectedStationId
+								? "This station still needs a province and city assignment for approval."
+								: "Pick the province and city or municipality for this report."}
+				</p>
+			</div>
+
 			<motion.button
 				whileTap={{ scale: 0.97 }}
 				type="submit"
@@ -590,7 +733,9 @@ export function ReportForm() {
 					? "Uploading Photo..."
 					: submitting
 						? "Submitting..."
-						: "Submit Report"}
+						: isEasyReport
+							? "Submit Easy Report"
+							: "Submit Report"}
 			</motion.button>
 		</motion.form>
 	);

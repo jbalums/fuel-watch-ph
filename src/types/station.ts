@@ -8,6 +8,7 @@ export type StationStatus = "Available" | "Low" | "Out";
 export type FuelAvailabilityMap = Record<FuelType, StationStatus | null>;
 export type FuelReportReviewStatus = "pending" | "approved" | "rejected";
 export type StationClaimReviewStatus = "pending" | "approved" | "rejected";
+export type FuelReportSubmissionMode = "standard" | "easy";
 
 export interface GasStation {
   id: string;
@@ -62,7 +63,7 @@ export interface StationClaimRequest {
 export interface FuelReport {
   id: string;
   stationId: string | null;
-  stationName: string;
+  stationName: string | null;
   reportedAddress: string | null;
   lat: number | null;
   lng: number | null;
@@ -73,12 +74,13 @@ export interface FuelReport {
   photoUrl: string | null;
   prices: Record<FuelType, number | null>;
   fuelAvailability: FuelAvailabilityMap;
-  price: number;
-  fuelType: FuelType;
-  status: StationStatus;
+  price: number | null;
+  fuelType: FuelType | null;
+  status: StationStatus | null;
   reportedAt: string;
   reportedBy: string;
   reportedByLabel: string;
+  submissionMode: FuelReportSubmissionMode;
   reviewStatus: FuelReportReviewStatus;
   reviewedAt: string | null;
   reviewedBy: string | null;

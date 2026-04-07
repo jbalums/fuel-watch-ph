@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
 	AlertDialog,
@@ -17,9 +17,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { AdminListPagination } from "@/components/admin/AdminListPagination";
 import { createFuelReportPhotoUrl } from "@/lib/fuel-report-photo-upload";
 import { usePaginatedList } from "@/hooks/usePaginatedList";
+import { useGeoReferences } from "@/hooks/useGeoReferences";
 import { LguVerifiedBadge } from "@/components/LguVerifiedBadge";
 import { StatusBadge } from "@/components/StatusBadge";
 import {
+	createEasyReportApprovalForm,
+	type EasyReportApprovalFormState,
+	getFuelReportDisplayName,
+	getFuelReportModeLabel,
 	formatReportedPrices,
 	type ReportFilter,
 	refreshAdminData,
@@ -28,6 +33,13 @@ import {
 	useScopedAdminReports,
 	useScopedAdminStations,
 } from "@/components/admin/admin-shared";
+import { EasyReportApprovalDialog } from "@/components/admin/EasyReportApprovalDialog";
+import {
+	hasAnyFuelAvailability,
+	parseFuelAvailabilityForm,
+	parseFuelPriceForm,
+	validateFuelPriceAvailability,
+} from "@/lib/fuel-prices";
 
 export default function LguReportsPage() {
 	const queryClient = useQueryClient();
@@ -35,6 +47,7 @@ export default function LguReportsPage() {
 	const { data: stations = [] } = useScopedAdminStations();
 	const { data: reports = [], isLoading: reportsLoading } =
 		useScopedAdminReports();
+	const { provinces, cities = [] } = useGeoReferences();
 	const [reportSearch, setReportSearch] = useState("");
 	const [reportFilter, setReportFilter] = useState<ReportFilter>("pending");
 	const [openingReportPhotoId, setOpeningReportPhotoId] = useState<
@@ -43,6 +56,11 @@ export default function LguReportsPage() {
 	const [reportToApprove, setReportToApprove] = useState<
 		(typeof reports)[number] | null
 	>(null);
+	const [easyApprovalForm, setEasyApprovalForm] =
+		useState<EasyReportApprovalFormState | null>(null);
+	const [easyApprovalError, setEasyApprovalError] = useState<string | null>(
+		null,
+	);
 	const [reportToReject, setReportToReject] = useState<
 		(typeof reports)[number] | null
 	>(null);
@@ -62,13 +80,14 @@ export default function LguReportsPage() {
 				? stationLookup.get(report.stationId)?.name ?? ""
 				: "";
 			const reportedAddress = report.reportedAddress ?? "";
+			const reportName = getFuelReportDisplayName(report);
 			const matchesSearch =
 				!query ||
-				report.stationName.toLowerCase().includes(query) ||
+				reportName.toLowerCase().includes(query) ||
 				linkedStationName.toLowerCase().includes(query) ||
 				reportedAddress.toLowerCase().includes(query) ||
-				report.fuelType.toLowerCase().includes(query) ||
-				report.status.toLowerCase().includes(query);
+				(report.fuelType ?? "").toLowerCase().includes(query) ||
+				(report.status ?? "").toLowerCase().includes(query);
 
 			return matchesFilter && matchesSearch;
 		});
@@ -100,6 +119,88 @@ export default function LguReportsPage() {
 		},
 		onError: (error) => toast.error(error.message),
 	});
+
+	const approveEasyReport = useMutation({
+		mutationFn: async ({
+			reportId,
+			form,
+		}: {
+			reportId: string;
+			form: EasyReportApprovalFormState;
+		}) => {
+			const normalizedPrices = parseFuelPriceForm(form.prices);
+			const normalizedAvailability = parseFuelAvailabilityForm(
+				form.fuelAvailability,
+			);
+			validateFuelPriceAvailability(
+				normalizedPrices,
+				normalizedAvailability,
+			);
+
+			if (!hasAnyFuelAvailability(normalizedAvailability)) {
+				throw new Error(
+					"Add at least one fuel availability or price before approval",
+				);
+			}
+
+			const fallbackStationName = form.stationId
+				? stationLookup.get(form.stationId)?.name ?? "Selected station"
+				: form.stationName.trim();
+			const stationName = fallbackStationName.trim();
+
+			if (!stationName) {
+				throw new Error("Station name is required");
+			}
+			if (!form.provinceCode.trim()) {
+				throw new Error("Province is required");
+			}
+			if (!form.cityMunicipalityCode.trim()) {
+				throw new Error("City or municipality is required");
+			}
+
+			const { data, error } = await supabase.rpc(
+				"approve_easy_fuel_report",
+				{
+					_report_id: reportId,
+					_station_name: stationName,
+					_station_id: form.stationId || null,
+					_reported_address:
+						form.reportedAddress.trim() || null,
+					_province_code: form.provinceCode.trim(),
+					_city_municipality_code:
+						form.cityMunicipalityCode.trim(),
+					_prices: normalizedPrices,
+					_fuel_availability: normalizedAvailability,
+				},
+			);
+
+			if (error) throw error;
+			return data;
+		},
+		onSuccess: async (stationId) => {
+			await refreshAdminData(queryClient);
+			const matchedStation = stationId ? stationLookup.get(stationId) : null;
+			toast.success(
+				matchedStation
+					? `Easy report approved and applied to ${matchedStation.name}`
+					: "Easy report approved",
+			);
+		},
+		onError: (error) => {
+			setEasyApprovalError(error.message);
+		},
+	});
+
+	useEffect(() => {
+		if (reportToApprove?.submissionMode === "easy") {
+			setEasyApprovalForm(createEasyReportApprovalForm(reportToApprove));
+			setEasyApprovalError(null);
+			return;
+		}
+
+		setEasyApprovalForm(null);
+		setEasyApprovalError(null);
+	}, [reportToApprove]);
 
 	const rejectReport = useMutation({
 		mutationFn: async (reportId: string) => {
@@ -148,7 +249,40 @@ export default function LguReportsPage() {
 	};
 
 	const confirmApproveReport = () => {
-		if (!reportToApprove || approveReport.isPending) {
+		if (!reportToApprove) {
+			return;
+		}
+
+		if (reportToApprove.submissionMode === "easy") {
+			if (!easyApprovalForm || approveEasyReport.isPending) {
+				return;
+			}
+
+			approveEasyReport.mutate(
+				{
+					reportId: reportToApprove.id,
+					form: easyApprovalForm,
+				},
+				{
+					onSuccess: async (stationId) => {
+						await refreshAdminData(queryClient);
+						const matchedStation = stationId
+							? stationLookup.get(stationId)
+							: null;
+						toast.success(
+							matchedStation
+								? `Easy report approved and applied to ${matchedStation.name}`
+								: "Easy report approved",
+						);
+						setReportToApprove(null);
+					},
+					onError: (error) => setEasyApprovalError(error.message),
+				},
+			);
+			return;
+		}
+
+		if (approveReport.isPending) {
 			return;
 		}
 
@@ -233,7 +367,7 @@ export default function LguReportsPage() {
 									<div className="min-w-0 flex-1">
 										<div className="flex flex-wrap items-center gap-2">
 											<p className="font-semibold text-foreground">
-												{report.stationName}
+												{getFuelReportDisplayName(report)}
 											</p>
 											{report.isLguVerified && (
 												<LguVerifiedBadge className="py-0.5" />
@@ -241,14 +375,27 @@ export default function LguReportsPage() {
 											<ReviewStatusBadge
 												status={report.reviewStatus}
 											/>
-											<StatusBadge status={report.status} />
+											{report.status ? (
+												<StatusBadge
+													status={report.status}
+												/>
+											) : null}
+											{report.submissionMode === "easy" ? (
+												<span className="inline-flex rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
+													{getFuelReportModeLabel(
+														report.submissionMode,
+													)}
+												</span>
+											) : null}
 										</div>
 										<p className="mt-1 text-sm text-muted-foreground">
 											{formatReportedPrices(
 												report.prices,
 												report.fuelAvailability,
 											) ||
-												"No valid prices"}{" "}
+												(report.submissionMode === "easy"
+													? "Awaiting manual price entry"
+													: "No valid prices")}{" "}
 											• {new Date(report.reportedAt).toLocaleString()}
 										</p>
 										<p className="mt-2 text-xs font-medium text-foreground">
@@ -305,7 +452,12 @@ export default function LguReportsPage() {
 												>
 													{openingReportPhotoId === report.id
 														? "Opening photo..."
-														: `View report photo${
+														: `View ${
+																report.submissionMode ===
+																"easy"
+																	? "reference"
+																	: "report"
+															} photo${
 															report.photoFilename
 																? ` (${report.photoFilename})`
 																: ""
@@ -330,6 +482,7 @@ export default function LguReportsPage() {
 													}
 													disabled={
 														approveReport.isPending ||
+														approveEasyReport.isPending ||
 														rejectReport.isPending
 													}
 													className="flex items-center gap-1.5 rounded-lg bg-success/15 px-3 py-2 text-sm font-medium text-success transition-colors hover:bg-success/20 disabled:opacity-50"
@@ -343,6 +496,7 @@ export default function LguReportsPage() {
 													}
 													disabled={
 														approveReport.isPending ||
+														approveEasyReport.isPending ||
 														rejectReport.isPending
 													}
 													className="flex items-center gap-1.5 rounded-lg bg-destructive/10 px-3 py-2 text-sm font-medium text-destructive transition-colors hover:bg-destructive/15 disabled:opacity-50"
@@ -371,7 +525,10 @@ export default function LguReportsPage() {
 			/>
 
 			<AlertDialog
-				open={!!reportToApprove}
+				open={
+					!!reportToApprove &&
+					reportToApprove.submissionMode !== "easy"
+				}
 				onOpenChange={(open) => {
 					if (!open && !approveReport.isPending) {
 						setReportToApprove(null);
@@ -389,7 +546,7 @@ export default function LguReportsPage() {
 					{reportToApprove && (
 						<div className="rounded-xl border border-success/20 bg-success/5 p-4 text-sm">
 							<p className="font-semibold text-foreground">
-								{reportToApprove.stationName}
+								{getFuelReportDisplayName(reportToApprove)}
 							</p>
 							<p className="mt-1 text-muted-foreground">
 								{formatReportedPrices(
@@ -428,6 +585,27 @@ export default function LguReportsPage() {
 					</AlertDialogFooter>
 				</AlertDialogContent>
 			</AlertDialog>
+
+			<EasyReportApprovalDialog
+				open={
+					!!reportToApprove &&
+					reportToApprove.submissionMode === "easy"
+				}
+				onOpenChange={(open) => {
+					if (!open && !approveEasyReport.isPending) {
+						setReportToApprove(null);
+					}
+				}}
+				report={reportToApprove}
+				form={easyApprovalForm}
+				setForm={setEasyApprovalForm}
+				stations={stations}
+				provinces={provinces}
+				cities={cities}
+				onApprove={confirmApproveReport}
+				approving={approveEasyReport.isPending}
+				validationMessage={easyApprovalError}
+			/>
 
 			<AlertDialog
 				open={!!reportToReject}

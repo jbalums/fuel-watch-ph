@@ -20,7 +20,7 @@ export type Database = {
           city_municipality_code: string | null
           created_at: string
           fuel_availability: Json | null
-          fuel_type: string
+          fuel_type: string | null
           id: string
           lat: number | null
           lgu_verified_at: string | null
@@ -29,7 +29,7 @@ export type Database = {
           lng: number | null
           photo_filename: string | null
           photo_path: string | null
-          price: number
+          price: number | null
           prices: Json | null
           province_code: string | null
           reported_address: string | null
@@ -38,8 +38,9 @@ export type Database = {
           reviewed_at: string | null
           reviewed_by: string | null
           station_id: string | null
-          station_name: string
-          status: string
+          station_name: string | null
+          status: string | null
+          submission_mode: string
           user_id: string
         }
         Insert: {
@@ -47,7 +48,7 @@ export type Database = {
           city_municipality_code?: string | null
           created_at?: string
           fuel_availability?: Json | null
-          fuel_type: string
+          fuel_type?: string | null
           id?: string
           lat?: number | null
           lgu_verified_at?: string | null
@@ -56,7 +57,7 @@ export type Database = {
           lng?: number | null
           photo_filename?: string | null
           photo_path?: string | null
-          price: number
+          price?: number | null
           prices?: Json | null
           province_code?: string | null
           reported_address?: string | null
@@ -65,8 +66,9 @@ export type Database = {
           reviewed_at?: string | null
           reviewed_by?: string | null
           station_id?: string | null
-          station_name: string
-          status?: string
+          station_name?: string | null
+          status?: string | null
+          submission_mode?: string
           user_id: string
         }
         Update: {
@@ -74,7 +76,7 @@ export type Database = {
           city_municipality_code?: string | null
           created_at?: string
           fuel_availability?: Json | null
-          fuel_type?: string
+          fuel_type?: string | null
           id?: string
           lat?: number | null
           lgu_verified_at?: string | null
@@ -83,7 +85,7 @@ export type Database = {
           lng?: number | null
           photo_filename?: string | null
           photo_path?: string | null
-          price?: number
+          price?: number | null
           prices?: Json | null
           province_code?: string | null
           reported_address?: string | null
@@ -92,8 +94,9 @@ export type Database = {
           reviewed_at?: string | null
           reviewed_by?: string | null
           station_id?: string | null
-          station_name?: string
-          status?: string
+          station_name?: string | null
+          status?: string | null
+          submission_mode?: string
           user_id?: string
         }
         Relationships: [
@@ -495,6 +498,19 @@ export type Database = {
       approve_fuel_report: {
         Args: {
           _report_id: string
+        }
+        Returns: string
+      }
+      approve_easy_fuel_report: {
+        Args: {
+          _city_municipality_code?: string | null
+          _fuel_availability?: Json | null
+          _prices?: Json | null
+          _province_code?: string | null
+          _report_id: string
+          _reported_address?: string | null
+          _station_id?: string | null
+          _station_name: string
         }
         Returns: string
       }
