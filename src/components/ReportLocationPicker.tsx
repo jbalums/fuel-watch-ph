@@ -38,6 +38,7 @@ interface ReportLocationPickerProps {
 	selectedPosition: CoordinatePair | null;
 	selectedAddress: string | null;
 	autoPinCurrentLocation?: boolean;
+	allowExistingStationSelection?: boolean;
 	onSelectExistingStation: (station: GasStation) => void;
 	onSelectNewLocation: (selection: ReportLocationSelection) => void;
 	onClearSelection: () => void;
@@ -60,6 +61,7 @@ function GoogleReportLocationPicker({
 	selectedPosition,
 	selectedAddress,
 	autoPinCurrentLocation = false,
+	allowExistingStationSelection = true,
 	onSelectExistingStation,
 	onSelectNewLocation,
 	onClearSelection,
@@ -357,9 +359,9 @@ function GoogleReportLocationPicker({
 							Location Picker
 						</p>
 						<p className="text-xs text-muted-foreground">
-							Tap a station marker to report an existing station,
-							or click anywhere else to pin a new station
-							location.
+							{allowExistingStationSelection
+								? "Tap a station marker to report an existing station, or click anywhere else to pin a new station location."
+								: "Tap an existing fuel station to use its location as your report pin, or click anywhere else to pin a new location."}
 						</p>
 					</div>
 				</div>
@@ -440,7 +442,17 @@ function GoogleReportLocationPicker({
 								setAddressError(null);
 								setLocationError(null);
 								setOpenInfoStationId(station.id);
-								onSelectExistingStation(station);
+								if (allowExistingStationSelection) {
+									onSelectExistingStation(station);
+									return;
+								}
+
+								onSelectNewLocation({
+									stationId: null,
+									lat: station.lat,
+									lng: station.lng,
+									reportedAddress: station.address,
+								});
 							}}
 						>
 							{openInfoStationId === station.id && (

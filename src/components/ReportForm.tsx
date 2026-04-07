@@ -642,11 +642,12 @@ export function ReportForm() {
 					{isEasyReport ? "Pin Current Location" : "Location"}
 				</label>
 				<ReportLocationPicker
-					stations={isEasyReport ? [] : stations}
+					stations={stations}
 					selectedStationId={selectedStationId}
 					selectedPosition={coords}
 					selectedAddress={reportedAddress}
 					autoPinCurrentLocation={isEasyReport}
+					allowExistingStationSelection={!isEasyReport}
 					onSelectExistingStation={(station) => {
 						setSelectedStationId(station.id);
 						setStationName(station.name);
