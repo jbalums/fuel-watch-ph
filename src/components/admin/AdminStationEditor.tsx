@@ -14,9 +14,11 @@ import {
 	SheetHeader,
 	SheetTitle,
 } from "@/components/ui/sheet";
-import { Loader2 } from "lucide-react";
+import { Loader2, MapPinned } from "lucide-react";
 import { useGeoReferences } from "@/hooks/useGeoReferences";
 import { useStationBrandLogos } from "@/hooks/useStationBrandLogos";
+import { toast } from "@/lib/app-toast";
+import { detectGeoScopeFromAddress } from "@/lib/geo-detection";
 import { fuelTypes, stationStatuses } from "@/lib/fuel-prices";
 import type { GasStationRow, StationFormState } from "./admin-shared";
 
@@ -50,11 +52,49 @@ function EditorForm({
 	onSubmit,
 	onCancel,
 }: Omit<AdminStationEditorProps, "open" | "isMobile" | "onOpenChange">) {
-	const { provinces, citiesByProvince } = useGeoReferences();
+	const { provinces, cities, citiesByProvince } = useGeoReferences();
 	const { data: stationBrandLogos = [] } = useStationBrandLogos();
 	const visibleCities = form.provinceCode
 		? citiesByProvince.get(form.provinceCode) ?? []
 		: [];
+	const handleAutoDetectScope = () => {
+		if (!form.address.trim()) {
+			toast.error("Enter or resolve a station address first");
+			return;
+		}
+
+		const detectedScope = detectGeoScopeFromAddress({
+			address: form.address,
+			provinces,
+			cities,
+		});
+
+		if (!detectedScope) {
+			toast.info("Could not auto-detect the province and city from this address");
+			return;
+		}
+
+		const detectedProvinceCode = detectedScope.provinceCode ?? "";
+		const detectedCityCode = detectedScope.cityMunicipalityCode ?? "";
+		const nextProvinceCode = lockedProvinceCode ?? detectedProvinceCode;
+		const nextCityCode = lockedCityMunicipalityCode
+			? lockedCityMunicipalityCode
+			: lockedProvinceCode && detectedProvinceCode !== lockedProvinceCode
+				? ""
+				: detectedCityCode;
+
+		onFormChange((current) => ({
+			...current,
+			provinceCode: nextProvinceCode,
+			cityMunicipalityCode: nextCityCode,
+		}));
+
+		toast.success(
+			nextCityCode
+				? "Province and city auto-detected"
+				: "Province auto-detected",
+		);
+	};
 
 	return (
 		<form
@@ -167,6 +207,16 @@ function EditorForm({
 								))}
 							</select>
 						</div>
+						<div className="mb-3 flex items-center justify-end">
+							<button
+								type="button"
+								onClick={handleAutoDetectScope}
+								className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-2 text-xs font-medium text-foreground transition-colors hover:bg-muted"
+							>
+								<MapPinned className="h-3.5 w-3.5" />
+								Auto Detect Province / City
+							</button>
+						</div>
 						<GeoScopeFields
 							provinces={provinces}
 							cities={visibleCities}
@@ -265,10 +315,9 @@ function EditorForm({
 							))}
 						</div>
 						<p className="mt-3 text-xs text-muted-foreground">
-							At least one fuel must be marked Available or Low
-							with a valid price. Mark a fuel as Out only when it
-							has no price. Leave both fields blank when you have
-							no data for that fuel.
+							{mode === "edit"
+								? "Prices are optional during editing. Mark a fuel as Out only when it has no price, or leave both fields blank when you have no current data yet."
+								: "At least one fuel must be marked Available or Low with a valid price. Mark a fuel as Out only when it has no price. Leave both fields blank when you have no data for that fuel."}
 						</p>
 					</div>
 					<div className="rounded-lg border border-border bg-background p-3 md:col-span-2">

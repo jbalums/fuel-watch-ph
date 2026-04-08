@@ -102,7 +102,9 @@ export default function LguStationsPage() {
 						null
 					: null;
 			const payload = {
-				...buildStationPayload(stationForm, editingStation),
+				...buildStationPayload(stationForm, editingStation, {
+					allowEmptyPricing: Boolean(editingStationId),
+				}),
 				...buildStationLguVerificationPayload(accessLevel, user?.id),
 			};
 
