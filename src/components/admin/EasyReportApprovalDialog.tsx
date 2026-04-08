@@ -1,5 +1,11 @@
-import { useMemo, type Dispatch, type SetStateAction } from "react";
-import { Loader2 } from "lucide-react";
+import {
+	useEffect,
+	useMemo,
+	useState,
+	type Dispatch,
+	type SetStateAction,
+} from "react";
+import { ExternalLink, Loader2 } from "lucide-react";
 import { GeoScopeFields } from "@/components/GeoScopeFields";
 import {
 	Dialog,
@@ -13,17 +19,14 @@ import type {
 	GeoCityMunicipality,
 	GeoProvince,
 } from "@/hooks/useGeoReferences";
+import { createFuelReportPhotoUrl } from "@/lib/fuel-report-photo-upload";
 import { fuelTypes, stationStatuses } from "@/lib/fuel-prices";
 import type { FuelReport } from "@/types/station";
+import type { GasStationRow } from "@/components/admin/admin-shared";
 import type { EasyReportApprovalFormState } from "@/components/admin/admin-shared";
+import { EasyReportStationPickerMap } from "@/components/admin/EasyReportStationPickerMap";
 
-type StationOption = {
-	id: string;
-	name: string | null;
-	address: string | null;
-	province_code: string | null;
-	city_municipality_code: string | null;
-};
+type StationOption = GasStationRow;
 
 interface EasyReportApprovalDialogProps {
 	open: boolean;
@@ -52,9 +55,22 @@ export function EasyReportApprovalDialog({
 	approving,
 	validationMessage,
 }: EasyReportApprovalDialogProps) {
+	const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+	const [photoError, setPhotoError] = useState<string | null>(null);
+	const [photoLoading, setPhotoLoading] = useState(false);
 	const stationLookup = useMemo(
 		() => new Map(stations.map((station) => [station.id, station])),
 		[stations],
+	);
+	const reportLocation = useMemo(
+		() =>
+			report?.lat !== null && report?.lng !== null
+				? {
+						lat: report?.lat,
+						lng: report?.lng,
+					}
+				: null,
+		[report?.lat, report?.lng],
 	);
 
 	const availableCities = useMemo(
@@ -68,10 +84,72 @@ export function EasyReportApprovalDialog({
 	);
 
 	const updateForm = (
-		updater: (current: EasyReportApprovalFormState) => EasyReportApprovalFormState,
+		updater: (
+			current: EasyReportApprovalFormState,
+		) => EasyReportApprovalFormState,
 	) => {
 		setForm((current) => (current ? updater(current) : current));
 	};
+
+	const applyStationSelection = (stationId: string) => {
+		const station = stationLookup.get(stationId) ?? null;
+		if (!station) {
+			return;
+		}
+
+		updateForm((current) => ({
+			...current,
+			stationId,
+			stationName: station.name ?? current.stationName,
+			reportedAddress: station.address ?? current.reportedAddress,
+			provinceCode: station.province_code ?? current.provinceCode,
+			cityMunicipalityCode:
+				station.city_municipality_code ?? current.cityMunicipalityCode,
+		}));
+	};
+
+	useEffect(() => {
+		if (!open || !report?.photoPath) {
+			setPhotoUrl(null);
+			setPhotoError(null);
+			setPhotoLoading(false);
+			return;
+		}
+
+		let cancelled = false;
+		setPhotoLoading(true);
+		setPhotoError(null);
+
+		void createFuelReportPhotoUrl(report.photoPath)
+			.then((url) => {
+				if (cancelled) {
+					return;
+				}
+
+				setPhotoUrl(url);
+			})
+			.catch((error) => {
+				if (cancelled) {
+					return;
+				}
+
+				setPhotoError(
+					error instanceof Error
+						? error.message
+						: "Failed to load Easy Report photo",
+				);
+				setPhotoUrl(null);
+			})
+			.finally(() => {
+				if (!cancelled) {
+					setPhotoLoading(false);
+				}
+			});
+
+		return () => {
+			cancelled = true;
+		};
+	}, [open, report?.photoPath]);
 
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
@@ -80,7 +158,8 @@ export function EasyReportApprovalDialog({
 					<DialogTitle>Complete and approve easy report</DialogTitle>
 					<DialogDescription>
 						Review the uploaded photo and manually enter the station
-						details, prices, and per-fuel availability before approval.
+						details, prices, and per-fuel availability before
+						approval.
 					</DialogDescription>
 				</DialogHeader>
 
@@ -100,6 +179,85 @@ export function EasyReportApprovalDialog({
 							</p>
 						</div>
 
+						<div className="grid gap-4 lg:grid-cols-1">
+							<div className="rounded-xl border border-border bg-background p-3">
+								<div className="flex items-start justify-between gap-3">
+									<div>
+										<p className="text-sm font-medium text-foreground">
+											Reference Photo
+										</p>
+										<p className="text-xs text-muted-foreground">
+											Review this image while entering
+											fuel prices.
+										</p>
+									</div>
+									{photoUrl ? (
+										<button
+											type="button"
+											onClick={() =>
+												window.open(
+													photoUrl,
+													"_blank",
+													"noopener,noreferrer",
+												)
+											}
+											className="inline-flex items-center gap-1 rounded-full bg-primary px-3 py-1 text-xs font-medium text-white transition-colors hover:bg-primary/80"
+										>
+											<ExternalLink className="h-3.5 w-3.5" />
+											Open Full Image
+										</button>
+									) : null}
+								</div>
+								{report.photoFilename ? (
+									<p className="mt-1 text-xs text-muted-foreground">
+										{report.photoFilename}
+									</p>
+								) : null}
+								<div className="mt-3 overflow-hidden rounded-xl border border-border bg-surface-alt">
+									{photoLoading ? (
+										<div className="flex h-64 items-center justify-center text-sm text-muted-foreground">
+											<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+											Loading report photo...
+										</div>
+									) : photoUrl ? (
+										<img
+											src={photoUrl}
+											alt={
+												report.photoFilename ??
+												"Easy Report reference photo"
+											}
+											className=" w-full object-contain bg-black/5"
+										/>
+									) : (
+										<div className="flex h-64 items-center justify-center px-4 text-center text-sm text-muted-foreground">
+											{photoError ??
+												"No photo is attached to this Easy Report."}
+										</div>
+									)}
+								</div>
+							</div>
+
+							<EasyReportStationPickerMap
+								reportLocation={reportLocation}
+								stations={stations
+									.filter(
+										(station) =>
+											typeof station.lat === "number" &&
+											typeof station.lng === "number",
+									)
+									.map((station) => ({
+										id: station.id,
+										name: station.name,
+										address: station.address,
+										lat: station.lat,
+										lng: station.lng,
+										status: station.status,
+									}))}
+								selectedStationId={form.stationId}
+								onStationSelect={applyStationSelection}
+							/>
+						</div>
+
 						<div className="grid gap-4 md:grid-cols-2">
 							<div className="flex flex-col gap-1.5">
 								<label className="text-label text-muted-foreground">
@@ -110,33 +268,26 @@ export function EasyReportApprovalDialog({
 									onChange={(event) => {
 										const nextStationId =
 											event.target.value;
-										const station = nextStationId
-											? stationLookup.get(nextStationId) ??
-												null
-											: null;
+										if (!nextStationId) {
+											updateForm((current) => ({
+												...current,
+												stationId: "",
+											}));
+											return;
+										}
 
-										updateForm((current) => ({
-											...current,
-											stationId: nextStationId,
-											stationName:
-												station?.name ??
-												current.stationName,
-											reportedAddress:
-												station?.address ??
-												current.reportedAddress,
-											provinceCode:
-												station?.province_code ??
-												current.provinceCode,
-											cityMunicipalityCode:
-												station?.city_municipality_code ??
-												current.cityMunicipalityCode,
-										}));
+										applyStationSelection(nextStationId);
 									}}
 									className="rounded-xl bg-surface-alt px-4 py-3 text-sm text-foreground outline-none focus:ring-2 focus:ring-primary/20"
 								>
-									<option value="">Create or match manually</option>
+									<option value="">
+										Create or match manually
+									</option>
 									{stations.map((station) => (
-										<option key={station.id} value={station.id}>
+										<option
+											key={station.id}
+											value={station.id}
+										>
 											{station.name ?? "Unnamed station"}
 										</option>
 									))}
@@ -188,9 +339,7 @@ export function EasyReportApprovalDialog({
 								provinces={provinces}
 								cities={availableCities}
 								provinceCode={form.provinceCode}
-								cityMunicipalityCode={
-									form.cityMunicipalityCode
-								}
+								cityMunicipalityCode={form.cityMunicipalityCode}
 								requestedRole="city_admin"
 								onProvinceChange={(nextProvinceCode) =>
 									updateForm((current) => ({
@@ -239,14 +388,16 @@ export function EasyReportApprovalDialog({
 											className="mt-2 w-full rounded-xl bg-surface-alt px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-primary/20"
 										/>
 										<select
-											value={form.fuelAvailability[fuelType]}
+											value={
+												form.fuelAvailability[fuelType]
+											}
 											onChange={(event) => {
-												const nextStatus =
-													event.target.value as
-														| ""
-														| "Available"
-														| "Low"
-														| "Out";
+												const nextStatus = event.target
+													.value as
+													| ""
+													| "Available"
+													| "Low"
+													| "Out";
 
 												updateForm((current) => ({
 													...current,
@@ -255,7 +406,8 @@ export function EasyReportApprovalDialog({
 														[fuelType]:
 															nextStatus === "Out"
 																? ""
-																: current.prices[
+																: current
+																		.prices[
 																		fuelType
 																	],
 													},
@@ -269,7 +421,10 @@ export function EasyReportApprovalDialog({
 										>
 											<option value="">No data</option>
 											{stationStatuses.map((status) => (
-												<option key={status} value={status}>
+												<option
+													key={status}
+													value={status}
+												>
 													{status}
 												</option>
 											))}

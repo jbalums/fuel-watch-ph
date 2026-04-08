@@ -15,7 +15,6 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "@/lib/app-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { AdminListPagination } from "@/components/admin/AdminListPagination";
-import { createFuelReportPhotoUrl } from "@/lib/fuel-report-photo-upload";
 import { usePaginatedList } from "@/hooks/usePaginatedList";
 import { useGeoReferences } from "@/hooks/useGeoReferences";
 import { LguVerifiedBadge } from "@/components/LguVerifiedBadge";
@@ -34,6 +33,7 @@ import {
 	useScopedAdminStations,
 } from "@/components/admin/admin-shared";
 import { EasyReportApprovalDialog } from "@/components/admin/EasyReportApprovalDialog";
+import { ReportPhotoPreviewDialog } from "@/components/admin/ReportPhotoPreviewDialog";
 import {
 	hasAnyFuelAvailability,
 	parseFuelAvailabilityForm,
@@ -50,9 +50,11 @@ export default function LguReportsPage() {
 	const { provinces, cities = [] } = useGeoReferences();
 	const [reportSearch, setReportSearch] = useState("");
 	const [reportFilter, setReportFilter] = useState<ReportFilter>("pending");
-	const [openingReportPhotoId, setOpeningReportPhotoId] = useState<
-		string | null
-	>(null);
+	const [reportPhotoPreview, setReportPhotoPreview] = useState<{
+		path: string;
+		filename: string | null;
+		mode: "easy" | "standard";
+	} | null>(null);
 	const [reportToApprove, setReportToApprove] = useState<
 		(typeof reports)[number] | null
 	>(null);
@@ -216,22 +218,6 @@ export default function LguReportsPage() {
 		},
 		onError: (error) => toast.error(error.message),
 	});
-
-	const openReportPhoto = async (reportId: string, photoPath: string) => {
-		try {
-			setOpeningReportPhotoId(reportId);
-			const signedUrl = await createFuelReportPhotoUrl(photoPath);
-			window.open(signedUrl, "_blank", "noopener,noreferrer");
-		} catch (error) {
-			toast.error(
-				error instanceof Error
-					? error.message
-					: "Failed to open report photo",
-			);
-		} finally {
-			setOpeningReportPhotoId(null);
-		}
-	};
 
 	const confirmRejectReport = () => {
 		if (!reportToReject || rejectReport.isPending) {
@@ -440,28 +426,26 @@ export default function LguReportsPage() {
 												<button
 													type="button"
 													onClick={() =>
-														void openReportPhoto(
-															report.id,
-															report.photoPath!,
-														)
+														setReportPhotoPreview({
+															path: report.photoPath!,
+															filename:
+																report.photoFilename,
+															mode:
+																report.submissionMode,
+														})
 													}
-													disabled={
-														openingReportPhotoId === report.id
-													}
-													className="font-medium text-accent hover:underline disabled:opacity-60"
+													className="font-medium text-accent hover:underline"
 												>
-													{openingReportPhotoId === report.id
-														? "Opening photo..."
-														: `View ${
-																report.submissionMode ===
-																"easy"
-																	? "reference"
-																	: "report"
-															} photo${
-															report.photoFilename
-																? ` (${report.photoFilename})`
-																: ""
-														}`}
+													{`View ${
+														report.submissionMode ===
+														"easy"
+															? "reference"
+															: "report"
+													} photo${
+														report.photoFilename
+															? ` (${report.photoFilename})`
+															: ""
+													}`}
 												</button>
 											</p>
 										)}
@@ -605,6 +589,27 @@ export default function LguReportsPage() {
 				onApprove={confirmApproveReport}
 				approving={approveEasyReport.isPending}
 				validationMessage={easyApprovalError}
+			/>
+
+			<ReportPhotoPreviewDialog
+				open={!!reportPhotoPreview}
+				onOpenChange={(open) => {
+					if (!open) {
+						setReportPhotoPreview(null);
+					}
+				}}
+				photoPath={reportPhotoPreview?.path ?? null}
+				photoFilename={reportPhotoPreview?.filename ?? null}
+				title={
+					reportPhotoPreview?.mode === "easy"
+						? "Reference Photo"
+						: "Report Photo"
+				}
+				description={
+					reportPhotoPreview?.mode === "easy"
+						? "Review the Easy Report image at full size."
+						: "Review the attached report image at full size."
+				}
 			/>
 
 			<AlertDialog

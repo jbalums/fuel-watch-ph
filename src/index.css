@@ -237,3 +237,11 @@
 .gm-style-iw-chr button > span {
 	@apply bg-red-600 !m-0 !p-0 !absolute top-0;
 }
+
+input[type="text"]:not([role="combobox"]),
+input[type="email"],
+input[type="password"],
+textarea,
+select {
+	@apply border border-border;
+}
