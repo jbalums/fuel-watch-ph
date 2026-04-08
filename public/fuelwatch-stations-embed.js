@@ -10,7 +10,8 @@
 	var cityMunicipalityCode =
 		script.getAttribute("data-city-municipality-code") || "";
 	var page = script.getAttribute("data-page") || "";
-	var height = script.getAttribute("data-height") || "2200";
+	var pageSize = script.getAttribute("data-page-size") || "10";
+	var height = script.getAttribute("data-height") || "720";
 	var targetId = script.getAttribute("data-target-id");
 
 	var iframeUrl = new URL("/embed/stations", baseUrl);
@@ -25,6 +26,9 @@
 	}
 	if (page && String(page) !== "1") {
 		iframeUrl.searchParams.set("page", String(page));
+	}
+	if (pageSize && String(pageSize) !== "10") {
+		iframeUrl.searchParams.set("pageSize", String(pageSize));
 	}
 
 	var iframe = document.createElement("iframe");
@@ -42,26 +46,6 @@
 	iframe.style.display = "block";
 	iframe.style.background = "transparent";
 	iframe.style.overflow = "hidden";
-
-	function handleIframeMessage(event) {
-		if (event.source !== iframe.contentWindow) {
-			return;
-		}
-
-		var data = event.data;
-		if (!data || data.type !== "fuelwatch-embed-height") {
-			return;
-		}
-
-		var nextHeight = Number(data.height);
-		if (!Number.isFinite(nextHeight) || nextHeight <= 0) {
-			return;
-		}
-
-		iframe.style.height = Math.ceil(nextHeight) + "px";
-	}
-
-	window.addEventListener("message", handleIframeMessage);
 
 	var mountTarget =
 		(targetId && document.getElementById(targetId)) || script.parentNode;

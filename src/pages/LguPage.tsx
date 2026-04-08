@@ -65,7 +65,7 @@ function buildEmbedScriptSnippet(scope: CurrentUserScope) {
 		);
 	}
 
-	lines.push('  data-height="2200"', "></script>");
+	lines.push('  data-page-size="10"', '  data-height="720"', "></script>");
 
 	return lines.join("\n");
 }
