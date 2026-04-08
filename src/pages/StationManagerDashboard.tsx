@@ -11,16 +11,15 @@ import {
   createEmptyFuelAvailabilityFormMap,
   createEmptyFuelPriceFormMap,
   fuelTypes,
+  getFuelSummarySelection,
   parseFuelAvailabilityForm,
   parseFuelPriceForm,
   stationStatuses,
   validateFuelPriceAvailability,
-  isFuelSellable,
   type FuelAvailabilityFormMap,
 } from "@/lib/fuel-prices";
-import type { FuelType } from "@/types/station";
 
-type StationPricesFormState = Record<FuelType, string>;
+type StationPricesFormState = Record<(typeof fuelTypes)[number], string>;
 type StationAvailabilityFormState = FuelAvailabilityFormMap;
 
 function normalizePrices(
@@ -49,7 +48,6 @@ export default function StationManagerDashboard() {
   const { user, loading: authLoading } = useAuth();
   const { data: station, isLoading } = useManagedStation();
   const [address, setAddress] = useState("");
-  const [fuelType, setFuelType] = useState<FuelType>("Diesel");
   const [prices, setPrices] = useState<StationPricesFormState>(
     createEmptyFuelPriceFormMap(),
   );
@@ -74,7 +72,6 @@ export default function StationManagerDashboard() {
     }
 
     setAddress(station.address);
-    setFuelType(station.fuelType);
     setPrices(normalizePrices(station.prices));
     setFuelAvailability(normalizeAvailability(station.fuelAvailability));
   }, [station]);
@@ -88,29 +85,26 @@ export default function StationManagerDashboard() {
       const payload = parseFuelPriceForm(prices);
       const normalizedAvailability = parseFuelAvailabilityForm(fuelAvailability);
       validateFuelPriceAvailability(payload, normalizedAvailability);
-
-      const selectedPrice = payload[fuelType];
-      const selectedAvailability = normalizedAvailability[fuelType];
+      const summarySelection = getFuelSummarySelection(
+        payload,
+        normalizedAvailability,
+        station.fuelType,
+      );
 
       if (!address.trim()) {
         throw new Error("Station address is required");
       }
 
-      if (
-        !isFuelSellable(selectedAvailability) ||
-        selectedPrice === null ||
-        Number.isNaN(selectedPrice) ||
-        selectedPrice <= 0
-      ) {
+      if (!summarySelection) {
         throw new Error(
-          `The selected fuel type must be marked Available or Low and include a valid price`,
+          "At least one fuel must be marked Available or Low and include a valid price",
         );
       }
 
       const { error } = await supabase.rpc("update_managed_station", {
         _station_id: station.id,
         _address: address.trim(),
-        _fuel_type: fuelType,
+        _fuel_type: summarySelection.fuelType,
         _prices: payload,
         _fuel_availability: normalizedAvailability,
       });
@@ -223,38 +217,23 @@ export default function StationManagerDashboard() {
                   placeholder="Station address"
                   className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
                 />
-                <select
-                  value={fuelType}
-                  onChange={(event) =>
-                    setFuelType(event.target.value as FuelType)
-                  }
-                  className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
-                >
-                  {fuelTypes.map((type) => (
-                    <option key={type} value={type}>
-                      {type}
-                    </option>
-                  ))}
-                </select>
                 <div className="flex items-center rounded-lg border border-border bg-muted px-3 py-2 text-sm text-muted-foreground">
-                  Primary fuel must be marked Available or Low.
+                  At least one fuel must be marked Available or Low with a valid price.
                 </div>
               </div>
 
               <div className="mt-5 rounded-xl border border-border bg-background p-4">
-                <div className="mb-3 flex items-center justify-between">
+                <div className="mb-3">
                   <div>
                     <p className="text-sm font-medium text-foreground">
                       Fuel Prices
                     </p>
                     <p className="text-xs text-muted-foreground">
                       Update each fuel's price and availability for your
-                      station.
+                      station. The main displayed fuel is derived automatically
+                      from the fuel rows.
                     </p>
                   </div>
-                  <span className="rounded-full bg-accent/10 px-3 py-1 text-sm font-medium text-accent">
-                    Primary: <b>{fuelType}</b>
-                  </span>
                 </div>
                 <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
                   {fuelTypes.map((type) => (

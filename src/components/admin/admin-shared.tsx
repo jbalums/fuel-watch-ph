@@ -563,11 +563,17 @@ export function buildStationPayload(
 		: createEmptyFuelPriceMap();
 	const nextPreviousPrices = { ...previousPrices, ...submittedPreviousPrices };
 
-	const pricePerLiter = prices[stationForm.fuelType];
-	const primaryFuelAvailability = fuelAvailability[stationForm.fuelType];
-	if (!isFuelSellable(primaryFuelAvailability) || pricePerLiter === null) {
+	const summarySelection = getFuelSummarySelection(
+		prices,
+		fuelAvailability,
+		existingStation?.fuel_type && fuelTypes.includes(existingStation.fuel_type as FuelType)
+			? (existingStation.fuel_type as FuelType)
+			: stationForm.fuelType,
+	);
+
+	if (!summarySelection || !isFuelSellable(summarySelection.status)) {
 		throw new Error(
-			`The selected fuel type must be marked Available or Low and include a valid price`,
+			"At least one fuel must be marked Available or Low and include a valid price",
 		);
 	}
 
@@ -607,9 +613,9 @@ export function buildStationPayload(
 		fuel_availability: fuelAvailability,
 		previous_prices: nextPreviousPrices,
 		price_trends: priceTrends,
-		fuel_type: stationForm.fuelType,
-		price_per_liter: pricePerLiter,
-		status: primaryFuelAvailability,
+		fuel_type: summarySelection.fuelType,
+		price_per_liter: summarySelection.price,
+		status: summarySelection.status,
 	};
 }
 

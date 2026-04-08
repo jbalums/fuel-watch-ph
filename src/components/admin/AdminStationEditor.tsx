@@ -17,7 +17,6 @@ import {
 import { Loader2 } from "lucide-react";
 import { useGeoReferences } from "@/hooks/useGeoReferences";
 import { fuelTypes, stationStatuses } from "@/lib/fuel-prices";
-import type { FuelType } from "@/types/station";
 import type { GasStationRow, StationFormState } from "./admin-shared";
 
 interface AdminStationEditorProps {
@@ -165,40 +164,18 @@ function EditorForm({
 							}
 						/>
 					</div>
-					<select
-						value={form.fuelType}
-						onChange={(event) =>
-							onFormChange((current) => ({
-								...current,
-								fuelType: event.target.value as FuelType,
-							}))
-						}
-						className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
-					>
-						{fuelTypes.map((fuelType) => (
-							<option key={fuelType} value={fuelType}>
-								{fuelType}
-							</option>
-						))}
-					</select>
-					<div className="flex items-center rounded-lg border border-border bg-muted px-3 py-2 text-sm text-muted-foreground">
-						Primary fuel must be marked Available or Low.
-					</div>
 					<div className="rounded-lg border border-border bg-background p-3 md:col-span-2">
-						<div className="mb-3 flex items-center justify-between gap-3">
+						<div className="mb-3">
 							<div>
 								<p className="text-sm font-medium text-foreground">
 									Current Prices
 								</p>
 								<p className="text-xs text-muted-foreground">
 									Set each fuel's price and availability. The
-									selected primary fuel becomes the main
-									displayed price.
+									main displayed fuel is derived
+									automatically from the fuel rows.
 								</p>
 							</div>
-							<span className="rounded-full bg-accent/10 px-3 py-1 text-sm font-medium text-accent">
-								Primary: <b>{form.fuelType}</b>
-							</span>
 						</div>
 						<div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
 							{fuelTypes.map((fuelType) => (
@@ -259,15 +236,10 @@ function EditorForm({
 							))}
 						</div>
 						<p className="mt-3 text-xs text-muted-foreground">
-							Current display price:{" "}
-							{form.prices[form.fuelType]
-								? `₱${Number(form.prices[form.fuelType]).toFixed(2)}`
-								: "Set a price and Available or Low status for the selected fuel type"}
-						</p>
-						<p className="mt-1 text-xs text-muted-foreground">
-							Mark a fuel as Out only when it has no price.
-							Leave both fields blank when you have no data for
-							that fuel.
+							At least one fuel must be marked Available or Low
+							with a valid price. Mark a fuel as Out only when it
+							has no price. Leave both fields blank when you have
+							no data for that fuel.
 						</p>
 					</div>
 					<div className="rounded-lg border border-border bg-background p-3 md:col-span-2">

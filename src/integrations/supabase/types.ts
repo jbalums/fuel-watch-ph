@@ -122,7 +122,7 @@ export type Database = {
           city_municipality_code: string | null
           created_at: string
           fuel_availability: Json
-          fuel_type: string
+          fuel_type: string | null
           google_place_id: string | null
           id: string
           is_lgu_verified: boolean
@@ -149,7 +149,7 @@ export type Database = {
           city_municipality_code?: string | null
           created_at?: string
           fuel_availability?: Json
-          fuel_type?: string
+          fuel_type?: string | null
           google_place_id?: string | null
           id?: string
           is_lgu_verified?: boolean
@@ -176,7 +176,7 @@ export type Database = {
           city_municipality_code?: string | null
           created_at?: string
           fuel_availability?: Json
-          fuel_type?: string
+          fuel_type?: string | null
           google_place_id?: string | null
           id?: string
           is_lgu_verified?: boolean

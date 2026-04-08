@@ -40,7 +40,6 @@ import {
 	GOOGLE_MAPS_SCRIPT_ID,
 	MANILA_CENTER,
 } from "@/lib/google-maps";
-import type { FuelType } from "@/types/station";
 
 type GoogleDiscoveredStation = {
 	placeId: string;
@@ -395,43 +394,18 @@ function DiscoveryStationForm({
 					}
 				/>
 
-				<div className="grid gap-3 md:grid-cols-2">
-					<select
-						value={form.fuelType}
-						onChange={(event) =>
-							onFormChange((current) => ({
-								...current,
-								fuelType: event.target.value as FuelType,
-							}))
-						}
-						className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
-					>
-						{fuelTypes.map((fuelType) => (
-							<option key={fuelType} value={fuelType}>
-								{fuelType}
-							</option>
-						))}
-					</select>
-					<div className="flex items-center rounded-lg border border-border bg-muted px-3 py-2 text-sm text-muted-foreground">
-						Primary fuel must be marked Available or Low.
-					</div>
-				</div>
-
 				<div className="rounded-lg border border-border bg-background p-3">
-					<div className="mb-3 flex items-center justify-between gap-3">
+					<div className="mb-3">
 						<div>
 							<p className="text-sm font-medium text-foreground">
 								Current Prices
 							</p>
 							<p className="text-xs text-muted-foreground">
 								Set each fuel's price and availability. The
-								selected primary fuel becomes the main displayed
-								price.
+								main displayed fuel is derived automatically
+								from the fuel rows.
 							</p>
 						</div>
-						<span className="rounded-full bg-accent/10 px-3 py-1 text-sm font-medium text-accent">
-							Primary: <b>{form.fuelType}</b>
-						</span>
 					</div>
 					<div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
 						{fuelTypes.map((fuelType) => (
@@ -493,6 +467,10 @@ function DiscoveryStationForm({
 							</div>
 						))}
 					</div>
+					<p className="mt-3 text-xs text-muted-foreground">
+						At least one fuel must be marked Available or Low with
+						a valid price.
+					</p>
 				</div>
 
 				<div className="rounded-lg border border-border bg-background p-3">
