@@ -714,8 +714,11 @@ export function ReportForm() {
 					autoPinCurrentLocation={
 						isEasyReport && !prefilledGoogleStation
 					}
-					allowExistingStationSelection={!isEasyReport}
+					allowExistingStationSelection
 					onSelectExistingStation={(station) => {
+						if (isEasyReport) {
+							setPrefilledGoogleStation(null);
+						}
 						setSelectedStationId(station.id);
 						setStationName(station.name);
 						setReportedAddress(station.address);
