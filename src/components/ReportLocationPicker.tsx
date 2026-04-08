@@ -187,7 +187,7 @@ function GoogleReportLocationPicker({
 		}
 
 		map.panTo(activePosition);
-		map.setZoom(selectedStation ? 18 : 17);
+		map.setZoom(selectedStation ? 15 : 15);
 	}, [activePosition, selectedStation]);
 
 	const resolveAddress = useCallback(
@@ -283,7 +283,7 @@ function GoogleReportLocationPicker({
 
 				setViewportCenter(coordinates);
 				mapRef.current?.panTo(coordinates);
-				mapRef.current?.setZoom(17);
+				mapRef.current?.setZoom(15);
 				void resolveAddress(coordinates);
 				setIsLocatingCurrentPosition(false);
 			},
@@ -320,7 +320,11 @@ function GoogleReportLocationPicker({
 			return;
 		}
 
-		if (selectedStationId || selectedPosition || isLocatingCurrentPosition) {
+		if (
+			selectedStationId ||
+			selectedPosition ||
+			isLocatingCurrentPosition
+		) {
 			return;
 		}
 

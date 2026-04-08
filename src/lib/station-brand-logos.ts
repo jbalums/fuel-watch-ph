@@ -31,7 +31,9 @@ export function resolveStationBrandLogo(
 	station: StationLogoResolutionInput,
 	brandLogos: StationBrandLogo[],
 ) {
-	const activeBrandLogos = brandLogos.filter((brandLogo) => brandLogo.isActive);
+	const activeBrandLogos = brandLogos.filter(
+		(brandLogo) => brandLogo.isActive,
+	);
 
 	if (station.stationBrandLogoId) {
 		const overrideBrandLogo =
@@ -82,8 +84,8 @@ export function buildBrandLogoMarkerIcon(
 
 	return {
 		url: logoUrl,
-		scaledSize: new googleMaps.Size(size, size),
-		anchor: new googleMaps.Point(size / 2, size / 2),
+		scaledSize: new googleMaps.Size(45, 40),
+		anchor: new googleMaps.Point(22.5, 35),
 	} satisfies google.maps.Icon;
 }
 

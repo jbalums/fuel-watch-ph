@@ -77,10 +77,13 @@ function GoogleStationMap({
 	>([]);
 	const [map, setMap] = useState<google.maps.Map | null>(null);
 	const [visibleBounds, setVisibleBounds] = useState<MapBounds | null>(null);
+	const [renderCenter, setRenderCenter] =
+		useState<CoordinatePair>(MANILA_CENTER);
 	const lastAutoFitKeyRef = useRef<string | null>(null);
 	const lastDiscoveryBoundsKeyRef = useRef<string | null>(null);
 	const discoverySearchTimeoutRef = useRef<number | null>(null);
 	const discoveryRequestIdRef = useRef(0);
+	const hasInitializedCenterRef = useRef(false);
 	const { coordinates: currentLocation } = useCurrentLocation();
 	const googleMaps =
 		typeof window !== "undefined" ? window.google?.maps : undefined;
@@ -99,8 +102,6 @@ function GoogleStationMap({
 				: null,
 		[selectedStationId, stationById],
 	);
-	const mapCenter =
-		focusedStation ?? highlightLocation ?? currentLocation ?? MANILA_CENTER;
 	const currentLocationIcon = useMemo(() => {
 		if (!googleMaps) {
 			return null;
@@ -208,7 +209,14 @@ function GoogleStationMap({
 
 			return true;
 		});
-	}, [allStations, cities, cityMunicipalityCode, discoveredStations, provinceCode, provinces]);
+	}, [
+		allStations,
+		cities,
+		cityMunicipalityCode,
+		discoveredStations,
+		provinceCode,
+		provinces,
+	]);
 	const selectedStationPosition = useMemo(
 		() =>
 			focusedStation
@@ -309,51 +317,6 @@ function GoogleStationMap({
 		[onFocusedStationChange],
 	);
 
-	const restoreDefaultMapView = useCallback(() => {
-		if (!map) {
-			return;
-		}
-		lastAutoFitKeyRef.current = null;
-
-		if (highlightLocation) {
-			map.panTo(highlightLocation);
-			map.setZoom(DEFAULT_HIGHLIGHT_ZOOM);
-			return;
-		}
-
-		if (currentLocation) {
-			map.panTo(currentLocation);
-			map.setZoom(DEFAULT_CURRENT_LOCATION_ZOOM);
-			return;
-		}
-
-		if (stations.length === 0) {
-			map.setCenter(MANILA_CENTER);
-			map.setZoom(DEFAULT_EMPTY_MAP_ZOOM);
-			return;
-		}
-
-		if (stations.length === 1) {
-			map.panTo({ lat: stations[0].lat, lng: stations[0].lng });
-			map.setZoom(DEFAULT_SINGLE_STATION_ZOOM);
-			return;
-		}
-
-		if (!googleMaps) {
-			return;
-		}
-
-		/* * * * commenting out auto-fit for now as it causes unwanted zooming when the station list updates or when the user clicks on a marker to view the info window. We can revisit this in the future and maybe add a button to allow users to manually trigger auto-fit if they want to. 
-		 * Auto-fit to station markers *
-
-		const bounds = new googleMaps.LatLngBounds();
-		for (const station of stations) {
-			bounds.extend({ lat: station.lat, lng: station.lng });
-		}
-		map.fitBounds(bounds, 80);
-		* * * */
-	}, [currentLocation, googleMaps, highlightLocation, map, stations]);
-
 	const updateVisibleBounds = useCallback(() => {
 		if (!map) {
 			return;
@@ -406,7 +369,10 @@ function GoogleStationMap({
 					return;
 				}
 
-				console.error("Failed to discover Google-only fuel stations", error);
+				console.error(
+					"Failed to discover Google-only fuel stations",
+					error,
+				);
 				setDiscoveredStations([]);
 			}
 		},
@@ -528,6 +494,32 @@ function GoogleStationMap({
 	}, []);
 
 	useEffect(() => {
+		if (focusedStation) {
+			setRenderCenter({
+				lat: focusedStation.lat,
+				lng: focusedStation.lng,
+			});
+			hasInitializedCenterRef.current = true;
+			return;
+		}
+
+		if (highlightLocation) {
+			setRenderCenter(highlightLocation);
+			hasInitializedCenterRef.current = true;
+			return;
+		}
+
+		if (hasInitializedCenterRef.current) {
+			return;
+		}
+
+		setRenderCenter(currentLocation ?? MANILA_CENTER);
+		if (currentLocation) {
+			hasInitializedCenterRef.current = true;
+		}
+	}, [currentLocation, focusedStation, highlightLocation]);
+
+	useEffect(() => {
 		if (!selectedGoogleStation) {
 			return;
 		}
@@ -547,7 +539,7 @@ function GoogleStationMap({
 				...GOOGLE_MAPS_CONTAINER_STYLE,
 				height: "calc(100dvh - 185px)",
 			}}
-			center={mapCenter}
+			center={renderCenter}
 			zoom={
 				focusedStation ? FOCUSED_STATION_ZOOM : DEFAULT_EMPTY_MAP_ZOOM
 			}
@@ -636,7 +628,6 @@ function GoogleStationMap({
 					position={selectedStationPosition}
 					onCloseClick={() => {
 						setSelectedStationId(null);
-						restoreDefaultMapView();
 					}}
 				>
 					<StationMarkerInfoWindow
