@@ -127,10 +127,13 @@ function GoogleReportLocationPicker({
 			return;
 		}
 
-		if (!stations.some((station) => station.id === openInfoStationId)) {
-			setOpenInfoStationId(null);
+		if (stations.some((station) => station.id === selectedStationId)) {
+			setOpenInfoStationId(selectedStationId);
+			return;
 		}
-	}, [openInfoStationId, selectedStationId, stations]);
+
+		setOpenInfoStationId(null);
+	}, [selectedStationId, stations]);
 
 	useEffect(() => {
 		if (activePosition) {
