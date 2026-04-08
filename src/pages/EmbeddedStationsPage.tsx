@@ -102,10 +102,7 @@ export default function EmbeddedStationsPage() {
 		cityMunicipalityCode,
 		searchDebounceMs: 0,
 	});
-	const totalPages = Math.max(
-		1,
-		Math.ceil(totalCount / pageSize),
-	);
+	const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
 	const mapUrl = useMemo(() => {
 		const nextSearchParams = new URLSearchParams();
 

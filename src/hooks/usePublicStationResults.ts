@@ -28,12 +28,8 @@ function mapBrowseStationRow(row: BrowseStationRow) {
 		!row.address ||
 		row.lat === null ||
 		row.lng === null ||
-		!row.fuel_type ||
-		row.price_per_liter === null ||
 		!row.updated_at ||
-		row.report_count === null ||
-		!row.created_at ||
-		!row.status
+		row.report_count === null
 	) {
 		return null;
 	}
@@ -114,7 +110,8 @@ async function fetchPublicStationResults({
 		stations: rows
 			.map(mapBrowseStationRow)
 			.filter(
-				(station): station is NonNullable<typeof station> => station !== null,
+				(station): station is NonNullable<typeof station> =>
+					station !== null,
 			),
 		totalCount: Number(rows[0]?.total_count ?? 0),
 	};
@@ -124,7 +121,7 @@ export function usePublicStationResults({
 	searchQuery = "",
 	fuelFilter = "All",
 	statusFilter = "All",
-	sortBy = "price_asc",
+	sortBy = "All",
 	page,
 	pageSize,
 	provinceCode,
@@ -132,7 +129,10 @@ export function usePublicStationResults({
 	searchDebounceMs = 300,
 }: UsePublicStationResultsOptions) {
 	const { coordinates: currentLocation } = useCurrentLocation();
-	const debouncedSearchQuery = useDebouncedValue(searchQuery, searchDebounceMs);
+	const debouncedSearchQuery = useDebouncedValue(
+		searchQuery,
+		searchDebounceMs,
+	);
 
 	const stationsQuery = useQuery({
 		queryKey: [
@@ -145,8 +145,8 @@ export function usePublicStationResults({
 			cityMunicipalityCode ?? "",
 			page,
 			pageSize,
-			fuelFilter === "All" ? currentLocation?.lat ?? null : null,
-			fuelFilter === "All" ? currentLocation?.lng ?? null : null,
+			fuelFilter === "All" ? (currentLocation?.lat ?? null) : null,
+			fuelFilter === "All" ? (currentLocation?.lng ?? null) : null,
 		],
 		queryFn: () =>
 			fetchPublicStationResults({
@@ -158,8 +158,10 @@ export function usePublicStationResults({
 				cityMunicipalityCode,
 				page,
 				pageSize,
-				userLat: fuelFilter === "All" ? currentLocation?.lat : undefined,
-				userLng: fuelFilter === "All" ? currentLocation?.lng : undefined,
+				userLat:
+					fuelFilter === "All" ? currentLocation?.lat : undefined,
+				userLng:
+					fuelFilter === "All" ? currentLocation?.lng : undefined,
 			}),
 		staleTime: 30_000,
 	});

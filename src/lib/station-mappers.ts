@@ -2,9 +2,11 @@ import { formatDistanceToNow } from "date-fns";
 import type { Tables } from "@/integrations/supabase/types";
 import {
 	createEmptyFuelPriceMap,
+	getFuelSummarySelection,
 	fuelTypes,
 	normalizeFuelAvailability,
 	normalizeFuelPrices,
+	stationStatuses,
 } from "@/lib/fuel-prices";
 import type { FuelType, GasStation, PublicStationSummary } from "@/types/station";
 
@@ -48,13 +50,40 @@ export function normalizeStationPrices(
 }
 
 export function mapGasStationRow(station: Tables<"gas_stations">): GasStation {
-	const fuelType = station.fuel_type as FuelType;
 	const fallbackPricePerLiter = Number(station.price_per_liter) || 0;
+	const fallbackFuelType = fuelTypes.includes(station.fuel_type as FuelType)
+		? (station.fuel_type as FuelType)
+		: undefined;
 	const prices = normalizeStationPrices(
 		station.prices,
-		fuelType,
+		fallbackFuelType ?? "Unleaded",
 		fallbackPricePerLiter,
 	);
+	const fallbackStatus = stationStatuses.includes(
+		station.status as GasStation["status"],
+	)
+		? (station.status as GasStation["status"])
+		: undefined;
+	const fuelAvailability = normalizeFuelAvailability(
+		station.fuel_availability,
+		fallbackFuelType,
+		fallbackStatus,
+	);
+	const derivedSummary =
+		getFuelSummarySelection(prices, fuelAvailability, fallbackFuelType) ??
+		null;
+	const fallbackSummaryFuelType =
+		fuelTypes.find(
+			(type) =>
+				fuelAvailability[type] !== null || prices[type] !== null,
+		) ?? "Unleaded";
+	const fuelType = derivedSummary?.fuelType ?? fallbackFuelType ?? fallbackSummaryFuelType;
+	const status =
+		derivedSummary?.status ??
+		fuelAvailability[fuelType] ??
+		(fallbackStatus ?? "Out");
+	const pricePerLiter =
+		derivedSummary?.price ?? prices[fuelType] ?? fallbackPricePerLiter;
 
 	return {
 		id: station.id,
@@ -67,11 +96,7 @@ export function mapGasStationRow(station: Tables<"gas_stations">): GasStation {
 		provinceCode: station.province_code,
 		cityMunicipalityCode: station.city_municipality_code,
 		prices,
-		fuelAvailability: normalizeFuelAvailability(
-			station.fuel_availability,
-			fuelType,
-			station.status as GasStation["status"],
-		),
+		fuelAvailability,
 		previousPrices: normalizeFuelPrices(station.previous_prices),
 		priceTrends: normalizeFuelPrices(station.price_trends),
 		isVerified: station.is_verified,
@@ -86,9 +111,9 @@ export function mapGasStationRow(station: Tables<"gas_stations">): GasStation {
 				| null,
 		verifiedAt: station.verified_at,
 		managerUserId: station.manager_user_id,
-		status: station.status as GasStation["status"],
+		status,
 		fuelType,
-		pricePerLiter: prices[fuelType] ?? fallbackPricePerLiter,
+		pricePerLiter,
 		updatedAt: station.updated_at,
 		lastUpdated: formatDistanceToNow(new Date(station.updated_at), {
 			addSuffix: true,
