@@ -52,6 +52,7 @@ export type StationFormState = {
 	address: string;
 	lat: string;
 	lng: string;
+	googlePlaceId: string;
 	provinceCode: string;
 	cityMunicipalityCode: string;
 	prices: StationPricesFormState;
@@ -79,6 +80,7 @@ export const initialStationForm: StationFormState = {
 	address: "",
 	lat: "",
 	lng: "",
+	googlePlaceId: "",
 	provinceCode: "",
 	cityMunicipalityCode: "",
 	prices: createEmptyFuelPriceFormMap(),
@@ -598,6 +600,7 @@ export function buildStationPayload(
 		address: stationForm.address.trim(),
 		lat,
 		lng,
+		google_place_id: stationForm.googlePlaceId.trim() || null,
 		province_code: stationForm.provinceCode.trim(),
 		city_municipality_code: stationForm.cityMunicipalityCode.trim(),
 		prices,

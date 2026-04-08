@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
 	AlertDialog,
@@ -11,6 +11,7 @@ import {
 	AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Loader2, Pencil, Plus, Search, Trash2 } from "lucide-react";
+import { useSearchParams } from "react-router-dom";
 import { toast } from "@/lib/app-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { AdminStationEditor } from "@/components/admin/AdminStationEditor";
@@ -41,6 +42,7 @@ export default function AdminStationsPage() {
 	const isMobile = useIsMobile();
 	const { user } = useAuth();
 	const { accessLevel } = useUserAccess();
+	const [searchParams, setSearchParams] = useSearchParams();
 	const { data: stations = [], isLoading: stationsLoading } =
 		useAdminStations();
 	const [editorOpen, setEditorOpen] = useState(false);
@@ -169,6 +171,7 @@ export default function AdminStationsPage() {
 			address: station.address,
 			lat: String(station.lat),
 			lng: String(station.lng),
+			googlePlaceId: station.google_place_id ?? "",
 			provinceCode: station.province_code ?? "",
 			cityMunicipalityCode: station.city_municipality_code ?? "",
 			prices: normalizeStationPricesForForm(
@@ -194,6 +197,27 @@ export default function AdminStationsPage() {
 		setStationForm(nextForm);
 		setEditorOpen(true);
 	};
+
+	useEffect(() => {
+		const stationIdToEdit = searchParams.get("edit");
+		if (!stationIdToEdit || stationsLoading || stations.length === 0) {
+			return;
+		}
+
+		const matchingStation = stations.find(
+			(station) => station.id === stationIdToEdit,
+		);
+		if (!matchingStation) {
+			return;
+		}
+
+		openEditStation(matchingStation);
+		setSearchParams((currentParams) => {
+			const nextParams = new URLSearchParams(currentParams);
+			nextParams.delete("edit");
+			return nextParams;
+		}, { replace: true });
+	}, [searchParams, setSearchParams, stations, stationsLoading]);
 
 	const requestCloseEditor = () => {
 		runWithUnsavedGuard(() => {

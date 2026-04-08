@@ -22,6 +22,7 @@ import AdminReportsPage from "./pages/AdminReportsPage";
 import AdminClaimsPage from "./pages/AdminClaimsPage";
 import AdminUsersPage from "./pages/AdminUsersPage";
 import AdminLguUsersPage from "./pages/AdminLguUsersPage";
+import AdminStationDiscoveryPage from "./pages/AdminStationDiscoveryPage";
 import AdminAccessRequestsPage from "./pages/AdminAccessRequestsPage";
 import AdminAccessRequestDetailPage from "./pages/AdminAccessRequestDetailPage";
 import AdminInvitesPage from "./pages/AdminInvitesPage";
@@ -99,6 +100,10 @@ function RouterContent() {
 								element={<AdminClaimsPage />}
 							/>
 							<Route path="users" element={<AdminUsersPage />} />
+							<Route
+								path="station-discovery"
+								element={<AdminStationDiscoveryPage />}
+							/>
 							<Route
 								path="lgu-users"
 								element={<AdminLguUsersPage />}

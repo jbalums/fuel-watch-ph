@@ -110,6 +110,13 @@ export default function AdminPage() {
 			icon: Fuel,
 		},
 		{
+			label: "Station Discovery",
+			description:
+				"Search Google Maps for fuel stations in the current map area and prefill a new local record.",
+			path: "/admin/station-discovery",
+			icon: MapPinned,
+		},
+		{
 			label: "Reports",
 			description: "Review submitted fuel updates and verification photos.",
 			path: "/admin/reports",

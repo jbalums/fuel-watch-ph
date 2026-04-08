@@ -16,7 +16,7 @@ export const GOOGLE_MAPS_API_KEY =
 	import.meta.env.VITE_GOOGLE_MAPS_API_KEY?.trim() ?? "";
 
 export const GOOGLE_MAPS_SCRIPT_ID = "fuelwatch-google-maps";
-export const GOOGLE_MAPS_LIBRARIES: Libraries = [];
+export const GOOGLE_MAPS_LIBRARIES: Libraries = ["places"];
 export const GOOGLE_MAPS_CONTAINER_STYLE = {
 	width: "100%",
 	height: "100%",

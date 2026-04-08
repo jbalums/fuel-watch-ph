@@ -11,6 +11,7 @@ export function AdminLayout() {
 	const adminNavItems = [
 		{ label: "Overview", to: "/admin", end: true },
 		{ label: "Stations", to: "/admin/stations" },
+		{ label: "Station Discovery", to: "/admin/station-discovery" },
 		{ label: "Reports", to: "/admin/reports" },
 		{ label: "Claims", to: "/admin/claims" },
 		...(isSuperAdmin
