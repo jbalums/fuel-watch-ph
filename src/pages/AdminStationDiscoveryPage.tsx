@@ -819,7 +819,7 @@ function GoogleDiscoveryMap({ stations }: { stations: GasStationRow[] }) {
 									}
 								>
 									<div className="max-w-xs">
-										<p className="font-semibold text-foreground">
+										<p className="font-semibold text-foreground dark:text-black">
 											{selectedResult.name}
 										</p>
 										<p className="mt-1 text-xs text-muted-foreground">
