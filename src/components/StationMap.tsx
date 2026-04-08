@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
 	GoogleMap,
 	InfoWindowF,
@@ -7,7 +8,7 @@ import {
 	OverlayViewF,
 } from "@react-google-maps/api";
 import { Loader2, MapPinned } from "lucide-react";
-import type { GasStation, StationStatus } from "@/types/station";
+import type { GasStation } from "@/types/station";
 import {
 	GOOGLE_MAPS_API_KEY,
 	GOOGLE_MAPS_CONTAINER_STYLE,
@@ -17,13 +18,18 @@ import {
 	type CoordinatePair,
 } from "@/lib/google-maps";
 import { useCurrentLocation } from "@/hooks/useCurrentLocation";
+import { useUserAccess } from "@/hooks/useUserAccess";
+import { useGeoReferences } from "@/hooks/useGeoReferences";
+import { detectGeoScopeFromAddress } from "@/lib/geo-detection";
+import {
+	buildAddressSearchText,
+	getDuplicateMatch,
+	searchGoogleFuelStationsInBounds,
+	type GoogleDiscoveredStation,
+} from "@/lib/station-discovery";
+import { DiscoveredStationInfoWindow } from "./DiscoveredStationInfoWindow";
 import { StationMarkerInfoWindow } from "./StationMarkerInfoWindow";
 import fuelwatchicon from "@/assets/images/map-pin-icon.png";
-const statusColors: Record<StationStatus, string> = {
-	Available: "#22c55e",
-	Low: "#f59e0b",
-	Out: "#ef4444",
-};
 const DEFAULT_HIGHLIGHT_ZOOM = 15;
 const DEFAULT_CURRENT_LOCATION_ZOOM = 15;
 const DEFAULT_EMPTY_MAP_ZOOM = 15;
@@ -39,23 +45,40 @@ type MapBounds = {
 
 interface StationMapProps {
 	stations: GasStation[];
+	allStations?: GasStation[];
 	focusedStationId?: string | null;
 	highlightLocation?: (CoordinatePair & { label?: string }) | null;
 	onFocusedStationChange?: (stationId: string | null) => void;
+	provinceCode?: string;
+	cityMunicipalityCode?: string;
 }
 
 function GoogleStationMap({
 	stations,
+	allStations = stations,
 	focusedStationId,
 	highlightLocation,
 	onFocusedStationChange,
+	provinceCode = "",
+	cityMunicipalityCode = "",
 }: StationMapProps) {
+	const navigate = useNavigate();
+	const { isAdmin } = useUserAccess();
+	const { provinces, cities } = useGeoReferences();
 	const [internalSelectedStationId, setInternalSelectedStationId] = useState<
 		string | null
 	>(null);
+	const [selectedGoogleStation, setSelectedGoogleStation] =
+		useState<GoogleDiscoveredStation | null>(null);
+	const [discoveredStations, setDiscoveredStations] = useState<
+		GoogleDiscoveredStation[]
+	>([]);
 	const [map, setMap] = useState<google.maps.Map | null>(null);
 	const [visibleBounds, setVisibleBounds] = useState<MapBounds | null>(null);
 	const lastAutoFitKeyRef = useRef<string | null>(null);
+	const lastDiscoveryBoundsKeyRef = useRef<string | null>(null);
+	const discoverySearchTimeoutRef = useRef<number | null>(null);
+	const discoveryRequestIdRef = useRef(0);
 	const { coordinates: currentLocation } = useCurrentLocation();
 	const googleMaps =
 		typeof window !== "undefined" ? window.google?.maps : undefined;
@@ -76,38 +99,6 @@ function GoogleStationMap({
 	);
 	const mapCenter =
 		focusedStation ?? highlightLocation ?? currentLocation ?? MANILA_CENTER;
-	const markerIcons = useMemo(() => {
-		if (!googleMaps) {
-			return null;
-		}
-
-		return {
-			Available: {
-				path: googleMaps.SymbolPath.CIRCLE,
-				scale: 12,
-				fillColor: statusColors.Available,
-				fillOpacity: 1,
-				strokeColor: "#1d4fd7",
-				strokeWeight: 1,
-			},
-			Low: {
-				path: googleMaps.SymbolPath.CIRCLE,
-				scale: 12,
-				fillColor: statusColors.Low,
-				fillOpacity: 1,
-				strokeColor: "#ffffff",
-				strokeWeight: 1,
-			},
-			Out: {
-				path: googleMaps.SymbolPath.CIRCLE,
-				scale: 12,
-				fillColor: statusColors.Out,
-				fillOpacity: 1,
-				strokeColor: "#ffffff",
-				strokeWeight: 1,
-			},
-		} satisfies Record<StationStatus, google.maps.Symbol>;
-	}, [googleMaps]);
 	const currentLocationIcon = useMemo(() => {
 		if (!googleMaps) {
 			return null;
@@ -136,6 +127,17 @@ function GoogleStationMap({
 			strokeWeight: 3,
 		} satisfies google.maps.Symbol;
 	}, [googleMaps]);
+	const defaultMarkerIcon = useMemo(() => {
+		if (!googleMaps) {
+			return null;
+		}
+
+		return {
+			url: fuelwatchicon,
+			scaledSize: new googleMaps.Size(45, 40),
+			anchor: new googleMaps.Point(22.5, 35),
+		} satisfies google.maps.Icon;
+	}, [googleMaps]);
 	const visibleStations = useMemo(() => {
 		if (!visibleBounds) {
 			return stations.map((station) => ({
@@ -144,7 +146,7 @@ function GoogleStationMap({
 					lat: station.lat,
 					lng: station.lng,
 				},
-				icon: markerIcons?.[station.status],
+				icon: defaultMarkerIcon,
 			}));
 		}
 
@@ -165,14 +167,39 @@ function GoogleStationMap({
 					lat: station.lat,
 					lng: station.lng,
 				},
-				icon: {
-					url: fuelwatchicon,
-					scaledSize: new googleMaps.Size(45, 40),
-					anchor: new googleMaps.Point(22.5, 35),
-				},
-				// icon: markerIcons?.[station.status],
+				icon: defaultMarkerIcon,
 			}));
-	}, [markerIcons, stations, visibleBounds]);
+	}, [defaultMarkerIcon, stations, visibleBounds]);
+	const filteredDiscoveredStations = useMemo(() => {
+		return discoveredStations.filter((station) => {
+			if (getDuplicateMatch(station, allStations)) {
+				return false;
+			}
+
+			if (!provinceCode && !cityMunicipalityCode) {
+				return true;
+			}
+
+			const detectedScope = detectGeoScopeFromAddress({
+				address: buildAddressSearchText(station),
+				provinces,
+				cities,
+			});
+
+			if (provinceCode && detectedScope?.provinceCode !== provinceCode) {
+				return false;
+			}
+
+			if (
+				cityMunicipalityCode &&
+				detectedScope?.cityMunicipalityCode !== cityMunicipalityCode
+			) {
+				return false;
+			}
+
+			return true;
+		});
+	}, [allStations, cities, cityMunicipalityCode, discoveredStations, provinceCode, provinces]);
 	const selectedStationPosition = useMemo(
 		() =>
 			focusedStation
@@ -182,6 +209,16 @@ function GoogleStationMap({
 					}
 				: null,
 		[focusedStation],
+	);
+	const selectedGoogleStationPosition = useMemo(
+		() =>
+			selectedGoogleStation
+				? {
+						lat: selectedGoogleStation.lat,
+						lng: selectedGoogleStation.lng,
+					}
+				: null,
+		[selectedGoogleStation],
 	);
 	const stationBoundsKey = useMemo(
 		() =>
@@ -216,8 +253,32 @@ function GoogleStationMap({
 		}),
 		[],
 	);
+	const openSelectedGoogleStationInDiscovery = useCallback(() => {
+		if (!selectedGoogleStation) {
+			return;
+		}
+
+		navigate("/admin/station-discovery", {
+			state: {
+				prefilledGoogleStation: selectedGoogleStation,
+			},
+		});
+	}, [navigate, selectedGoogleStation]);
+	const reportSelectedGoogleStation = useCallback(() => {
+		if (!selectedGoogleStation) {
+			return;
+		}
+
+		navigate("/report", {
+			state: {
+				prefilledGoogleStation: selectedGoogleStation,
+			},
+		});
+	}, [navigate, selectedGoogleStation]);
 
 	const setSelectedStationId = (stationId: string | null) => {
+		setSelectedGoogleStation(null);
+
 		if (onFocusedStationChange) {
 			onFocusedStationChange(stationId);
 			return;
@@ -226,12 +287,23 @@ function GoogleStationMap({
 		setInternalSelectedStationId(stationId);
 	};
 
+	const handleSelectGoogleStation = useCallback(
+		(station: GoogleDiscoveredStation | null) => {
+			if (onFocusedStationChange) {
+				onFocusedStationChange(null);
+			} else {
+				setInternalSelectedStationId(null);
+			}
+
+			setSelectedGoogleStation(station);
+		},
+		[onFocusedStationChange],
+	);
+
 	const restoreDefaultMapView = useCallback(() => {
 		if (!map) {
 			return;
 		}
-		map.setZoom(DEFAULT_CURRENT_LOCATION_ZOOM);
-		return;
 		lastAutoFitKeyRef.current = null;
 
 		if (highlightLocation) {
@@ -307,6 +379,63 @@ function GoogleStationMap({
 		});
 	}, [map]);
 
+	const searchDiscoveredStations = useCallback(
+		async (bounds: google.maps.LatLngBounds, boundsKey: string) => {
+			const requestId = ++discoveryRequestIdRef.current;
+
+			try {
+				const results = await searchGoogleFuelStationsInBounds(bounds);
+
+				if (requestId !== discoveryRequestIdRef.current) {
+					return;
+				}
+
+				setDiscoveredStations(results);
+				lastDiscoveryBoundsKeyRef.current = boundsKey;
+			} catch (error) {
+				if (requestId !== discoveryRequestIdRef.current) {
+					return;
+				}
+
+				console.error("Failed to discover Google-only fuel stations", error);
+				setDiscoveredStations([]);
+			}
+		},
+		[],
+	);
+
+	const scheduleDiscoverySearch = useCallback(() => {
+		if (!map) {
+			return;
+		}
+
+		const bounds = map.getBounds();
+		if (!bounds) {
+			return;
+		}
+
+		const northEast = bounds.getNorthEast();
+		const southWest = bounds.getSouthWest();
+		const boundsKey = [
+			northEast.lat().toFixed(4),
+			northEast.lng().toFixed(4),
+			southWest.lat().toFixed(4),
+			southWest.lng().toFixed(4),
+		].join("|");
+
+		if (lastDiscoveryBoundsKeyRef.current === boundsKey) {
+			return;
+		}
+
+		if (discoverySearchTimeoutRef.current !== null) {
+			window.clearTimeout(discoverySearchTimeoutRef.current);
+		}
+
+		discoverySearchTimeoutRef.current = window.setTimeout(() => {
+			searchDiscoveredStations(bounds, boundsKey);
+		}, 1200);
+	}, [map, searchDiscoveredStations]);
+
 	useEffect(() => {
 		if (!map) {
 			return;
@@ -381,6 +510,28 @@ function GoogleStationMap({
 		updateVisibleBounds();
 	}, [updateVisibleBounds, stations, highlightLocation]);
 
+	useEffect(() => {
+		return () => {
+			if (discoverySearchTimeoutRef.current !== null) {
+				window.clearTimeout(discoverySearchTimeoutRef.current);
+			}
+		};
+	}, []);
+
+	useEffect(() => {
+		if (!selectedGoogleStation) {
+			return;
+		}
+
+		const stillVisible = filteredDiscoveredStations.some(
+			(station) => station.placeId === selectedGoogleStation.placeId,
+		);
+
+		if (!stillVisible) {
+			setSelectedGoogleStation(null);
+		}
+	}, [filteredDiscoveredStations, selectedGoogleStation]);
+
 	return (
 		<GoogleMap
 			mapContainerStyle={{
@@ -397,7 +548,10 @@ function GoogleStationMap({
 			onUnmount={() => {
 				setMap(null);
 			}}
-			onIdle={updateVisibleBounds}
+			onIdle={() => {
+				updateVisibleBounds();
+				scheduleDiscoverySearch();
+			}}
 			options={mapOptions}
 		>
 			{highlightLocation && (
@@ -448,6 +602,15 @@ function GoogleStationMap({
 					onClick={() => setSelectedStationId(stationMarker.id)}
 				/>
 			))}
+			{filteredDiscoveredStations.map((station) => (
+				<MarkerF
+					key={`google-discovered-${station.placeId}`}
+					position={{ lat: station.lat, lng: station.lng }}
+					icon={defaultMarkerIcon ?? undefined}
+					onClick={() => handleSelectGoogleStation(station)}
+					zIndex={4_500}
+				/>
+			))}
 			{focusedStation && selectedStationPosition ? (
 				<InfoWindowF
 					position={selectedStationPosition}
@@ -462,15 +625,32 @@ function GoogleStationMap({
 					/>
 				</InfoWindowF>
 			) : null}
+			{selectedGoogleStation && selectedGoogleStationPosition ? (
+				<InfoWindowF
+					position={selectedGoogleStationPosition}
+					onCloseClick={() => handleSelectGoogleStation(null)}
+				>
+					<DiscoveredStationInfoWindow
+						station={selectedGoogleStation}
+						showAdminAction={isAdmin}
+						onOpenInDiscovery={openSelectedGoogleStationInDiscovery}
+						showReportAction={!isAdmin}
+						onReportGasStation={reportSelectedGoogleStation}
+					/>
+				</InfoWindowF>
+			) : null}
 		</GoogleMap>
 	);
 }
 
 export function StationMap({
 	stations,
+	allStations,
 	focusedStationId,
 	highlightLocation,
 	onFocusedStationChange,
+	provinceCode,
+	cityMunicipalityCode,
 }: StationMapProps) {
 	if (!GOOGLE_MAPS_API_KEY) {
 		return (
@@ -505,9 +685,12 @@ export function StationMap({
 			>
 				<GoogleStationMap
 					stations={stations}
+					allStations={allStations}
 					focusedStationId={focusedStationId}
 					highlightLocation={highlightLocation}
 					onFocusedStationChange={onFocusedStationChange}
+					provinceCode={provinceCode}
+					cityMunicipalityCode={cityMunicipalityCode}
 				/>
 			</LoadScriptNext>
 		</div>

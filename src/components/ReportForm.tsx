@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { CheckCircle, ImagePlus, Loader2, Send, X } from "lucide-react";
+import { useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/lib/app-toast";
@@ -29,6 +30,7 @@ import {
 } from "@/lib/fuel-prices";
 import { GeoScopeFields } from "@/components/GeoScopeFields";
 import type { FuelReportSubmissionMode } from "@/types/station";
+import type { GoogleDiscoveredStation } from "@/lib/station-discovery";
 
 type UploadedPhoto = {
 	path: string;
@@ -36,6 +38,7 @@ type UploadedPhoto = {
 };
 
 export function ReportForm() {
+	const location = useLocation();
 	const { user } = useAuth();
 	const { data: stations = [] } = useStations();
 	const { provinces, cities, citiesByProvince } = useGeoReferences();
@@ -71,6 +74,25 @@ export function ReportForm() {
 	const [autoDetectScopeMessage, setAutoDetectScopeMessage] = useState<
 		string | null
 	>(null);
+	const [prefilledGoogleStation, setPrefilledGoogleStation] =
+		useState<GoogleDiscoveredStation | null>(() => {
+			const state = location.state as
+				| { prefilledGoogleStation?: GoogleDiscoveredStation | null }
+				| null;
+			const candidate = state?.prefilledGoogleStation;
+
+			if (
+				!candidate ||
+				!candidate.placeId ||
+				!candidate.name ||
+				!Number.isFinite(candidate.lat) ||
+				!Number.isFinite(candidate.lng)
+			) {
+				return null;
+			}
+
+			return candidate;
+		});
 
 	useEffect(() => {
 		if (!photoFile) {
@@ -109,6 +131,21 @@ export function ReportForm() {
 		setCoords(null);
 		resetPhotoState();
 	};
+
+	useEffect(() => {
+		if (!prefilledGoogleStation) {
+			return;
+		}
+
+		setStationName(prefilledGoogleStation.name);
+		setReportedAddress(prefilledGoogleStation.address);
+		setCoords({
+			lat: prefilledGoogleStation.lat,
+			lng: prefilledGoogleStation.lng,
+		});
+		setSelectedStationId(null);
+		setSubmissionMode("easy");
+	}, [prefilledGoogleStation]);
 
 	const selectedStation = selectedStationId
 		? (stations.find((station) => station.id === selectedStationId) ?? null)
@@ -353,7 +390,7 @@ export function ReportForm() {
 		const { error } = await supabase.from("fuel_reports").insert({
 			user_id: user.id,
 			submission_mode: submissionMode,
-			station_name: isEasyReport ? null : stationName.trim(),
+			station_name: stationName.trim() || null,
 			price: isEasyReport ? null : summarySelection!.price,
 			fuel_type: isEasyReport ? null : summarySelection!.fuelType,
 			prices: isEasyReport
@@ -504,6 +541,19 @@ export function ReportForm() {
 						LGU officers will review the image and enter the prices
 						manually.
 					</p>
+					{prefilledGoogleStation ? (
+						<div className="mt-3 rounded-xl border border-amber-600/20 bg-amber-600/5 px-4 py-3 text-xs text-amber-900/80 dark:text-amber-700">
+							<p className="font-medium text-amber-700 dark:text-amber-500">
+								Reporting Google-only station
+							</p>
+							<p className="mt-1">
+								{prefilledGoogleStation.name}
+							</p>
+							<p className="mt-1">
+								{prefilledGoogleStation.address}
+							</p>
+						</div>
+					) : null}
 				</div>
 			)}
 
@@ -661,7 +711,9 @@ export function ReportForm() {
 					selectedStationId={selectedStationId}
 					selectedPosition={coords}
 					selectedAddress={reportedAddress}
-					autoPinCurrentLocation={isEasyReport}
+					autoPinCurrentLocation={
+						isEasyReport && !prefilledGoogleStation
+					}
 					allowExistingStationSelection={!isEasyReport}
 					onSelectExistingStation={(station) => {
 						setSelectedStationId(station.id);
@@ -682,6 +734,10 @@ export function ReportForm() {
 							lng: selection.lng,
 						});
 						setReportedAddress(selection.reportedAddress);
+						if (isEasyReport) {
+							setPrefilledGoogleStation(null);
+							setStationName("");
+						}
 						setSelectedStationId(null);
 						if (!isEasyReport) {
 							setStationName((current) =>
@@ -694,6 +750,10 @@ export function ReportForm() {
 						setReportedAddress(null);
 						setProvinceCode("");
 						setCityMunicipalityCode("");
+						if (isEasyReport) {
+							setPrefilledGoogleStation(null);
+							setStationName("");
+						}
 						if (!isEasyReport) {
 							setStationName((current) =>
 								selectedStationId ? "" : current,

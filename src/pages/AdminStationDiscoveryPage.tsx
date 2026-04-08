@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
 	GoogleMap,
@@ -13,7 +13,7 @@ import {
 	MapPinned,
 	Search,
 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { GeoScopeFields } from "@/components/GeoScopeFields";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/lib/app-toast";
@@ -24,6 +24,17 @@ import { useCurrentLocation } from "@/hooks/useCurrentLocation";
 import { useGeoReferences } from "@/hooks/useGeoReferences";
 import { detectGeoScopeFromAddress } from "@/lib/geo-detection";
 import { fuelTypes, stationStatuses } from "@/lib/fuel-prices";
+import {
+	buildAddressSearchText,
+	dedupeDiscoveredStations,
+	formatLatLng,
+	getDuplicateLabel,
+	getDuplicateMatch,
+	getDuplicateMessage,
+	searchGoogleFuelStationsInBounds,
+	type DuplicateMatch,
+	type GoogleDiscoveredStation,
+} from "@/lib/station-discovery";
 import {
 	buildStationLguVerificationPayload,
 	buildStationPayload,
@@ -41,189 +52,8 @@ import {
 	MANILA_CENTER,
 } from "@/lib/google-maps";
 
-type GoogleDiscoveredStation = {
-	placeId: string;
-	name: string;
-	address: string;
-	lat: number;
-	lng: number;
-	addressComponents?: google.maps.places.AddressComponent[];
-};
-
-type DuplicateMatch = {
-	station: GasStationRow;
-	kind: "exact_place_id" | "name_and_distance" | "distance_only";
-	distanceMeters: number;
-};
-
 const DEFAULT_DISCOVERY_ZOOM = 15;
 const SELECTED_RESULT_ZOOM = 17;
-const NAME_AND_DISTANCE_DUPLICATE_THRESHOLD_METERS = 150;
-const DISTANCE_ONLY_DUPLICATE_THRESHOLD_METERS = 30;
-
-function normalizeText(value: string) {
-	return value
-		.toLowerCase()
-		.replace(/[^a-z0-9]+/g, " ")
-		.replace(/\s+/g, " ")
-		.trim();
-}
-
-function toRadians(value: number) {
-	return (value * Math.PI) / 180;
-}
-
-function calculateDistanceMeters(
-	start: { lat: number; lng: number },
-	end: { lat: number; lng: number },
-) {
-	const earthRadiusMeters = 6_371_000;
-	const deltaLat = toRadians(end.lat - start.lat);
-	const deltaLng = toRadians(end.lng - start.lng);
-	const startLat = toRadians(start.lat);
-	const endLat = toRadians(end.lat);
-
-	const haversine =
-		Math.sin(deltaLat / 2) ** 2 +
-		Math.cos(startLat) * Math.cos(endLat) * Math.sin(deltaLng / 2) ** 2;
-
-	return (
-		2 *
-		earthRadiusMeters *
-		Math.atan2(Math.sqrt(haversine), Math.sqrt(1 - haversine))
-	);
-}
-
-function dedupeDiscoveredStations(results: GoogleDiscoveredStation[]) {
-	const deduped = new Map<string, GoogleDiscoveredStation>();
-
-	for (const result of results) {
-		deduped.set(result.placeId, result);
-	}
-
-	return Array.from(deduped.values());
-}
-
-function mapPlaceResult(
-	result: google.maps.places.Place,
-): GoogleDiscoveredStation | null {
-	const placeId = result.id?.trim();
-	const name = result.displayName?.trim();
-	const location = result.location;
-
-	if (!placeId || !name || !location) {
-		return null;
-	}
-
-	return {
-		placeId,
-		name,
-		address: result.formattedAddress?.trim() || "Address unavailable",
-		lat: location.lat(),
-		lng: location.lng(),
-		addressComponents: result.addressComponents,
-	};
-}
-
-function getDuplicateMatch(
-	result: GoogleDiscoveredStation,
-	stations: GasStationRow[],
-): DuplicateMatch | null {
-	const exactPlaceIdMatch =
-		result.placeId &&
-		stations.find(
-			(station) =>
-				station.google_place_id?.trim() &&
-				station.google_place_id === result.placeId,
-		);
-
-	if (exactPlaceIdMatch) {
-		return {
-			station: exactPlaceIdMatch,
-			kind: "exact_place_id",
-			distanceMeters: calculateDistanceMeters(result, exactPlaceIdMatch),
-		};
-	}
-
-	const normalizedResultName = normalizeText(result.name);
-	const stationsByDistance = stations
-		.map((station) => ({
-			station,
-			distanceMeters: calculateDistanceMeters(result, station),
-			nameMatches:
-				normalizedResultName.length > 0 &&
-				normalizeText(station.name) === normalizedResultName,
-		}))
-		.sort((left, right) => left.distanceMeters - right.distanceMeters);
-
-	const namedNearbyMatch = stationsByDistance.find(
-		(candidate) =>
-			candidate.nameMatches &&
-			candidate.distanceMeters <=
-				NAME_AND_DISTANCE_DUPLICATE_THRESHOLD_METERS,
-	);
-
-	if (namedNearbyMatch) {
-		return {
-			station: namedNearbyMatch.station,
-			kind: "name_and_distance",
-			distanceMeters: namedNearbyMatch.distanceMeters,
-		};
-	}
-
-	const nearbyCoordinateMatch = stationsByDistance.find(
-		(candidate) =>
-			candidate.distanceMeters <=
-			DISTANCE_ONLY_DUPLICATE_THRESHOLD_METERS,
-	);
-
-	if (nearbyCoordinateMatch) {
-		return {
-			station: nearbyCoordinateMatch.station,
-			kind: "distance_only",
-			distanceMeters: nearbyCoordinateMatch.distanceMeters,
-		};
-	}
-
-	return null;
-}
-
-function getDuplicateLabel(match: DuplicateMatch) {
-	if (match.kind === "exact_place_id") {
-		return "Already Added";
-	}
-
-	if (match.kind === "name_and_distance") {
-		return "Likely Duplicate";
-	}
-
-	return "Nearby Existing Station";
-}
-
-function getDuplicateMessage(match: DuplicateMatch) {
-	if (match.kind === "exact_place_id") {
-		return "This Google Maps station already exists in FuelWatch PH.";
-	}
-
-	if (match.kind === "name_and_distance") {
-		return `A station with the same name already exists about ${Math.round(match.distanceMeters)}m away.`;
-	}
-
-	return `A local station already exists about ${Math.round(match.distanceMeters)}m from this Google result.`;
-}
-
-function formatLatLng(value: number) {
-	return value.toFixed(6);
-}
-
-function buildAddressSearchText(result: GoogleDiscoveredStation) {
-	const componentText = (result.addressComponents ?? [])
-		.map((component) => component.longText?.trim())
-		.filter(Boolean)
-		.join(", ");
-
-	return [result.address, componentText].filter(Boolean).join(", ");
-}
 
 function DiscoveryStationForm({
 	form,
@@ -533,7 +363,13 @@ function DiscoveryStationForm({
 	);
 }
 
-function GoogleDiscoveryMap({ stations }: { stations: GasStationRow[] }) {
+function GoogleDiscoveryMap({
+	stations,
+	initialGoogleStation = null,
+}: {
+	stations: GasStationRow[];
+	initialGoogleStation?: GoogleDiscoveredStation | null;
+}) {
 	const queryClient = useQueryClient();
 	const navigate = useNavigate();
 	const { user } = useAuth();
@@ -553,15 +389,27 @@ function GoogleDiscoveryMap({ stations }: { stations: GasStationRow[] }) {
 	const [searchError, setSearchError] = useState<string | null>(null);
 
 	const mapCenter = currentLocation ?? MANILA_CENTER;
+	const normalizedStations = useMemo(
+		() =>
+			stations.map((station) => ({
+				id: station.id,
+				name: station.name,
+				address: station.address,
+				lat: station.lat,
+				lng: station.lng,
+				googlePlaceId: station.google_place_id,
+			})),
+		[stations],
+	);
 
 	const duplicateMatches = useMemo(() => {
 		return new Map(
 			results.map((result) => [
 				result.placeId,
-				getDuplicateMatch(result, stations),
+				getDuplicateMatch(result, normalizedStations),
 			]),
 		);
-	}, [results, stations]);
+	}, [normalizedStations, results]);
 
 	const selectedResult = selectedResultId
 		? (results.find((result) => result.placeId === selectedResultId) ??
@@ -618,34 +466,8 @@ function GoogleDiscoveryMap({ stations }: { stations: GasStationRow[] }) {
 		setIsSearching(true);
 		setSearchError(null);
 		try {
-			const { Place, SearchByTextRankPreference } =
-				(await google.maps.importLibrary(
-					"places",
-				)) as google.maps.PlacesLibrary;
-			const response = await Place.searchByText({
-				textQuery: "gas station",
-				fields: [
-					"id",
-					"displayName",
-					"formattedAddress",
-					"location",
-					"viewport",
-					"addressComponents",
-				],
-				locationRestriction: bounds,
-				includedType: "gas_station",
-				maxResultCount: 20,
-				rankPreference: SearchByTextRankPreference.RELEVANCE,
-				useStrictTypeFiltering: true,
-			});
-
-			const normalizedResults = dedupeDiscoveredStations(
-				(response.places ?? [])
-					.map(mapPlaceResult)
-					.filter((result): result is GoogleDiscoveredStation =>
-						Boolean(result),
-					),
-			);
+			const normalizedResults =
+				await searchGoogleFuelStationsInBounds(bounds);
 
 			setResults(normalizedResults);
 			setSearchError(
@@ -698,6 +520,21 @@ function GoogleDiscoveryMap({ stations }: { stations: GasStationRow[] }) {
 		},
 		[cities, map, provinces],
 	);
+
+	useEffect(() => {
+		if (!initialGoogleStation || selectedResultId || isPrefilling) {
+			return;
+		}
+
+		setResults((current) => {
+			if (current.some((result) => result.placeId === initialGoogleStation.placeId)) {
+				return current;
+			}
+
+			return dedupeDiscoveredStations([initialGoogleStation, ...current]);
+		});
+		handleSelectResult(initialGoogleStation);
+	}, [handleSelectResult, initialGoogleStation, isPrefilling, selectedResultId]);
 
 	const openExistingStation = useCallback(
 		(stationId: string) => {
@@ -978,7 +815,26 @@ function GoogleDiscoveryMap({ stations }: { stations: GasStationRow[] }) {
 }
 
 export default function AdminStationDiscoveryPage() {
+	const location = useLocation();
 	const { data: stations = [], isLoading } = useAdminStations();
+	const initialGoogleStation = useMemo(() => {
+		const state = location.state as
+			| { prefilledGoogleStation?: GoogleDiscoveredStation | null }
+			| null;
+		const candidate = state?.prefilledGoogleStation;
+
+		if (
+			!candidate ||
+			!candidate.placeId ||
+			!candidate.name ||
+			!Number.isFinite(candidate.lat) ||
+			!Number.isFinite(candidate.lng)
+		) {
+			return null;
+		}
+
+		return candidate;
+	}, [location.state]);
 
 	if (!GOOGLE_MAPS_API_KEY) {
 		return (
@@ -1018,7 +874,10 @@ export default function AdminStationDiscoveryPage() {
 				</div>
 			}
 		>
-			<GoogleDiscoveryMap stations={stations} />
+			<GoogleDiscoveryMap
+				stations={stations}
+				initialGoogleStation={initialGoogleStation}
+			/>
 		</LoadScriptNext>
 	);
 }

@@ -200,8 +200,11 @@ export default function MapPage() {
 
 			<StationMap
 				stations={filteredStations}
+				allStations={stations}
 				focusedStationId={selectedStationId}
 				highlightLocation={reportLocation}
+				provinceCode={provinceCode}
+				cityMunicipalityCode={cityMunicipalityCode}
 				onFocusedStationChange={(stationId) => {
 					const nextParams = new URLSearchParams(searchParams);
 					if (stationId) {
