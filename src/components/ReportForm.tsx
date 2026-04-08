@@ -1,10 +1,28 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type FocusEvent } from "react";
 import { motion } from "framer-motion";
-import { CheckCircle, ImagePlus, Loader2, Send, X } from "lucide-react";
+import {
+	CheckCircle,
+	ChevronDown,
+	ChevronUp,
+	ImagePlus,
+	Loader2,
+	MapPinned,
+	Send,
+	X,
+} from "lucide-react";
 import { useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import {
+	Command,
+	CommandEmpty,
+	CommandInput,
+	CommandItem,
+	CommandList,
+} from "@/components/ui/command";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/lib/app-toast";
+import { useCurrentLocation } from "@/hooks/useCurrentLocation";
 import { useStations } from "@/hooks/useStations";
 import { useGeoReferences } from "@/hooks/useGeoReferences";
 import {
@@ -29,7 +47,7 @@ import {
 	type FuelPriceFormMap,
 } from "@/lib/fuel-prices";
 import { GeoScopeFields } from "@/components/GeoScopeFields";
-import type { FuelReportSubmissionMode } from "@/types/station";
+import type { FuelReportSubmissionMode, GasStation } from "@/types/station";
 import type { GoogleDiscoveredStation } from "@/lib/station-discovery";
 
 type UploadedPhoto = {
@@ -37,10 +55,198 @@ type UploadedPhoto = {
 	filename: string;
 };
 
+function normalizeSearchValue(value: string) {
+	return value.trim().toLowerCase();
+}
+
+function getStationDistanceScore(
+	station: GasStation,
+	coordinates: { lat: number; lng: number } | null,
+) {
+	if (!coordinates) {
+		return Number.POSITIVE_INFINITY;
+	}
+
+	return (
+		Math.abs(station.lat - coordinates.lat) +
+		Math.abs(station.lng - coordinates.lng)
+	);
+}
+
+function scoreStationMatch(station: GasStation, query: string) {
+	if (!query) {
+		return 0;
+	}
+
+	const haystack = [
+		station.name,
+		station.address,
+		station.provinceCode ?? "",
+		station.cityMunicipalityCode ?? "",
+	]
+		.join(" ")
+		.toLowerCase();
+
+	if (!haystack.includes(query)) {
+		return Number.POSITIVE_INFINITY;
+	}
+
+	if (station.name.toLowerCase() === query) {
+		return 0;
+	}
+
+	if (station.name.toLowerCase().startsWith(query)) {
+		return 1;
+	}
+
+	if (station.address.toLowerCase().includes(query)) {
+		return 3;
+	}
+
+	return 2;
+}
+
+function StationSearchField({
+	value,
+	selectedStation,
+	suggestions,
+	locationFiltersOpen,
+	filterProvinceCode,
+	filterCityMunicipalityCode,
+	provinces,
+	availableCities,
+	onValueChange,
+	onSelectStation,
+	onToggleLocationFilters,
+	onFilterProvinceChange,
+	onFilterCityChange,
+}: {
+	value: string;
+	selectedStation: GasStation | null;
+	suggestions: GasStation[];
+	locationFiltersOpen: boolean;
+	filterProvinceCode: string;
+	filterCityMunicipalityCode: string;
+	provinces: ReturnType<typeof useGeoReferences>["provinces"];
+	availableCities: ReturnType<typeof useGeoReferences>["cities"];
+	onValueChange: (value: string) => void;
+	onSelectStation: (station: GasStation) => void;
+	onToggleLocationFilters: () => void;
+	onFilterProvinceChange: (provinceCode: string) => void;
+	onFilterCityChange: (cityCode: string) => void;
+}) {
+	const [isSearchFocused, setIsSearchFocused] = useState(false);
+
+	const handleSearchBlur = (event: FocusEvent<HTMLDivElement>) => {
+		const nextFocusedElement = event.relatedTarget;
+		if (
+			nextFocusedElement &&
+			event.currentTarget.contains(nextFocusedElement)
+		) {
+			return;
+		}
+
+		setIsSearchFocused(false);
+	};
+
+	return (
+		<div className="flex flex-col gap-3">
+			<div className="flex items-center justify-between gap-3">
+				<label className="text-label text-muted-foreground">
+					Station Name
+				</label>
+				<Button
+					type="button"
+					variant="outline"
+					onClick={onToggleLocationFilters}
+					className="h-auto rounded-full px-3 py-1.5 text-xs font-medium"
+				>
+					<MapPinned className="h-3.5 w-3.5" />
+					Filter location
+					{locationFiltersOpen ? (
+						<ChevronUp className="h-3.5 w-3.5" />
+					) : (
+						<ChevronDown className="h-3.5 w-3.5" />
+					)}
+				</Button>
+			</div>
+
+			{locationFiltersOpen ? (
+				<div className="rounded-2xl border border-border bg-background p-4">
+					<GeoScopeFields
+						provinces={provinces}
+						cities={availableCities}
+						provinceCode={filterProvinceCode}
+						cityMunicipalityCode={filterCityMunicipalityCode}
+						provincePlaceholder="All Provinces"
+						cityPlaceholder="All Cities / Municipalities"
+						cityRequired={false}
+						onProvinceChange={onFilterProvinceChange}
+						onCityChange={onFilterCityChange}
+					/>
+				</div>
+			) : null}
+
+			<div
+				className="rounded-md border border-border bg-foreground/50 backdrop-blur-lg"
+				onBlur={handleSearchBlur}
+			>
+				<Command
+					shouldFilter={false}
+					className="relative overflow-visible"
+				>
+					<CommandInput
+						value={value}
+						onValueChange={onValueChange}
+						onFocus={() => setIsSearchFocused(true)}
+						placeholder="Search nearby or type a station name"
+						className="h-12"
+					/>
+					{isSearchFocused && value.trim() ? (
+						<CommandList className="absolute w-full top-[52px] h-56 z-20 bg-white/80 dark:bg-background border rounded-md shadow-sm">
+							<>
+								<CommandEmpty>
+									No matching stations found. You can still
+									submit a new station name.
+								</CommandEmpty>
+								{suggestions.map((station) => (
+									<CommandItem
+										key={station.id}
+										value={`${station.name} ${station.address}`}
+										onSelect={() => {
+											onSelectStation(station);
+											setIsSearchFocused(false);
+										}}
+										className="flex flex-col items-start gap-1 py-3"
+									>
+										<span className="font-bold">
+											{station.name}
+										</span>
+										<span className="text-xs">
+											{station.address}
+										</span>
+									</CommandItem>
+								))}
+							</>
+						</CommandList>
+					) : null}
+				</Command>
+			</div>
+
+			<p className="text-xs text-muted-foreground">
+				{selectedStation
+					? "Selected station is linked to your report and also highlighted on the map."
+					: "Suggestions appear after you start typing and are prioritized by nearby stations when location is available."}
+			</p>
+		</div>
+	);
+}
+
 export function ReportForm() {
 	const location = useLocation();
 	const { user } = useAuth();
 	const { data: stations = [] } = useStations();
+	const { coordinates: currentLocation } = useCurrentLocation();
 	const { provinces, cities, citiesByProvince } = useGeoReferences();
 	const fileInputRef = useRef<HTMLInputElement | null>(null);
 	const [submissionMode, setSubmissionMode] =
@@ -74,11 +280,19 @@ export function ReportForm() {
 	const [autoDetectScopeMessage, setAutoDetectScopeMessage] = useState<
 		string | null
 	>(null);
+	const [stationSearchProvinceCode, setStationSearchProvinceCode] =
+		useState("");
+	const [
+		stationSearchCityMunicipalityCode,
+		setStationSearchCityMunicipalityCode,
+	] = useState("");
+	const [stationSearchFiltersOpen, setStationSearchFiltersOpen] =
+		useState(false);
 	const [prefilledGoogleStation, setPrefilledGoogleStation] =
 		useState<GoogleDiscoveredStation | null>(() => {
-			const state = location.state as
-				| { prefilledGoogleStation?: GoogleDiscoveredStation | null }
-				| null;
+			const state = location.state as {
+				prefilledGoogleStation?: GoogleDiscoveredStation | null;
+			} | null;
 			const candidate = state?.prefilledGoogleStation;
 
 			if (
@@ -159,6 +373,66 @@ export function ReportForm() {
 	const availableCities = provinceCode
 		? (citiesByProvince.get(provinceCode) ?? [])
 		: [];
+	const stationSearchCities = stationSearchProvinceCode
+		? (citiesByProvince.get(stationSearchProvinceCode) ?? [])
+		: [];
+	const filteredStationSuggestions = useMemo(() => {
+		const normalizedQuery = normalizeSearchValue(stationName);
+		const candidates = stations.filter((station) => {
+			if (
+				stationSearchProvinceCode &&
+				station.provinceCode !== stationSearchProvinceCode
+			) {
+				return false;
+			}
+
+			if (
+				stationSearchCityMunicipalityCode &&
+				station.cityMunicipalityCode !==
+					stationSearchCityMunicipalityCode
+			) {
+				return false;
+			}
+
+			if (!normalizedQuery) {
+				return true;
+			}
+
+			return (
+				station.name.toLowerCase().includes(normalizedQuery) ||
+				station.address.toLowerCase().includes(normalizedQuery)
+			);
+		});
+
+		return [...candidates]
+			.sort((left, right) => {
+				const matchDelta =
+					scoreStationMatch(left, normalizedQuery) -
+					scoreStationMatch(right, normalizedQuery);
+				if (matchDelta !== 0) {
+					return matchDelta;
+				}
+
+				const distanceDelta =
+					getStationDistanceScore(left, currentLocation) -
+					getStationDistanceScore(right, currentLocation);
+				if (
+					normalizedQuery ||
+					(Number.isFinite(distanceDelta) && distanceDelta !== 0)
+				) {
+					return distanceDelta;
+				}
+
+				return left.name.localeCompare(right.name);
+			})
+			.slice(0, normalizedQuery ? 8 : currentLocation ? 8 : 6);
+	}, [
+		currentLocation,
+		stationName,
+		stationSearchCityMunicipalityCode,
+		stationSearchProvinceCode,
+		stations,
+	]);
 
 	useEffect(() => {
 		if (!isEasyReport) {
@@ -512,24 +786,45 @@ export function ReportForm() {
 			</div>
 
 			{!isEasyReport ? (
-				<div className="flex flex-col gap-1.5">
-					<label className="text-label text-muted-foreground">
-						Station Name
-					</label>
-					<input
-						type="text"
-						value={stationName}
-						onChange={(e) => setStationName(e.target.value)}
-						readOnly={selectedStationId !== null}
-						placeholder="e.g. Petron EDSA Cubao"
-						className="rounded-xl bg-surface-alt px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:bg-card focus:ring-2 focus:ring-primary/20 sovereign-ease transition-all"
-					/>
-					<p className="text-xs text-muted-foreground">
-						{selectedStationId
-							? "Station name is locked because you selected an existing station marker."
-							: "Select an existing station on the map or enter a new station name for a pinned location."}
-					</p>
-				</div>
+				<StationSearchField
+					value={stationName}
+					selectedStation={selectedStation}
+					suggestions={filteredStationSuggestions}
+					locationFiltersOpen={stationSearchFiltersOpen}
+					filterProvinceCode={stationSearchProvinceCode}
+					filterCityMunicipalityCode={
+						stationSearchCityMunicipalityCode
+					}
+					provinces={provinces}
+					availableCities={stationSearchCities}
+					onValueChange={(value) => {
+						setStationName(value);
+						if (selectedStationId) {
+							setSelectedStationId(null);
+						}
+					}}
+					onSelectStation={(station) => {
+						setSelectedStationId(station.id);
+						setStationName(station.name);
+						setReportedAddress(station.address);
+						setProvinceCode(station.provinceCode ?? "");
+						setCityMunicipalityCode(
+							station.cityMunicipalityCode ?? "",
+						);
+						setCoords({
+							lat: station.lat,
+							lng: station.lng,
+						});
+					}}
+					onToggleLocationFilters={() =>
+						setStationSearchFiltersOpen((current) => !current)
+					}
+					onFilterProvinceChange={(nextProvinceCode) => {
+						setStationSearchProvinceCode(nextProvinceCode);
+						setStationSearchCityMunicipalityCode("");
+					}}
+					onFilterCityChange={setStationSearchCityMunicipalityCode}
+				/>
 			) : (
 				<div className="">
 					<p className="text-sm font-medium text-amber-600">
