@@ -78,7 +78,7 @@ function SearchableGeoSelect({
 						aria-expanded={open}
 						disabled={disabled}
 						className={cn(
-							"h-auto min-h-12 w-full justify-between rounded-xl border-border bg-background px-4 py-3 text-sm font-normal text-foreground hover:bg-background",
+							"h-auto min-h-12 w-full justify-between rounded-xl border-border bg-background px-4 py-3 text-sm font-normal text-foreground hover:text-primary hover:bg-background",
 							!selectedOption && "text-muted-foreground",
 						)}
 					>
