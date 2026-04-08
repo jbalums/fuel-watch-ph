@@ -144,6 +144,53 @@ export default function EmbeddedStationsPage() {
 		};
 	}, []);
 
+	useEffect(() => {
+		if (typeof window === "undefined") {
+			return;
+		}
+
+		const reportHeight = () => {
+			const root = embedRootRef.current;
+			if (!root) {
+				return;
+			}
+
+			const height = Math.max(
+				root.scrollHeight,
+				root.getBoundingClientRect().height,
+				document.documentElement.scrollHeight,
+			);
+
+			window.parent?.postMessage(
+				{
+					type: "fuelwatch-embed-height",
+					height,
+				},
+				"*",
+			);
+		};
+
+		const animationFrame = window.requestAnimationFrame(reportHeight);
+		const resizeObserver =
+			typeof ResizeObserver !== "undefined" && embedRootRef.current
+				? new ResizeObserver(() => {
+						reportHeight();
+					})
+				: null;
+
+		if (resizeObserver && embedRootRef.current) {
+			resizeObserver.observe(embedRootRef.current);
+		}
+
+		window.addEventListener("resize", reportHeight);
+
+		return () => {
+			window.cancelAnimationFrame(animationFrame);
+			window.removeEventListener("resize", reportHeight);
+			resizeObserver?.disconnect();
+		};
+	}, [filtersOpen, isFullscreen, isLoading, stations.length, totalPages, currentPage]);
+
 	const updateSearchParams = (
 		updates: Record<string, string | null>,
 		resetPage = true,
