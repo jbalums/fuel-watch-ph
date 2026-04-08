@@ -387,8 +387,8 @@ function GoogleStationMap({
 				...GOOGLE_MAPS_CONTAINER_STYLE,
 				height: "calc(100dvh - 185px)",
 			}}
-			defaultCenter={mapCenter}
-			defaultZoom={
+			center={mapCenter}
+			zoom={
 				focusedStation ? FOCUSED_STATION_ZOOM : DEFAULT_EMPTY_MAP_ZOOM
 			}
 			onLoad={(map) => {
