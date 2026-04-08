@@ -401,9 +401,10 @@ function DiscoveryStationForm({
 								Current Prices
 							</p>
 							<p className="text-xs text-muted-foreground">
-								Set each fuel's price and availability. The
-								main displayed fuel is derived automatically
-								from the fuel rows.
+								Leave these blank if you are only creating the
+								station shell for now. The main displayed fuel
+								is derived automatically once real pricing is
+								added later.
 							</p>
 						</div>
 					</div>
@@ -468,8 +469,8 @@ function DiscoveryStationForm({
 						))}
 					</div>
 					<p className="mt-3 text-xs text-muted-foreground">
-						At least one fuel must be marked Available or Low with
-						a valid price.
+						Optional for station discovery. Add prices only when you
+						already have verified fuel data.
 					</p>
 				</div>
 
@@ -576,7 +577,9 @@ function GoogleDiscoveryMap({ stations }: { stations: GasStationRow[] }) {
 	const saveStation = useMutation({
 		mutationFn: async () => {
 			const payload = {
-				...buildStationPayload(stationForm),
+				...buildStationPayload(stationForm, null, {
+					allowEmptyPricing: true,
+				}),
 				...buildStationLguVerificationPayload(accessLevel, user?.id),
 			};
 
@@ -718,8 +721,8 @@ function GoogleDiscoveryMap({ stations }: { stations: GasStationRow[] }) {
 	}, [results, selectedResultId]);
 
 	return (
-		<div className="grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(420px,0.9fr)]">
-			<div className="flex min-h-0 flex-col gap-4">
+		<div className="grid gap-6 grid-cols-1">
+			<div className="grid grid-cols-1 lg:grid-cols-2  gap-4">
 				<div className="rounded-2xl bg-card p-5 shadow-sovereign">
 					<div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
 						<div>
@@ -842,7 +845,7 @@ function GoogleDiscoveryMap({ stations }: { stations: GasStationRow[] }) {
 					</div>
 				</div>
 
-				<div className="rounded-2xl bg-card p-5 shadow-sovereign">
+				<div className="rounded-2xl bg-card p-5 shadow-sovereign overflow-auto max-h-[646px]">
 					<div className="mb-4 flex items-center justify-between gap-3">
 						<div>
 							<h3 className="text-xl font-semibold text-foreground">

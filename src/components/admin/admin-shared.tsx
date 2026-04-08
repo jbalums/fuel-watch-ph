@@ -527,6 +527,9 @@ function computeStationPriceTrendMap(
 export function buildStationPayload(
 	stationForm: StationFormState,
 	existingStation?: GasStationRow | null,
+	options?: {
+		allowEmptyPricing?: boolean;
+	},
 ) {
 	const lat = Number.parseFloat(stationForm.lat);
 	const lng = Number.parseFloat(stationForm.lng);
@@ -572,6 +575,28 @@ export function buildStationPayload(
 	);
 
 	if (!summarySelection || !isFuelSellable(summarySelection.status)) {
+		if (options?.allowEmptyPricing) {
+			return {
+				name: stationForm.name.trim(),
+				address: stationForm.address.trim(),
+				lat,
+				lng,
+				google_place_id: stationForm.googlePlaceId.trim() || null,
+				province_code: stationForm.provinceCode.trim(),
+				city_municipality_code: stationForm.cityMunicipalityCode.trim(),
+				prices,
+				fuel_availability: fuelAvailability,
+				previous_prices: nextPreviousPrices,
+				price_trends: computeStationPriceTrendMap(
+					prices,
+					nextPreviousPrices,
+				),
+				fuel_type: null,
+				price_per_liter: 0,
+				status: "Out",
+			};
+		}
+
 		throw new Error(
 			"At least one fuel must be marked Available or Low and include a valid price",
 		);
