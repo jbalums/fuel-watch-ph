@@ -22,6 +22,7 @@ import AdminReportsPage from "./pages/AdminReportsPage";
 import AdminClaimsPage from "./pages/AdminClaimsPage";
 import AdminUsersPage from "./pages/AdminUsersPage";
 import AdminLguUsersPage from "./pages/AdminLguUsersPage";
+import AdminBrandLogosPage from "./pages/AdminBrandLogosPage";
 import AdminStationDiscoveryPage from "./pages/AdminStationDiscoveryPage";
 import AdminAccessRequestsPage from "./pages/AdminAccessRequestsPage";
 import AdminAccessRequestDetailPage from "./pages/AdminAccessRequestDetailPage";
@@ -103,6 +104,10 @@ function RouterContent() {
 							<Route
 								path="station-discovery"
 								element={<AdminStationDiscoveryPage />}
+							/>
+							<Route
+								path="brand-logos"
+								element={<AdminBrandLogosPage />}
 							/>
 							<Route
 								path="lgu-users"

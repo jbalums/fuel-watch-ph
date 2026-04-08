@@ -10,6 +10,7 @@ const station: GasStation = {
 	lat: 9.647,
 	lng: 123.855,
 	googlePlaceId: null,
+	stationBrandLogoId: null,
 	provinceCode: "PH-BOH",
 	cityMunicipalityCode: "PH-BOH-TAGBILARAN-CITY",
 	prices: {

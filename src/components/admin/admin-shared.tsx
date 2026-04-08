@@ -53,6 +53,7 @@ export type StationFormState = {
 	lat: string;
 	lng: string;
 	googlePlaceId: string;
+	stationBrandLogoId: string;
 	provinceCode: string;
 	cityMunicipalityCode: string;
 	prices: StationPricesFormState;
@@ -81,6 +82,7 @@ export const initialStationForm: StationFormState = {
 	lat: "",
 	lng: "",
 	googlePlaceId: "",
+	stationBrandLogoId: "",
 	provinceCode: "",
 	cityMunicipalityCode: "",
 	prices: createEmptyFuelPriceFormMap(),
@@ -582,6 +584,8 @@ export function buildStationPayload(
 				lat,
 				lng,
 				google_place_id: stationForm.googlePlaceId.trim() || null,
+				station_brand_logo_id:
+					stationForm.stationBrandLogoId.trim() || null,
 				province_code: stationForm.provinceCode.trim(),
 				city_municipality_code: stationForm.cityMunicipalityCode.trim(),
 				prices,
@@ -632,6 +636,7 @@ export function buildStationPayload(
 		lat,
 		lng,
 		google_place_id: stationForm.googlePlaceId.trim() || null,
+		station_brand_logo_id: stationForm.stationBrandLogoId.trim() || null,
 		province_code: stationForm.provinceCode.trim(),
 		city_municipality_code: stationForm.cityMunicipalityCode.trim(),
 		prices,

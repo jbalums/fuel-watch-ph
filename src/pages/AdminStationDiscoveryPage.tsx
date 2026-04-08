@@ -22,7 +22,9 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useUserAccess } from "@/hooks/useUserAccess";
 import { useCurrentLocation } from "@/hooks/useCurrentLocation";
 import { useGeoReferences } from "@/hooks/useGeoReferences";
+import { useStationBrandLogos } from "@/hooks/useStationBrandLogos";
 import { detectGeoScopeFromAddress } from "@/lib/geo-detection";
+import { buildResolvedStationMarkerIcon } from "@/lib/station-brand-logos";
 import { fuelTypes, stationStatuses } from "@/lib/fuel-prices";
 import {
 	buildAddressSearchText,
@@ -78,6 +80,8 @@ function DiscoveryStationForm({
 	onSubmit: () => void;
 	onOpenExistingStation: (stationId: string) => void;
 }) {
+	const { data: stationBrandLogos = [] } = useStationBrandLogos();
+
 	return (
 		<div className="rounded-2xl bg-card p-5 shadow-sovereign">
 			<div className="mb-4 flex items-start justify-between gap-3">
@@ -202,6 +206,34 @@ function DiscoveryStationForm({
 					<p className="mt-1 break-all text-muted-foreground">
 						{form.googlePlaceId || "Not linked"}
 					</p>
+				</div>
+
+				<div className="rounded-xl border border-border bg-secondary/20 p-3 text-sm">
+					<p className="font-medium text-foreground">
+						Marker Logo Override
+					</p>
+					<p className="mt-1 text-muted-foreground">
+						Leave this on auto-match to resolve the marker logo
+						from the station name, or choose a brand to override
+						it.
+					</p>
+					<select
+						value={form.stationBrandLogoId}
+						onChange={(event) =>
+							onFormChange((current) => ({
+								...current,
+								stationBrandLogoId: event.target.value,
+							}))
+						}
+						className="mt-3 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
+					>
+						<option value="">Auto-match from station name</option>
+						{stationBrandLogos.map((brandLogo) => (
+							<option key={brandLogo.id} value={brandLogo.id}>
+								{brandLogo.brandName}
+							</option>
+						))}
+					</select>
 				</div>
 
 				<GeoScopeFields
@@ -370,6 +402,7 @@ function GoogleDiscoveryMap({
 	stations: GasStationRow[];
 	initialGoogleStation?: GoogleDiscoveredStation | null;
 }) {
+	const { data: stationBrandLogos = [] } = useStationBrandLogos();
 	const queryClient = useQueryClient();
 	const navigate = useNavigate();
 	const { user } = useAuth();
@@ -637,6 +670,15 @@ function GoogleDiscoveryMap({
 											lat: result.lat,
 											lng: result.lng,
 										}}
+										icon={buildResolvedStationMarkerIcon(
+											window.google.maps,
+											{
+												name: result.name,
+												stationBrandLogoId: null,
+											},
+											stationBrandLogos,
+											{ isSelected },
+										)}
 										onClick={() =>
 											handleSelectResult(result)
 										}

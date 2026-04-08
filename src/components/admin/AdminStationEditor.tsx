@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/sheet";
 import { Loader2 } from "lucide-react";
 import { useGeoReferences } from "@/hooks/useGeoReferences";
+import { useStationBrandLogos } from "@/hooks/useStationBrandLogos";
 import { fuelTypes, stationStatuses } from "@/lib/fuel-prices";
 import type { GasStationRow, StationFormState } from "./admin-shared";
 
@@ -50,6 +51,7 @@ function EditorForm({
 	onCancel,
 }: Omit<AdminStationEditorProps, "open" | "isMobile" | "onOpenChange">) {
 	const { provinces, citiesByProvince } = useGeoReferences();
+	const { data: stationBrandLogos = [] } = useStationBrandLogos();
 	const visibleCities = form.provinceCode
 		? citiesByProvince.get(form.provinceCode) ?? []
 		: [];
@@ -138,6 +140,33 @@ function EditorForm({
 						}))}
 					/>
 					<div className="md:col-span-2">
+						<div className="mb-3 rounded-lg border border-border bg-background p-3">
+							<p className="text-sm font-medium text-foreground">
+								Marker Logo Override
+							</p>
+							<p className="mt-1 text-xs text-muted-foreground">
+								Leave this on auto-match to resolve the map logo
+								from the station name. Choose a brand only when
+								you need to override that behavior.
+							</p>
+							<select
+								value={form.stationBrandLogoId}
+								onChange={(event) =>
+									onFormChange((current) => ({
+										...current,
+										stationBrandLogoId: event.target.value,
+									}))
+								}
+								className="mt-3 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
+							>
+								<option value="">Auto-match from station name</option>
+								{stationBrandLogos.map((brandLogo) => (
+									<option key={brandLogo.id} value={brandLogo.id}>
+										{brandLogo.brandName}
+									</option>
+								))}
+							</select>
+						</div>
 						<GeoScopeFields
 							provinces={provinces}
 							cities={visibleCities}

@@ -17,6 +17,7 @@ export interface GasStation {
   lat: number;
   lng: number;
   googlePlaceId: string | null;
+  stationBrandLogoId: string | null;
   provinceCode: string | null;
   cityMunicipalityCode: string | null;
   prices: Record<FuelType, number | null>;
@@ -36,6 +37,17 @@ export interface GasStation {
   updatedAt: string;
   lastUpdated: string;
   reportCount: number;
+}
+
+export interface StationBrandLogo {
+  id: string;
+  brandName: string;
+  matchKeywords: string[];
+  logoPath: string;
+  logoUrl: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface PublicStationSummary {

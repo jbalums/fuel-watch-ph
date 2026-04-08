@@ -6,7 +6,8 @@ import {
 	MarkerF,
 } from "@react-google-maps/api";
 import { Loader2, MapPinned } from "lucide-react";
-import type { StationStatus } from "@/types/station";
+import { useStationBrandLogos } from "@/hooks/useStationBrandLogos";
+import { buildResolvedStationMarkerIcon } from "@/lib/station-brand-logos";
 import {
 	GOOGLE_MAPS_API_KEY,
 	GOOGLE_MAPS_CONTAINER_STYLE,
@@ -23,6 +24,7 @@ type StationCandidate = {
 	lat: number;
 	lng: number;
 	status: string | null;
+	stationBrandLogoId: string | null;
 };
 
 interface EasyReportStationPickerMapProps {
@@ -30,35 +32,6 @@ interface EasyReportStationPickerMapProps {
 	stations: StationCandidate[];
 	selectedStationId: string;
 	onStationSelect: (stationId: string) => void;
-}
-
-const statusColors: Record<StationStatus, string> = {
-	Available: "#22c55e",
-	Low: "#f59e0b",
-	Out: "#ef4444",
-};
-
-function isStationStatus(value: string | null): value is StationStatus {
-	return value === "Available" || value === "Low" || value === "Out";
-}
-
-function buildStationMarkerIcon(
-	googleMaps: typeof google.maps,
-	status: string | null,
-	isSelected: boolean,
-) {
-	const resolvedStatus: StationStatus = isStationStatus(status)
-		? status
-		: "Available";
-
-	return {
-		path: googleMaps.SymbolPath.CIRCLE,
-		scale: isSelected ? 10 : 7,
-		fillColor: statusColors[resolvedStatus],
-		fillOpacity: 1,
-		strokeColor: isSelected ? "#111827" : "#ffffff",
-		strokeWeight: isSelected ? 3 : 2,
-	} satisfies google.maps.Symbol;
 }
 
 function buildReportPinIcon(googleMaps: typeof google.maps) {
@@ -78,6 +51,7 @@ function GoogleEasyReportStationPickerMap({
 	selectedStationId,
 	onStationSelect,
 }: EasyReportStationPickerMapProps) {
+	const { data: stationBrandLogos = [] } = useStationBrandLogos();
 	const [openInfoStationId, setOpenInfoStationId] = useState<string | null>(
 		null,
 	);
@@ -174,12 +148,20 @@ function GoogleEasyReportStationPickerMap({
 						? visibleStations.map((station) => (
 								<MarkerF
 									key={station.id}
-									position={{ lat: station.lat, lng: station.lng }}
-									icon={buildStationMarkerIcon(
-										googleMaps,
-										station.status,
-										station.id === selectedStationId,
-									)}
+										position={{ lat: station.lat, lng: station.lng }}
+										icon={buildResolvedStationMarkerIcon(
+											googleMaps,
+											{
+												name: station.name ?? "Unnamed station",
+												stationBrandLogoId:
+													station.stationBrandLogoId,
+											},
+											stationBrandLogos,
+											{
+												isSelected:
+													station.id === selectedStationId,
+											},
+										)}
 									onClick={() => {
 										onStationSelect(station.id);
 										setOpenInfoStationId(station.id);

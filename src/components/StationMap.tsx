@@ -18,9 +18,11 @@ import {
 	type CoordinatePair,
 } from "@/lib/google-maps";
 import { useCurrentLocation } from "@/hooks/useCurrentLocation";
+import { useStationBrandLogos } from "@/hooks/useStationBrandLogos";
 import { useUserAccess } from "@/hooks/useUserAccess";
 import { useGeoReferences } from "@/hooks/useGeoReferences";
 import { detectGeoScopeFromAddress } from "@/lib/geo-detection";
+import { buildResolvedStationMarkerIcon } from "@/lib/station-brand-logos";
 import {
 	buildAddressSearchText,
 	getDuplicateMatch,
@@ -29,7 +31,6 @@ import {
 } from "@/lib/station-discovery";
 import { DiscoveredStationInfoWindow } from "./DiscoveredStationInfoWindow";
 import { StationMarkerInfoWindow } from "./StationMarkerInfoWindow";
-import fuelwatchicon from "@/assets/images/map-pin-icon.png";
 const DEFAULT_HIGHLIGHT_ZOOM = 15;
 const DEFAULT_CURRENT_LOCATION_ZOOM = 15;
 const DEFAULT_EMPTY_MAP_ZOOM = 15;
@@ -64,6 +65,7 @@ function GoogleStationMap({
 }: StationMapProps) {
 	const navigate = useNavigate();
 	const { isAdmin } = useUserAccess();
+	const { data: stationBrandLogos = [] } = useStationBrandLogos();
 	const { provinces, cities } = useGeoReferences();
 	const [internalSelectedStationId, setInternalSelectedStationId] = useState<
 		string | null
@@ -127,18 +129,11 @@ function GoogleStationMap({
 			strokeWeight: 3,
 		} satisfies google.maps.Symbol;
 	}, [googleMaps]);
-	const defaultMarkerIcon = useMemo(() => {
+	const visibleStations = useMemo(() => {
 		if (!googleMaps) {
-			return null;
+			return [];
 		}
 
-		return {
-			url: fuelwatchicon,
-			scaledSize: new googleMaps.Size(45, 40),
-			anchor: new googleMaps.Point(22.5, 35),
-		} satisfies google.maps.Icon;
-	}, [googleMaps]);
-	const visibleStations = useMemo(() => {
 		if (!visibleBounds) {
 			return stations.map((station) => ({
 				id: station.id,
@@ -146,7 +141,14 @@ function GoogleStationMap({
 					lat: station.lat,
 					lng: station.lng,
 				},
-				icon: defaultMarkerIcon,
+				icon: buildResolvedStationMarkerIcon(
+					googleMaps,
+					{
+						name: station.name,
+						stationBrandLogoId: station.stationBrandLogoId,
+					},
+					stationBrandLogos,
+				),
 			}));
 		}
 
@@ -167,9 +169,16 @@ function GoogleStationMap({
 					lat: station.lat,
 					lng: station.lng,
 				},
-				icon: defaultMarkerIcon,
+				icon: buildResolvedStationMarkerIcon(
+					googleMaps,
+					{
+						name: station.name,
+						stationBrandLogoId: station.stationBrandLogoId,
+					},
+					stationBrandLogos,
+				),
 			}));
-	}, [defaultMarkerIcon, stations, visibleBounds]);
+	}, [googleMaps, stationBrandLogos, stations, visibleBounds]);
 	const filteredDiscoveredStations = useMemo(() => {
 		return discoveredStations.filter((station) => {
 			if (getDuplicateMatch(station, allStations)) {
@@ -606,7 +615,18 @@ function GoogleStationMap({
 				<MarkerF
 					key={`google-discovered-${station.placeId}`}
 					position={{ lat: station.lat, lng: station.lng }}
-					icon={defaultMarkerIcon ?? undefined}
+					icon={
+						googleMaps
+							? buildResolvedStationMarkerIcon(
+									googleMaps,
+									{
+										name: station.name,
+										stationBrandLogoId: null,
+									},
+									stationBrandLogos,
+								)
+							: undefined
+					}
 					onClick={() => handleSelectGoogleStation(station)}
 					zIndex={4_500}
 				/>

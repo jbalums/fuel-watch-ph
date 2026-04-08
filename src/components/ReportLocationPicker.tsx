@@ -6,7 +6,7 @@ import {
 	MarkerF,
 } from "@react-google-maps/api";
 import { Loader2, MapPin, MapPinned } from "lucide-react";
-import type { GasStation, StationStatus } from "@/types/station";
+import type { GasStation } from "@/types/station";
 import {
 	deriveCenterFromLocations,
 	formatCoordinate,
@@ -17,13 +17,9 @@ import {
 	MANILA_CENTER,
 	type CoordinatePair,
 } from "@/lib/google-maps";
+import { useStationBrandLogos } from "@/hooks/useStationBrandLogos";
+import { buildResolvedStationMarkerIcon } from "@/lib/station-brand-logos";
 import { StationMarkerInfoWindow } from "@/components/StationMarkerInfoWindow";
-
-const statusColors: Record<StationStatus, string> = {
-	Available: "#22c55e",
-	Low: "#f59e0b",
-	Out: "#ef4444",
-};
 
 type ReportLocationSelection = {
 	stationId: string | null;
@@ -66,6 +62,7 @@ function GoogleReportLocationPicker({
 	onSelectNewLocation,
 	onClearSelection,
 }: ReportLocationPickerProps) {
+	const { data: stationBrandLogos = [] } = useStationBrandLogos();
 	const selectedStation = useMemo(
 		() =>
 			selectedStationId
@@ -252,18 +249,6 @@ function GoogleReportLocationPicker({
 		[onSelectNewLocation],
 	);
 
-	const createStationMarkerIcon = useCallback(
-		(status: StationStatus, isSelected: boolean): google.maps.Symbol => ({
-			path: window.google.maps.SymbolPath.CIRCLE,
-			scale: isSelected ? 11 : 8,
-			fillColor: statusColors[status],
-			fillOpacity: 1,
-			strokeColor: isSelected ? "#111827" : "#ffffff",
-			strokeWeight: isSelected ? 3 : 2,
-		}),
-		[],
-	);
-
 	const newLocationMarkerIcon = useMemo<google.maps.Symbol>(
 		() => ({
 			path: window.google.maps.SymbolPath.CIRCLE,
@@ -434,9 +419,18 @@ function GoogleReportLocationPicker({
 						<MarkerF
 							key={station.id}
 							position={{ lat: station.lat, lng: station.lng }}
-							icon={createStationMarkerIcon(
-								station.status,
-								station.id === selectedStationId,
+							icon={buildResolvedStationMarkerIcon(
+								window.google.maps,
+								{
+									name: station.name,
+									stationBrandLogoId:
+										station.stationBrandLogoId,
+								},
+								stationBrandLogos,
+								{
+									isSelected:
+										station.id === selectedStationId,
+								},
 							)}
 							onClick={() => {
 								setAddressError(null);

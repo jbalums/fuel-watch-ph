@@ -47,6 +47,7 @@ function mapBrowseStationRow(row: BrowseStationRow) {
 		province_code: row.province_code,
 		city_municipality_code: row.city_municipality_code,
 		google_place_id: row.google_place_id,
+		station_brand_logo_id: null,
 		prices: row.prices ?? {},
 		fuel_availability: row.fuel_availability ?? {},
 		previous_prices: row.previous_prices ?? {},

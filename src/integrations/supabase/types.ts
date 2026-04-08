@@ -140,6 +140,7 @@ export type Database = {
           price_trends: Json
           province_code: string | null
           report_count: number
+          station_brand_logo_id: string | null
           status: string
           updated_at: string
           verified_at: string | null
@@ -167,6 +168,7 @@ export type Database = {
           price_trends?: Json
           province_code?: string | null
           report_count?: number
+          station_brand_logo_id?: string | null
           status?: string
           updated_at?: string
           verified_at?: string | null
@@ -194,9 +196,40 @@ export type Database = {
           price_trends?: Json
           province_code?: string | null
           report_count?: number
+          station_brand_logo_id?: string | null
           status?: string
           updated_at?: string
           verified_at?: string | null
+        }
+        Relationships: []
+      }
+      station_brand_logos: {
+        Row: {
+          brand_name: string
+          created_at: string
+          id: string
+          is_active: boolean
+          logo_path: string
+          match_keywords: string[]
+          updated_at: string
+        }
+        Insert: {
+          brand_name: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          logo_path: string
+          match_keywords?: string[]
+          updated_at?: string
+        }
+        Update: {
+          brand_name?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          logo_path?: string
+          match_keywords?: string[]
+          updated_at?: string
         }
         Relationships: []
       }

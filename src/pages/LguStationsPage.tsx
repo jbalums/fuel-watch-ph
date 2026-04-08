@@ -205,6 +205,7 @@ export default function LguStationsPage() {
 			lat: String(station.lat),
 			lng: String(station.lng),
 			googlePlaceId: station.google_place_id ?? "",
+			stationBrandLogoId: station.station_brand_logo_id ?? "",
 			provinceCode: station.province_code ?? scope?.provinceCode ?? "",
 			cityMunicipalityCode:
 				station.city_municipality_code ??

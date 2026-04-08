@@ -4,6 +4,7 @@ import {
 	CheckCircle2,
 	FileText,
 	Fuel,
+	ImagePlus,
 	Loader2,
 	MapPinned,
 	ShieldAlert,
@@ -115,6 +116,13 @@ export default function AdminPage() {
 				"Search Google Maps for fuel stations in the current map area and prefill a new local record.",
 			path: "/admin/station-discovery",
 			icon: MapPinned,
+		},
+		{
+			label: "Brand Logos",
+			description:
+				"Manage brand match keywords and marker logos used across station maps.",
+			path: "/admin/brand-logos",
+			icon: ImagePlus,
 		},
 		{
 			label: "Reports",

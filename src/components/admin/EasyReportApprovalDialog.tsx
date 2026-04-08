@@ -252,6 +252,8 @@ export function EasyReportApprovalDialog({
 										lat: station.lat,
 										lng: station.lng,
 										status: station.status,
+										stationBrandLogoId:
+											station.station_brand_logo_id,
 									}))}
 								selectedStationId={form.stationId}
 								onStationSelect={applyStationSelection}
