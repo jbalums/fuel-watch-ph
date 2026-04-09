@@ -1,5 +1,7 @@
 import defaultStationPin from "@/assets/images/map-pin-icon.png";
-import type { StationBrandLogo } from "@/types/station";
+import { createEmptyFuelPriceMap, fuelTypes } from "@/lib/fuel-prices";
+import type { FuelPriceMap } from "@/lib/fuel-prices";
+import type { GasStation, StationBrandLogo } from "@/types/station";
 
 type StationLogoResolutionInput = {
 	name: string;
@@ -65,6 +67,86 @@ export function resolveStationBrandLogo(
 			);
 		}) ?? null
 	);
+}
+
+export type StationBrandAverage = {
+	brandName: string;
+	sampleCount: number;
+	averagePrices: FuelPriceMap;
+};
+
+export function buildStationBrandAverage(
+	station: StationLogoResolutionInput,
+	stations: Pick<GasStation, "name" | "stationBrandLogoId" | "prices">[],
+	brandLogos: StationBrandLogo[],
+): StationBrandAverage | null {
+	const matchedBrandLogo = resolveStationBrandLogo(station, brandLogos);
+	if (!matchedBrandLogo) {
+		return null;
+	}
+
+	const matchingStations = stations.filter((candidate) => {
+		const candidateBrandLogo = resolveStationBrandLogo(
+			{
+				name: candidate.name,
+				stationBrandLogoId: candidate.stationBrandLogoId,
+			},
+			brandLogos,
+		);
+
+		return candidateBrandLogo?.id === matchedBrandLogo.id;
+	});
+
+	if (matchingStations.length === 0) {
+		return {
+			brandName: matchedBrandLogo.brandName,
+			sampleCount: 0,
+			averagePrices: createEmptyFuelPriceMap(),
+		};
+	}
+
+	const totals = createEmptyFuelPriceMap();
+	const counts = fuelTypes.reduce<Record<typeof fuelTypes[number], number>>(
+		(accumulator, fuelType) => {
+			accumulator[fuelType] = 0;
+			return accumulator;
+		},
+		{} as Record<typeof fuelTypes[number], number>,
+	);
+
+	for (const candidate of matchingStations) {
+		for (const fuelType of fuelTypes) {
+			const price = candidate.prices[fuelType];
+			if (
+				typeof price !== "number" ||
+				!Number.isFinite(price) ||
+				price <= 0
+			) {
+				continue;
+			}
+
+			totals[fuelType] = (totals[fuelType] ?? 0) + price;
+			counts[fuelType] += 1;
+		}
+	}
+
+	const averagePrices = createEmptyFuelPriceMap();
+	for (const fuelType of fuelTypes) {
+		if (counts[fuelType] === 0) {
+			averagePrices[fuelType] = null;
+			continue;
+		}
+
+		averagePrices[fuelType] = Number(
+			((totals[fuelType] ?? 0) / counts[fuelType]).toFixed(2),
+		);
+	}
+
+	return {
+		brandName: matchedBrandLogo.brandName,
+		sampleCount: matchingStations.length,
+		averagePrices,
+	};
 }
 
 export function buildDefaultStationMarkerIcon(googleMaps: typeof google.maps) {

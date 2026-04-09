@@ -1,9 +1,12 @@
 import { Button } from "@/components/ui/button";
+import { fuelTypes, fuelTypeTextColorClassNames } from "@/lib/fuel-prices";
+import type { StationBrandAverage } from "@/lib/station-brand-logos";
 import type { GoogleDiscoveredStation } from "@/lib/station-discovery";
 import { BadgePlus, MapPinned } from "lucide-react";
 
 interface DiscoveredStationInfoWindowProps {
 	station: GoogleDiscoveredStation;
+	brandAverage?: StationBrandAverage | null;
 	showAdminAction?: boolean;
 	onOpenInDiscovery?: () => void;
 	showReportAction?: boolean;
@@ -12,6 +15,7 @@ interface DiscoveredStationInfoWindowProps {
 
 export function DiscoveredStationInfoWindow({
 	station,
+	brandAverage = null,
 	showAdminAction = false,
 	onOpenInDiscovery,
 	showReportAction = false,
@@ -39,6 +43,56 @@ export function DiscoveredStationInfoWindow({
 					Lat {station.lat.toFixed(6)}, Lng {station.lng.toFixed(6)}
 				</p>
 			</div>
+			{brandAverage ? (
+				<div className="rounded-lg border border-border bg-slate-100 px-3 py-2 text-xs text-muted-foreground">
+					<div className="font-medium text-sky-700">
+						Average from similar stations
+					</div>
+					<p className="mt-1 font-medium text-foreground">
+						{brandAverage.brandName} average
+					</p>
+					<p className="mt-0.5 text-[11px] text-muted-foreground">
+						Based on {brandAverage.sampleCount} station
+						{brandAverage.sampleCount === 1 ? "" : "s"}
+					</p>
+					{fuelTypes.some(
+						(fuelType) =>
+							typeof brandAverage.averagePrices[fuelType] ===
+							"number",
+					) ? (
+						<div className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1">
+							{fuelTypes.map((fuelType) => {
+								const averagePrice =
+									brandAverage.averagePrices[fuelType];
+								if (
+									typeof averagePrice !== "number" ||
+									!Number.isFinite(averagePrice) ||
+									averagePrice <= 0
+								) {
+									return null;
+								}
+
+								return (
+									<div key={fuelType} className="min-w-0">
+										<p
+											className={`text-[11px] font-medium ${fuelTypeTextColorClassNames[fuelType]}`}
+										>
+											{fuelType}
+										</p>
+										<p className="text-[11px] font-semibold text-foreground">
+											₱ {averagePrice.toFixed(2)}
+										</p>
+									</div>
+								);
+							})}
+						</div>
+					) : (
+						<p className="mt-2 text-[11px]">
+							No similar listed stations with price data yet.
+						</p>
+					)}
+				</div>
+			) : null}
 			<div className="mt-1 flex flex-col gap-2">
 				{showReportAction && onReportGasStation ? (
 					<Button

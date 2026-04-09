@@ -22,7 +22,10 @@ import { useStationBrandLogos } from "@/hooks/useStationBrandLogos";
 import { useUserAccess } from "@/hooks/useUserAccess";
 import { useGeoReferences } from "@/hooks/useGeoReferences";
 import { detectGeoScopeFromAddress } from "@/lib/geo-detection";
-import { buildResolvedStationMarkerIcon } from "@/lib/station-brand-logos";
+import {
+	buildResolvedStationMarkerIcon,
+	buildStationBrandAverage,
+} from "@/lib/station-brand-logos";
 import {
 	buildAddressSearchText,
 	getDuplicateMatch,
@@ -236,6 +239,20 @@ function GoogleStationMap({
 					}
 				: null,
 		[selectedGoogleStation],
+	);
+	const selectedGoogleStationBrandAverage = useMemo(
+		() =>
+			selectedGoogleStation
+				? buildStationBrandAverage(
+						{
+							name: selectedGoogleStation.name,
+							stationBrandLogoId: null,
+						},
+						allStations,
+						stationBrandLogos,
+					)
+				: null,
+		[allStations, selectedGoogleStation, stationBrandLogos],
 	);
 	const stationBoundsKey = useMemo(
 		() =>
@@ -643,6 +660,7 @@ function GoogleStationMap({
 				>
 					<DiscoveredStationInfoWindow
 						station={selectedGoogleStation}
+						brandAverage={selectedGoogleStationBrandAverage}
 						showAdminAction={isAdmin}
 						onOpenInDiscovery={openSelectedGoogleStationInDiscovery}
 						showReportAction={!isAdmin}
