@@ -46,7 +46,8 @@ export function DiscoveredStationInfoWindow({
 			{brandAverage ? (
 				<div className="rounded-lg border border-border dark:border-slate-300 bg-slate-100 px-3 py-2 text-xs text-muted-foreground">
 					<div className="font-medium text-indigo-700">
-						Average from similar stations
+						Average from other <u>{brandAverage.brandName}</u>{" "}
+						stations
 					</div>
 					{/* <p className="mt-1 font-medium text-black">
 						{brandAverage.brandName} average
@@ -76,11 +77,11 @@ export function DiscoveredStationInfoWindow({
 									return (
 										<div key={fuelType} className="min-w-0">
 											<p
-												className={`text-[11px] font-medium ${fuelTypeTextColorClassNames[fuelType]}`}
+												className={`text-[12px] font-medium ${fuelTypeTextColorClassNames[fuelType]}`}
 											>
 												{fuelType}
 											</p>
-											<p className="text-[11px] font-semibold text-black">
+											<p className="text-[16px] font-semibold text-black">
 												₱ {averagePrice.toFixed(2)}
 											</p>
 										</div>
