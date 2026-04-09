@@ -114,4 +114,22 @@ describe("StationMarkerInfoWindow", () => {
 			"noopener,noreferrer",
 		);
 	});
+
+	it("renders and triggers the report action when enabled", () => {
+		const onReportFuelPrices = vi.fn();
+
+		render(
+			<StationMarkerInfoWindow
+				station={station}
+				showReportAction
+				onReportFuelPrices={onReportFuelPrices}
+			/>,
+		);
+
+		fireEvent.click(
+			screen.getByRole("button", { name: /report fuel prices!/i }),
+		);
+
+		expect(onReportFuelPrices).toHaveBeenCalledTimes(1);
+	});
 });

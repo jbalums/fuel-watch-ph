@@ -292,6 +292,8 @@ export function ReportForm() {
 		useState<GoogleDiscoveredStation | null>(() => {
 			const state = location.state as {
 				prefilledGoogleStation?: GoogleDiscoveredStation | null;
+				prefilledStationId?: string | null;
+				prefilledSubmissionMode?: FuelReportSubmissionMode | null;
 			} | null;
 			const candidate = state?.prefilledGoogleStation;
 
@@ -307,6 +309,27 @@ export function ReportForm() {
 
 			return candidate;
 		});
+	const [prefilledStationId] = useState<string | null>(() => {
+		const state = location.state as {
+			prefilledStationId?: string | null;
+		} | null;
+		const candidate = state?.prefilledStationId;
+
+		return typeof candidate === "string" && candidate.trim()
+			? candidate
+			: null;
+	});
+	const [prefilledSubmissionMode] = useState<FuelReportSubmissionMode | null>(
+		() => {
+			const state = location.state as {
+				prefilledSubmissionMode?: FuelReportSubmissionMode | null;
+			} | null;
+			return state?.prefilledSubmissionMode === "standard" ||
+				state?.prefilledSubmissionMode === "easy"
+				? state.prefilledSubmissionMode
+				: null;
+		},
+	);
 
 	useEffect(() => {
 		if (!photoFile) {
@@ -360,6 +383,32 @@ export function ReportForm() {
 		setSelectedStationId(null);
 		setSubmissionMode("easy");
 	}, [prefilledGoogleStation]);
+
+	useEffect(() => {
+		if (!prefilledStationId) {
+			return;
+		}
+
+		const prefilledStation =
+			stations.find((station) => station.id === prefilledStationId) ??
+			null;
+
+		if (!prefilledStation) {
+			return;
+		}
+
+		setPrefilledGoogleStation(null);
+		setSubmissionMode(prefilledSubmissionMode ?? "standard");
+		setSelectedStationId(prefilledStation.id);
+		setStationName(prefilledStation.name);
+		setReportedAddress(prefilledStation.address);
+		setCoords({
+			lat: prefilledStation.lat,
+			lng: prefilledStation.lng,
+		});
+		setProvinceCode(prefilledStation.provinceCode ?? "");
+		setCityMunicipalityCode(prefilledStation.cityMunicipalityCode ?? "");
+	}, [prefilledStationId, prefilledSubmissionMode, stations]);
 
 	const selectedStation = selectedStationId
 		? (stations.find((station) => station.id === selectedStationId) ?? null)

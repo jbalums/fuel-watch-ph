@@ -309,6 +309,18 @@ function GoogleStationMap({
 			},
 		});
 	}, [navigate, selectedGoogleStation]);
+	const reportFocusedStation = useCallback(() => {
+		if (!focusedStation) {
+			return;
+		}
+
+		navigate("/report", {
+			state: {
+				prefilledStationId: focusedStation.id,
+				prefilledSubmissionMode: "standard",
+			},
+		});
+	}, [focusedStation, navigate]);
 
 	const setSelectedStationId = (stationId: string | null) => {
 		setSelectedGoogleStation(null);
@@ -549,10 +561,24 @@ function GoogleStationMap({
 			setSelectedGoogleStation(null);
 		}
 	}, [filteredDiscoveredStations, selectedGoogleStation]);
-
+	const showOnlyRoadsStyle = [
+		{
+			// 1. Hide every label on the map first
+			featureType: "all",
+			elementType: "labels",
+			stylers: [{ visibility: "off" }],
+		},
+		{
+			// 2. Turn road labels back on specifically
+			featureType: "road",
+			elementType: "labels",
+			stylers: [{ visibility: "on" }],
+		},
+	];
 	return (
 		<GoogleMap
 			mapContainerStyle={{
+				// ...showOnlyRoadsStyle,
 				...GOOGLE_MAPS_CONTAINER_STYLE,
 				height: "calc(100dvh - 185px)",
 			}}
@@ -650,6 +676,8 @@ function GoogleStationMap({
 					<StationMarkerInfoWindow
 						station={focusedStation}
 						showDirectionsAction
+						showReportAction
+						onReportFuelPrices={reportFocusedStation}
 					/>
 				</InfoWindowF>
 			) : null}
@@ -663,7 +691,7 @@ function GoogleStationMap({
 						brandAverage={selectedGoogleStationBrandAverage}
 						showAdminAction={isAdmin}
 						onOpenInDiscovery={openSelectedGoogleStationInDiscovery}
-						showReportAction={!isAdmin}
+						showReportAction
 						onReportGasStation={reportSelectedGoogleStation}
 					/>
 				</InfoWindowF>

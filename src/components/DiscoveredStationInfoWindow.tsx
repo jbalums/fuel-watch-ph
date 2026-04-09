@@ -108,7 +108,7 @@ export function DiscoveredStationInfoWindow({
 						className="h-8 w-full justify-center text-xs"
 						onClick={onReportGasStation}
 					>
-						Report Gas Station
+						Report Fuel Prices!
 					</Button>
 				) : null}
 				{showAdminAction && onOpenInDiscovery ? (

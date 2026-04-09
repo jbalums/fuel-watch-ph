@@ -23,11 +23,15 @@ const statusColors: Record<StationStatus, string> = {
 interface StationMarkerInfoWindowProps {
 	station: GasStation;
 	showDirectionsAction?: boolean;
+	showReportAction?: boolean;
+	onReportFuelPrices?: () => void;
 }
 
 export const StationMarkerInfoWindow = memo(function StationMarkerInfoWindow({
 	station,
 	showDirectionsAction = false,
+	showReportAction = false,
+	onReportFuelPrices,
 }: StationMarkerInfoWindowProps) {
 	const directionsUrl = buildGoogleMapsDirectionsUrl({
 		lat: station.lat,
@@ -113,24 +117,39 @@ export const StationMarkerInfoWindow = memo(function StationMarkerInfoWindow({
 					</div>
 				);
 			})}
-			{showDirectionsAction ? (
-				<Button
-					type="button"
-					variant="default"
-					size="sm"
-					className="mt-2 h-8 w-full justify-center text-xs"
-					onClick={() => {
-						openGoogleMapsDirections({
-							lat: station.lat,
-							lng: station.lng,
-							placeId: station.googlePlaceId,
-						});
-					}}
-					disabled={!directionsUrl}
-				>
-					<Navigation className="h-4 w-4" />
-					Get Directions
-				</Button>
+			{showReportAction || showDirectionsAction ? (
+				<div className="mt-2 flex flex-col gap-2">
+					{showReportAction && onReportFuelPrices ? (
+						<Button
+							type="button"
+							variant="outlineprimary"
+							size="sm"
+							className="mt-5 mb-2 h-8 w-full justify-center text-xs"
+							onClick={onReportFuelPrices}
+						>
+							Report Fuel Prices!
+						</Button>
+					) : null}
+					{showDirectionsAction ? (
+						<Button
+							type="button"
+							variant="default"
+							size="sm"
+							className="h-8 w-full justify-center text-xs"
+							onClick={() => {
+								openGoogleMapsDirections({
+									lat: station.lat,
+									lng: station.lng,
+									placeId: station.googlePlaceId,
+								});
+							}}
+							disabled={!directionsUrl}
+						>
+							<Navigation className="h-4 w-4" />
+							Get Directions
+						</Button>
+					) : null}
+				</div>
 			) : null}
 			<span className="text-xs text-gray-400">{station.lastUpdated}</span>
 		</div>
