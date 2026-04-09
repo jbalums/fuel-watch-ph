@@ -1,9 +1,6 @@
 import { motion } from "framer-motion";
 import { FuelType, PublicStationSummary } from "@/types/station";
-import {
-	fuelTypes,
-	fuelTypeTextColorClassNames,
-} from "@/lib/fuel-prices";
+import { fuelTypes, fuelTypeTextColorClassNames } from "@/lib/fuel-prices";
 
 interface HeroStatusProps {
 	summary: PublicStationSummary | null;

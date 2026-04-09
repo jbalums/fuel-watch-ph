@@ -34,7 +34,7 @@ export function DiscoveredStationInfoWindow({
 			<span className="text-xs text-gray-500 whitespace-normal pr-4">
 				{station.address}
 			</span>
-			<div className="rounded-lg border border-border bg-slate-100 px-3 py-2 text-xs text-muted-foreground">
+			<div className="rounded-lg border border-border dark:border-slate-300 bg-slate-100 px-3 py-2 text-xs text-muted-foreground">
 				<div className="flex items-center gap-2 font-medium text-amber-600">
 					<MapPinned className="h-3.5 w-3.5" />
 					Not yet added to FuelWatch PH
@@ -44,13 +44,13 @@ export function DiscoveredStationInfoWindow({
 				</p>
 			</div>
 			{brandAverage ? (
-				<div className="rounded-lg border border-border bg-slate-100 px-3 py-2 text-xs text-muted-foreground">
-					<div className="font-medium text-sky-700">
+				<div className="rounded-lg border border-border dark:border-slate-300 bg-slate-100 px-3 py-2 text-xs text-muted-foreground">
+					<div className="font-medium text-indigo-700">
 						Average from similar stations
 					</div>
-					<p className="mt-1 font-medium text-foreground">
+					{/* <p className="mt-1 font-medium text-black">
 						{brandAverage.brandName} average
-					</p>
+					</p> */}
 					<p className="mt-0.5 text-[11px] text-muted-foreground">
 						Based on {brandAverage.sampleCount} station
 						{brandAverage.sampleCount === 1 ? "" : "s"}
@@ -60,32 +60,38 @@ export function DiscoveredStationInfoWindow({
 							typeof brandAverage.averagePrices[fuelType] ===
 							"number",
 					) ? (
-						<div className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1">
-							{fuelTypes.map((fuelType) => {
-								const averagePrice =
-									brandAverage.averagePrices[fuelType];
-								if (
-									typeof averagePrice !== "number" ||
-									!Number.isFinite(averagePrice) ||
-									averagePrice <= 0
-								) {
-									return null;
-								}
+						<>
+							<div className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1 mb-2">
+								{fuelTypes.map((fuelType) => {
+									const averagePrice =
+										brandAverage.averagePrices[fuelType];
+									if (
+										typeof averagePrice !== "number" ||
+										!Number.isFinite(averagePrice) ||
+										averagePrice <= 0
+									) {
+										return null;
+									}
 
-								return (
-									<div key={fuelType} className="min-w-0">
-										<p
-											className={`text-[11px] font-medium ${fuelTypeTextColorClassNames[fuelType]}`}
-										>
-											{fuelType}
-										</p>
-										<p className="text-[11px] font-semibold text-foreground">
-											₱ {averagePrice.toFixed(2)}
-										</p>
-									</div>
-								);
-							})}
-						</div>
+									return (
+										<div key={fuelType} className="min-w-0">
+											<p
+												className={`text-[11px] font-medium ${fuelTypeTextColorClassNames[fuelType]}`}
+											>
+												{fuelType}
+											</p>
+											<p className="text-[11px] font-semibold text-black">
+												₱ {averagePrice.toFixed(2)}
+											</p>
+										</div>
+									);
+								})}
+							</div>
+							<span className="text-red-700 text-[10px]">
+								Disclaimer: Prices are for reference only and
+								may not reflect current market prices.
+							</span>
+						</>
 					) : (
 						<p className="mt-2 text-[11px]">
 							No similar listed stations with price data yet.
