@@ -23,15 +23,15 @@ export function DiscoveredStationInfoWindow({
 				<span className="font-semibold !text-black pr-2">
 					{station.name}
 				</span>
-				<span className="rounded-full bg-accent/10 px-2 py-0.5 text-[11px] font-medium text-accent">
-					Google Maps only
+				<span className="rounded-full bg-accent/10 px-2 py-0 text-[8px] font-medium text-accent">
+					Google Maps
 				</span>
 			</div>
 			<span className="text-xs text-gray-500 whitespace-normal pr-4">
 				{station.address}
 			</span>
-			<div className="rounded-lg border border-border bg-secondary/20 px-3 py-2 text-xs text-muted-foreground">
-				<div className="flex items-center gap-2 font-medium text-foreground">
+			<div className="rounded-lg border border-border bg-slate-100 px-3 py-2 text-xs text-muted-foreground">
+				<div className="flex items-center gap-2 font-medium text-amber-600">
 					<MapPinned className="h-3.5 w-3.5" />
 					Not yet added to FuelWatch PH
 				</div>
