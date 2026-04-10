@@ -62,6 +62,7 @@ export function LguLayout() {
 	const navItems = [
 		{ label: "Overview", to: "/lgu", end: true },
 		{ label: "Stations", to: "/lgu/stations" },
+		{ label: "Stations Summary", to: "/lgu/stations-summary" },
 		{ label: "Reports", to: "/lgu/reports" },
 		...((isProvinceAdmin || isCityAdmin)
 			? [{ label: "Team", to: "/lgu/team" }]

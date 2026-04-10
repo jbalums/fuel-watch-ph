@@ -18,6 +18,7 @@ import EmbeddedStationsPage from "./pages/EmbeddedStationsPage";
 import ReportPage from "./pages/ReportPage";
 import AdminPage from "./pages/AdminPage";
 import AdminStationsPage from "./pages/AdminStationsPage";
+import AdminStationsSummaryPage from "./pages/AdminStationsSummaryPage";
 import AdminReportsPage from "./pages/AdminReportsPage";
 import AdminClaimsPage from "./pages/AdminClaimsPage";
 import AdminUsersPage from "./pages/AdminUsersPage";
@@ -36,6 +37,7 @@ import AdminInviteRegistrationPage from "./pages/AdminInviteRegistrationPage";
 import ContactUs from "./pages/ContactUs";
 import LguPage from "./pages/LguPage";
 import LguStationsPage from "./pages/LguStationsPage";
+import LguStationsSummaryPage from "./pages/LguStationsSummaryPage";
 import LguReportsPage from "./pages/LguReportsPage";
 import LguTeamPage from "./pages/LguTeamPage";
 import Profile from "./pages/Profile";
@@ -93,6 +95,10 @@ function RouterContent() {
 								element={<AdminStationsPage />}
 							/>
 							<Route
+								path="stations-summary"
+								element={<AdminStationsSummaryPage />}
+							/>
+							<Route
 								path="reports"
 								element={<AdminReportsPage />}
 							/>
@@ -139,6 +145,10 @@ function RouterContent() {
 							<Route
 								path="stations"
 								element={<LguStationsPage />}
+							/>
+							<Route
+								path="stations-summary"
+								element={<LguStationsSummaryPage />}
 							/>
 							<Route
 								path="reports"

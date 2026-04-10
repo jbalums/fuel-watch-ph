@@ -140,6 +140,13 @@ export default function LguPage() {
 			icon: Fuel,
 		},
 		{
+			label: "Stations Summary",
+			description:
+				"Review a read-only table of stations and average fuel prices inside your assigned scope.",
+			path: "/lgu/stations-summary",
+			icon: Fuel,
+		},
+		{
 			label: "Scoped Reports",
 			description:
 				"Approve or reject community fuel reports inside your assigned area.",

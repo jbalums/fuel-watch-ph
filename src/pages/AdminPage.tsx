@@ -111,6 +111,13 @@ export default function AdminPage() {
 			icon: Fuel,
 		},
 		{
+			label: "Stations Summary",
+			description:
+				"Review a read-only table of listed stations and average fuel prices.",
+			path: "/admin/stations-summary",
+			icon: Fuel,
+		},
+		{
 			label: "Station Discovery",
 			description:
 				"Search Google Maps for fuel stations in the current map area and prefill a new local record.",
