@@ -7,9 +7,9 @@ import { useGeoReferences } from "@/hooks/useGeoReferences";
 
 export default function AdminStationsSummaryPage() {
 	const { data: stations = [], isLoading } = useAdminStations();
-	const { provinces, citiesByProvince } = useGeoReferences();
 	const [provinceCode, setProvinceCode] = useState("");
 	const [cityMunicipalityCode, setCityMunicipalityCode] = useState("");
+	const { provinces, citiesByProvince } = useGeoReferences({ provinceCode });
 
 	const visibleCities = useMemo(
 		() => (provinceCode ? (citiesByProvince.get(provinceCode) ?? []) : []),

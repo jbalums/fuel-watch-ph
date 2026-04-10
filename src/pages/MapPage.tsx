@@ -20,12 +20,12 @@ export default function MapPage() {
 	const { data: stations = [] } = useStations();
 	const { isLguOperator } = useUserAccess();
 	const { data: currentUserScope } = useCurrentUserScope(isLguOperator);
-	const { provinces, citiesByProvince } = useGeoReferences();
 	const location = useLocation();
 	const [searchParams, setSearchParams] = useSearchParams();
 	const stationParam = searchParams.get("station");
 	const provinceCode = searchParams.get("provinceCode") ?? "";
 	const cityMunicipalityCode = searchParams.get("cityMunicipalityCode") ?? "";
+	const { provinces, citiesByProvince } = useGeoReferences({ provinceCode });
 	const hasInitializedScopeFilters = useRef(false);
 	const hasActiveGeoFilter = !!provinceCode || !!cityMunicipalityCode;
 	const [locationFiltersOpen, setLocationFiltersOpen] = useState(false);

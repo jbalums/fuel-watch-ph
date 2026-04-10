@@ -17,12 +17,12 @@ export default function AdminAccessRequestDetailPage() {
 	const { isSuperAdmin, isLoading: accessLoading } = useUserAccess();
 	const { data: request, isLoading, error } =
 		useAdminAccessRequest(isSuperAdmin ? requestId : undefined);
-	const { provinces, citiesByProvince } = useGeoReferences();
 	const [approvedRole, setApprovedRole] = useState<
 		"province_admin" | "city_admin"
 	>("city_admin");
 	const [provinceCode, setProvinceCode] = useState("");
 	const [cityMunicipalityCode, setCityMunicipalityCode] = useState("");
+	const { provinces, citiesByProvince } = useGeoReferences({ provinceCode });
 	const [reviewNotes, setReviewNotes] = useState("");
 	const [expiresInDays, setExpiresInDays] = useState("7");
 	const [generatedInviteLink, setGeneratedInviteLink] = useState<string | null>(

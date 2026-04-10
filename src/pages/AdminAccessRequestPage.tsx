@@ -17,8 +17,9 @@ const roleOptions: { value: OfficialAdminRole; label: string }[] = [
 
 export default function AdminAccessRequestPage() {
 	const navigate = useNavigate();
+	const [provinceCode, setProvinceCode] = useState("");
 	const { provinces, citiesByProvince, isLoading: geoLoading, error } =
-		useGeoReferences();
+		useGeoReferences({ provinceCode });
 	const [fullName, setFullName] = useState("");
 	const [email, setEmail] = useState("");
 	const [mobileNumber, setMobileNumber] = useState("");
@@ -26,7 +27,6 @@ export default function AdminAccessRequestPage() {
 	const [positionTitle, setPositionTitle] = useState("");
 	const [requestedRole, setRequestedRole] =
 		useState<OfficialAdminRole>("city_admin");
-	const [provinceCode, setProvinceCode] = useState("");
 	const [cityMunicipalityCode, setCityMunicipalityCode] = useState("");
 	const [reason, setReason] = useState("");
 	const [submitted, setSubmitted] = useState(false);

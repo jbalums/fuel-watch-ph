@@ -1,4 +1,8 @@
 import type { GasStation } from "@/types/station";
+import {
+	initialStationForm,
+	type StationFormState,
+} from "@/components/admin/admin-shared";
 
 export type GoogleDiscoveredStation = {
 	placeId: string;
@@ -25,6 +29,32 @@ function normalizeText(value: string) {
 		.replace(/\s+/g, " ")
 		.trim();
 }
+
+function containsWholePhrase(haystack: string, needle: string) {
+	if (!haystack || !needle) {
+		return false;
+	}
+
+	const pattern = new RegExp(
+		`(^|\\s)${needle.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(\\s|$)`,
+		"i",
+	);
+
+	return pattern.test(haystack);
+}
+
+export const AUTO_CREATE_SUPPORTED_DISCOVERY_BRANDS = [
+	"Shell",
+	"Petron",
+	"Caltex",
+	"Unioil",
+	"PTT",
+	"Seaoil",
+	"Total",
+	"Phoenix",
+	"ECOOIL",
+	"Jetti",
+] as const;
 
 function toRadians(value: number) {
 	return (value * Math.PI) / 180;
@@ -212,4 +242,36 @@ export function buildAddressSearchText(result: GoogleDiscoveredStation) {
 
 export function formatLatLng(value: number) {
 	return value.toFixed(6);
+}
+
+export function getDiscoveredStationAutoCreateBrand(name: string) {
+	const normalizedName = normalizeText(name);
+	if (!normalizedName) {
+		return null;
+	}
+
+	return (
+		AUTO_CREATE_SUPPORTED_DISCOVERY_BRANDS.find((brand) =>
+			containsWholePhrase(normalizedName, normalizeText(brand)),
+		) ?? null
+	);
+}
+
+export function buildDiscoveredStationForm(
+	result: GoogleDiscoveredStation,
+	scope?: {
+		provinceCode?: string | null;
+		cityMunicipalityCode?: string | null;
+	},
+): StationFormState {
+	return {
+		...initialStationForm,
+		name: result.name,
+		address: result.address,
+		lat: formatLatLng(result.lat),
+		lng: formatLatLng(result.lng),
+		googlePlaceId: result.placeId,
+		provinceCode: scope?.provinceCode ?? "",
+		cityMunicipalityCode: scope?.cityMunicipalityCode ?? "",
+	};
 }

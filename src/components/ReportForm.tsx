@@ -247,7 +247,10 @@ export function ReportForm() {
 	const { user } = useAuth();
 	const { data: stations = [] } = useStations();
 	const { coordinates: currentLocation } = useCurrentLocation();
-	const { provinces, cities, citiesByProvince } = useGeoReferences();
+	const { provinces, cities, citiesByProvince } = useGeoReferences({
+		provinceCode,
+		includeAllCities: true,
+	});
 	const fileInputRef = useRef<HTMLInputElement | null>(null);
 	const [submissionMode, setSubmissionMode] =
 		useState<FuelReportSubmissionMode>("easy");

@@ -34,7 +34,7 @@ export default function AdminGeoBackfillPage() {
 		provinces,
 		citiesByProvince,
 		isLoading: geoLoading,
-	} = useGeoReferences();
+	} = useGeoReferences({ includeAllCities: true });
 	const [stationSelections, setStationSelections] = useState<
 		Record<string, BackfillSelection>
 	>({});

@@ -77,7 +77,9 @@ function GoogleStationMap({
 	const navigate = useNavigate();
 	const { isAdmin } = useUserAccess();
 	const { data: stationBrandLogos = [] } = useStationBrandLogos();
-	const { provinces, cities } = useGeoReferences();
+	const { provinces, cities } = useGeoReferences({
+		includeAllCities: true,
+	});
 	const [internalSelectedStationId, setInternalSelectedStationId] = useState<
 		string | null
 	>(null);

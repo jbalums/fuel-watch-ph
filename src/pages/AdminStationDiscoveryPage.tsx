@@ -8,14 +8,30 @@ import {
 } from "@react-google-maps/api";
 import {
 	AlertTriangle,
+	Check,
+	ChevronsUpDown,
+	Crosshair,
 	ExternalLink,
 	Loader2,
 	MapPinned,
 	Search,
+	WandSparkles,
 } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { GeoScopeFields } from "@/components/GeoScopeFields";
 import { Button } from "@/components/ui/button";
+import {
+	Command,
+	CommandEmpty,
+	CommandInput,
+	CommandItem,
+	CommandList,
+} from "@/components/ui/command";
+import {
+	Popover,
+	PopoverContent,
+	PopoverTrigger,
+} from "@/components/ui/popover";
 import { toast } from "@/lib/app-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -27,9 +43,11 @@ import { detectGeoScopeFromAddress } from "@/lib/geo-detection";
 import { buildResolvedStationMarkerIcon } from "@/lib/station-brand-logos";
 import { fuelTypes, stationStatuses } from "@/lib/fuel-prices";
 import {
+	buildDiscoveredStationForm,
 	buildAddressSearchText,
 	dedupeDiscoveredStations,
 	formatLatLng,
+	getDiscoveredStationAutoCreateBrand,
 	getDuplicateLabel,
 	getDuplicateMatch,
 	getDuplicateMessage,
@@ -53,9 +71,163 @@ import {
 	GOOGLE_MAPS_SCRIPT_ID,
 	MANILA_CENTER,
 } from "@/lib/google-maps";
+import { cn } from "@/lib/utils";
 
 const DEFAULT_DISCOVERY_ZOOM = 15;
 const SELECTED_RESULT_ZOOM = 17;
+
+type ResultAutoCreateStatus =
+	| "eligible"
+	| "duplicate"
+	| "missing_scope"
+	| "unsupported_brand";
+
+type ResultAssessment = {
+	duplicateMatch: DuplicateMatch | null;
+	detectedScope: {
+		provinceCode: string;
+		cityMunicipalityCode: string;
+	} | null;
+	matchedBrand: string | null;
+	status: ResultAutoCreateStatus;
+};
+
+function SearchableResultsScopeSelect({
+	label,
+	placeholder,
+	searchPlaceholder,
+	emptyLabel,
+	options,
+	value,
+	disabled = false,
+	onChange,
+}: {
+	label: string;
+	placeholder: string;
+	searchPlaceholder: string;
+	emptyLabel: string;
+	options: Array<{ code: string; name: string }>;
+	value: string;
+	disabled?: boolean;
+	onChange: (nextValue: string) => void;
+}) {
+	const [open, setOpen] = useState(false);
+	const selectedOption =
+		options.find((option) => option.code === value) ?? null;
+
+	return (
+		<div className="flex flex-col gap-1.5">
+			<label className="text-label text-muted-foreground">{label}</label>
+			<Popover open={open} onOpenChange={setOpen}>
+				<PopoverTrigger asChild>
+					<Button
+						type="button"
+						variant="outline"
+						role="combobox"
+						aria-expanded={open}
+						disabled={disabled}
+						className={cn(
+							"h-auto min-h-12 w-full justify-between rounded-xl border-border bg-background px-4 py-3 text-sm font-normal text-foreground hover:bg-background hover:text-primary",
+							!selectedOption && "text-muted-foreground",
+						)}
+					>
+						<span className="truncate text-left">
+							{selectedOption?.name ?? placeholder}
+						</span>
+						<ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+					</Button>
+				</PopoverTrigger>
+				<PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
+					<Command>
+						<CommandInput placeholder={searchPlaceholder} />
+						<CommandList>
+							<CommandEmpty>{emptyLabel}</CommandEmpty>
+							<CommandItem
+								value={`All ${label}`}
+								onSelect={() => {
+									onChange("");
+									setOpen(false);
+								}}
+							>
+								<Check
+									className={cn(
+										"mr-2 h-4 w-4",
+										!value ? "opacity-100" : "opacity-0",
+									)}
+								/>
+								{`All ${label}`}
+							</CommandItem>
+							{options.map((option) => (
+								<CommandItem
+									key={option.code}
+									value={`${option.name} ${option.code}`}
+									onSelect={() => {
+										onChange(option.code);
+										setOpen(false);
+									}}
+								>
+									<Check
+										className={cn(
+											"mr-2 h-4 w-4",
+											value === option.code
+												? "opacity-100"
+												: "opacity-0",
+										)}
+									/>
+									{option.name}
+								</CommandItem>
+							))}
+						</CommandList>
+					</Command>
+				</PopoverContent>
+			</Popover>
+		</div>
+	);
+}
+
+function getAssessmentLabel(assessment: ResultAssessment) {
+	switch (assessment.status) {
+		case "eligible":
+			return "Supported for auto-create";
+		case "duplicate":
+			return "Skipped by auto-create";
+		case "missing_scope":
+			return "Missing location scope";
+		case "unsupported_brand":
+			return "Unsupported for auto-create";
+	}
+}
+
+function getAssessmentTone(assessment: ResultAssessment) {
+	switch (assessment.status) {
+		case "eligible":
+			return "bg-success/15 text-success";
+		case "duplicate":
+			return "bg-warning/15 text-warning";
+		case "missing_scope":
+			return "bg-warning/15 text-warning";
+		case "unsupported_brand":
+			return "bg-secondary text-muted-foreground";
+	}
+}
+
+function getAssessmentMessage(assessment: ResultAssessment) {
+	if (assessment.status === "eligible" && assessment.matchedBrand) {
+		return assessment.detectedScope?.cityMunicipalityCode
+			? `${assessment.matchedBrand} matched. Province and city were detected.`
+			: `${assessment.matchedBrand} matched. Province is set; city is optional for discovery create.`;
+	}
+
+	if (assessment.status === "duplicate") {
+		return "This station already matches an existing local station and will be skipped.";
+	}
+
+	if (assessment.status === "missing_scope") {
+		return "Province could not be resolved yet. Pick a province above to continue.";
+	}
+
+	return "Only supported brand names are auto-created. You can still create this one manually.";
+}
 
 function DiscoveryStationForm({
 	form,
@@ -213,9 +385,8 @@ function DiscoveryStationForm({
 						Marker Logo Override
 					</p>
 					<p className="mt-1 text-muted-foreground">
-						Leave this on auto-match to resolve the marker logo
-						from the station name, or choose a brand to override
-						it.
+						Leave this on auto-match to resolve the marker logo from
+						the station name, or choose a brand to override it.
 					</p>
 					<select
 						value={form.stationBrandLogoId}
@@ -408,18 +579,33 @@ function GoogleDiscoveryMap({
 	const { user } = useAuth();
 	const { accessLevel } = useUserAccess();
 	const { coordinates: currentLocation } = useCurrentLocation();
-	const { provinces, cities, citiesByProvince } = useGeoReferences();
 	const [map, setMap] = useState<google.maps.Map | null>(null);
 	const [placesReady, setPlacesReady] = useState(false);
 	const [results, setResults] = useState<GoogleDiscoveredStation[]>([]);
 	const [selectedResultId, setSelectedResultId] = useState<string | null>(
 		null,
 	);
+	const [resultsProvinceFilter, setResultsProvinceFilter] = useState("");
+	const [resultsCityFilter, setResultsCityFilter] = useState("");
+	const [resultScopeOverrides, setResultScopeOverrides] = useState<
+		Record<
+			string,
+			{
+				provinceCode: string;
+				cityMunicipalityCode: string;
+			}
+		>
+	>({});
 	const [stationForm, setStationForm] =
 		useState<StationFormState>(initialStationForm);
 	const [isSearching, setIsSearching] = useState(false);
 	const [isPrefilling, setIsPrefilling] = useState(false);
+	const [isAutoDetectingScopes, setIsAutoDetectingScopes] = useState(false);
 	const [searchError, setSearchError] = useState<string | null>(null);
+	const { provinces, cities, citiesByProvince } = useGeoReferences({
+		provinceCode: resultsProvinceFilter || stationForm.provinceCode,
+		includeAllCities: false,
+	});
 
 	const mapCenter = currentLocation ?? MANILA_CENTER;
 	const normalizedStations = useMemo(
@@ -434,6 +620,13 @@ function GoogleDiscoveryMap({
 			})),
 		[stations],
 	);
+	const filteredCities = useMemo(
+		() =>
+			resultsProvinceFilter
+				? (citiesByProvince.get(resultsProvinceFilter) ?? [])
+				: [],
+		[citiesByProvince, resultsProvinceFilter],
+	);
 
 	const duplicateMatches = useMemo(() => {
 		return new Map(
@@ -444,12 +637,97 @@ function GoogleDiscoveryMap({
 		);
 	}, [normalizedStations, results]);
 
+	const resultAssessments = useMemo(() => {
+		return new Map<string, ResultAssessment>(
+			results.map((result) => {
+				const duplicateMatch =
+					duplicateMatches.get(result.placeId) ?? null;
+				const detectedScope =
+					resultScopeOverrides[result.placeId] ??
+					(() => {
+						if (resultsProvinceFilter) {
+							return {
+								provinceCode: resultsProvinceFilter,
+								cityMunicipalityCode: resultsCityFilter,
+							};
+						}
+
+						const autoDetectedScope = detectGeoScopeFromAddress({
+							address: buildAddressSearchText(result),
+							provinces,
+							cities,
+						});
+
+						return autoDetectedScope;
+					})();
+				const matchedBrand = getDiscoveredStationAutoCreateBrand(
+					result.name,
+				);
+				let status: ResultAutoCreateStatus = "eligible";
+
+				if (duplicateMatch) {
+					status = "duplicate";
+				} else if (!detectedScope?.provinceCode) {
+					status = "missing_scope";
+				} else if (!matchedBrand) {
+					status = "unsupported_brand";
+				}
+
+				return [
+					result.placeId,
+					{
+						duplicateMatch,
+						detectedScope: detectedScope?.provinceCode
+							? {
+									provinceCode: detectedScope.provinceCode,
+									cityMunicipalityCode:
+										detectedScope.cityMunicipalityCode ??
+										"",
+								}
+							: null,
+						matchedBrand,
+						status,
+					},
+				];
+			}),
+		);
+	}, [
+		cities,
+		duplicateMatches,
+		provinces,
+		resultScopeOverrides,
+		results,
+		resultsCityFilter,
+		resultsProvinceFilter,
+	]);
+
+	const autoCreateSummary = useMemo(() => {
+		return results.reduce(
+			(summary, result) => {
+				const assessment =
+					resultAssessments.get(result.placeId) ?? null;
+				if (!assessment) {
+					return summary;
+				}
+
+				summary[assessment.status] += 1;
+				return summary;
+			},
+			{
+				eligible: 0,
+				duplicate: 0,
+				missing_scope: 0,
+				unsupported_brand: 0,
+			},
+		);
+	}, [resultAssessments, results]);
+
 	const selectedResult = selectedResultId
 		? (results.find((result) => result.placeId === selectedResultId) ??
 			null)
 		: null;
 	const selectedDuplicateMatch = selectedResultId
-		? (duplicateMatches.get(selectedResultId) ?? null)
+		? (resultAssessments.get(selectedResultId)?.duplicateMatch ?? null)
 		: null;
 	const visibleCities = stationForm.provinceCode
 		? (citiesByProvince.get(stationForm.provinceCode) ?? [])
@@ -460,6 +738,7 @@ function GoogleDiscoveryMap({
 			const payload = {
 				...buildStationPayload(stationForm, null, {
 					allowEmptyPricing: true,
+					allowProvinceOnlyScope: true,
 				}),
 				...buildStationLguVerificationPayload(accessLevel, user?.id),
 			};
@@ -478,6 +757,211 @@ function GoogleDiscoveryMap({
 			toast.success("Station created from Google Maps");
 			setSelectedResultId(null);
 			setStationForm(initialStationForm);
+		},
+		onError: (error) => toast.error(error.message),
+	});
+
+	const autoDetectAllResultScopes = useCallback(() => {
+		if (results.length === 0) {
+			return;
+		}
+
+		setIsAutoDetectingScopes(true);
+		try {
+			const nextOverrides: Record<
+				string,
+				{
+					provinceCode: string;
+					cityMunicipalityCode: string;
+				}
+			> = {};
+			let detectedCount = 0;
+			let missingCount = 0;
+
+			for (const result of results) {
+				const detectedScope = detectGeoScopeFromAddress({
+					address: buildAddressSearchText(result),
+					provinces,
+					cities,
+				});
+
+				if (
+					detectedScope?.provinceCode &&
+					detectedScope?.cityMunicipalityCode
+				) {
+					nextOverrides[result.placeId] = {
+						provinceCode: detectedScope.provinceCode,
+						cityMunicipalityCode:
+							detectedScope.cityMunicipalityCode,
+					};
+					detectedCount += 1;
+					continue;
+				}
+
+				missingCount += 1;
+			}
+
+			setResultScopeOverrides(nextOverrides);
+
+			if (selectedResultId) {
+				const selectedResult = results.find(
+					(result) => result.placeId === selectedResultId,
+				);
+				const selectedScope =
+					selectedResult && nextOverrides[selectedResult.placeId];
+
+				if (selectedResult && selectedScope) {
+					setStationForm((current) => ({
+						...current,
+						provinceCode: selectedScope.provinceCode,
+						cityMunicipalityCode:
+							selectedScope.cityMunicipalityCode,
+					}));
+				}
+			}
+
+			toast.info(
+				[
+					`Auto-detected scope for ${detectedCount} station${detectedCount === 1 ? "" : "s"}.`,
+					missingCount > 0
+						? `${missingCount} still need manual province selection.`
+						: null,
+				]
+					.filter(Boolean)
+					.join(" "),
+			);
+		} finally {
+			setIsAutoDetectingScopes(false);
+		}
+	}, [cities, provinces, results, selectedResultId]);
+
+	const handleResultsProvinceFilterChange = useCallback(
+		(provinceCode: string) => {
+			setResultsProvinceFilter(provinceCode);
+			setResultsCityFilter("");
+
+			if (selectedResultId) {
+				setStationForm((current) => ({
+					...current,
+					provinceCode,
+					cityMunicipalityCode: "",
+				}));
+			}
+		},
+		[selectedResultId],
+	);
+
+	const handleResultsCityFilterChange = useCallback(
+		(cityMunicipalityCode: string) => {
+			setResultsCityFilter(cityMunicipalityCode);
+
+			if (selectedResultId) {
+				setStationForm((current) => ({
+					...current,
+					cityMunicipalityCode,
+				}));
+			}
+		},
+		[selectedResultId],
+	);
+
+	const autoCreateStations = useMutation({
+		mutationFn: async () => {
+			const eligibleResults = results.filter((result) => {
+				const assessment =
+					resultAssessments.get(result.placeId) ?? null;
+				return assessment?.status === "eligible";
+			});
+
+			const summary = {
+				created: 0,
+				duplicate: autoCreateSummary.duplicate,
+				missingScope: autoCreateSummary.missing_scope,
+				unsupportedBrand: autoCreateSummary.unsupported_brand,
+			};
+
+			if (eligibleResults.length === 0) {
+				return summary;
+			}
+
+			const stationRows = eligibleResults.map((result) => {
+				const assessment = resultAssessments.get(result.placeId);
+				if (!assessment?.detectedScope?.provinceCode) {
+					throw new Error(
+						"Auto Create could not resolve a valid province for one of the selected Google stations.",
+					);
+				}
+
+				const form = buildDiscoveredStationForm(
+					result,
+					assessment.detectedScope,
+				);
+
+				return {
+					...buildStationPayload(form, null, {
+						allowEmptyPricing: true,
+						allowProvinceOnlyScope: true,
+					}),
+					...buildStationLguVerificationPayload(
+						accessLevel,
+						user?.id,
+					),
+					report_count: 0,
+				};
+			});
+
+			const { error } = await supabase
+				.from("gas_stations")
+				.insert(stationRows);
+
+			if (error) {
+				throw error;
+			}
+
+			summary.created = stationRows.length;
+			return summary;
+		},
+		onSuccess: async (summary) => {
+			await refreshAdminData(queryClient);
+			setSelectedResultId(null);
+			setStationForm(initialStationForm);
+
+			if (summary.created > 0) {
+				toast.success(
+					[
+						`Created ${summary.created} station${summary.created === 1 ? "" : "s"}.`,
+						summary.unsupportedBrand > 0
+							? `Skipped ${summary.unsupportedBrand} unsupported brand${summary.unsupportedBrand === 1 ? "" : "s"}.`
+							: null,
+						summary.duplicate > 0
+							? `Skipped ${summary.duplicate} duplicate${summary.duplicate === 1 ? "" : "s"}.`
+							: null,
+						summary.missingScope > 0
+							? `Skipped ${summary.missingScope} missing location scope.`
+							: null,
+					]
+						.filter(Boolean)
+						.join(" "),
+				);
+				return;
+			}
+
+			toast.info(
+				[
+					"No eligible stations were auto-created.",
+					summary.unsupportedBrand > 0
+						? `${summary.unsupportedBrand} unsupported brand${summary.unsupportedBrand === 1 ? "" : "s"}.`
+						: null,
+					summary.duplicate > 0
+						? `${summary.duplicate} duplicate${summary.duplicate === 1 ? "" : "s"}.`
+						: null,
+					summary.missingScope > 0
+						? `${summary.missingScope} missing location scope.`
+						: null,
+				]
+					.filter(Boolean)
+					.join(" "),
+			);
 		},
 		onError: (error) => toast.error(error.message),
 	});
@@ -530,28 +1014,18 @@ function GoogleDiscoveryMap({
 
 			setIsPrefilling(true);
 			try {
-				const detectedScope = detectGeoScopeFromAddress({
-					address: buildAddressSearchText(result),
-					provinces,
-					cities,
-				});
+				const detectedScope = resultAssessments.get(
+					result.placeId,
+				)?.detectedScope;
 
-				setStationForm({
-					...initialStationForm,
-					name: result.name,
-					address: result.address,
-					lat: formatLatLng(result.lat),
-					lng: formatLatLng(result.lng),
-					googlePlaceId: result.placeId,
-					provinceCode: detectedScope?.provinceCode ?? "",
-					cityMunicipalityCode:
-						detectedScope?.cityMunicipalityCode ?? "",
-				});
+				setStationForm(
+					buildDiscoveredStationForm(result, detectedScope),
+				);
 			} finally {
 				setIsPrefilling(false);
 			}
 		},
-		[cities, map, provinces],
+		[map, resultAssessments],
 	);
 
 	useEffect(() => {
@@ -560,14 +1034,23 @@ function GoogleDiscoveryMap({
 		}
 
 		setResults((current) => {
-			if (current.some((result) => result.placeId === initialGoogleStation.placeId)) {
+			if (
+				current.some(
+					(result) => result.placeId === initialGoogleStation.placeId,
+				)
+			) {
 				return current;
 			}
 
 			return dedupeDiscoveredStations([initialGoogleStation, ...current]);
 		});
 		handleSelectResult(initialGoogleStation);
-	}, [handleSelectResult, initialGoogleStation, isPrefilling, selectedResultId]);
+	}, [
+		handleSelectResult,
+		initialGoogleStation,
+		isPrefilling,
+		selectedResultId,
+	]);
 
 	const openExistingStation = useCallback(
 		(stationId: string) => {
@@ -620,6 +1103,27 @@ function GoogleDiscoveryMap({
 									<>
 										<Search className="h-4 w-4" />
 										Search this area
+									</>
+								)}
+							</Button>
+							<Button
+								type="button"
+								variant="outline"
+								onClick={() => autoCreateStations.mutate()}
+								disabled={
+									autoCreateStations.isPending ||
+									results.length === 0
+								}
+							>
+								{autoCreateStations.isPending ? (
+									<>
+										<Loader2 className="h-4 w-4 animate-spin" />
+										Auto creating
+									</>
+								) : (
+									<>
+										<WandSparkles className="h-4 w-4" />
+										Auto Create
 									</>
 								)}
 							</Button>
@@ -735,11 +1239,71 @@ function GoogleDiscoveryMap({
 								create form.
 							</p>
 						</div>
-						{results.length > 0 ? (
-							<span className="rounded-full bg-secondary px-3 py-1 text-xs font-medium text-muted-foreground">
-								{results.length} found
-							</span>
-						) : null}
+						<div className="flex items-center gap-2">
+							{results.length > 0 ? (
+								<span className="rounded-full bg-secondary px-3 py-1 text-xs font-medium text-muted-foreground">
+									{results.length} found
+								</span>
+							) : null}
+							<Button
+								type="button"
+								variant="outline"
+								size="sm"
+								onClick={autoDetectAllResultScopes}
+								disabled={
+									results.length === 0 ||
+									isAutoDetectingScopes
+								}
+							>
+								{isAutoDetectingScopes ? (
+									<>
+										<Loader2 className="h-4 w-4 animate-spin" />
+										Auto detecting
+									</>
+								) : (
+									<>
+										<Crosshair className="h-4 w-4" />
+										Auto Detect
+									</>
+								)}
+							</Button>
+						</div>
+					</div>
+
+					<div className="mb-4 grid gap-3 md:grid-cols-2">
+						<SearchableResultsScopeSelect
+							label="Province"
+							placeholder="Set province for results"
+							searchPlaceholder="Search provinces..."
+							emptyLabel="No provinces found."
+							options={provinces.map((province) => ({
+								code: province.code,
+								name: province.name,
+							}))}
+							value={resultsProvinceFilter}
+							onChange={handleResultsProvinceFilterChange}
+						/>
+						<SearchableResultsScopeSelect
+							label="City / Municipality"
+							placeholder={
+								resultsProvinceFilter
+									? "Set city or municipality"
+									: "Select a province first"
+							}
+							searchPlaceholder="Search cities or municipalities..."
+							emptyLabel={
+								resultsProvinceFilter
+									? "No cities or municipalities found."
+									: "Select a province first."
+							}
+							options={filteredCities.map((city) => ({
+								code: city.code,
+								name: city.name,
+							}))}
+							value={resultsCityFilter}
+							disabled={!resultsProvinceFilter}
+							onChange={handleResultsCityFilterChange}
+						/>
 					</div>
 
 					{searchError ? (
@@ -758,20 +1322,48 @@ function GoogleDiscoveryMap({
 						</div>
 					) : (
 						<div className="flex flex-col gap-3">
+							<div className="rounded-xl border border-border bg-secondary/20 p-3 text-xs text-muted-foreground">
+								<span className="font-medium text-foreground">
+									Auto Create summary:
+								</span>{" "}
+								{autoCreateSummary.eligible} eligible,{" "}
+								{autoCreateSummary.unsupported_brand}{" "}
+								unsupported , {autoCreateSummary.duplicate}{" "}
+								duplicate, {autoCreateSummary.missing_scope}{" "}
+								missing scope.
+							</div>
 							{results.map((result) => {
 								const duplicateMatch =
 									duplicateMatches.get(result.placeId) ??
 									null;
 								const isSelected =
 									result.placeId === selectedResultId;
+								const assessment = resultAssessments.get(
+									result.placeId,
+								) ?? {
+									duplicateMatch: null,
+									detectedScope: null,
+									matchedBrand: null,
+									status: "unsupported_brand" as const,
+								};
 
 								return (
-									<button
+									<div
 										key={result.placeId}
-										type="button"
 										onClick={() =>
 											handleSelectResult(result)
 										}
+										role="button"
+										tabIndex={0}
+										onKeyDown={(event) => {
+											if (
+												event.key === "Enter" ||
+												event.key === " "
+											) {
+												event.preventDefault();
+												handleSelectResult(result);
+											}
+										}}
 										className={`rounded-xl border p-4 text-left transition-colors ${
 											isSelected
 												? "border-primary bg-primary/5"
@@ -803,12 +1395,24 @@ function GoogleDiscoveryMap({
 														New Candidate
 													</span>
 												)}
+												<span
+													className={`inline-flex rounded-full px-3 py-1 text-xs font-medium ${getAssessmentTone(
+														assessment,
+													)}`}
+												>
+													{getAssessmentLabel(
+														assessment,
+													)}
+												</span>
 												<span className="text-xs text-muted-foreground">
 													Click to prefill
 												</span>
 											</div>
 										</div>
-									</button>
+										<p className="mt-3 text-xs text-muted-foreground">
+											{getAssessmentMessage(assessment)}
+										</p>
+									</div>
 								);
 							})}
 						</div>
@@ -860,9 +1464,9 @@ export default function AdminStationDiscoveryPage() {
 	const location = useLocation();
 	const { data: stations = [], isLoading } = useAdminStations();
 	const initialGoogleStation = useMemo(() => {
-		const state = location.state as
-			| { prefilledGoogleStation?: GoogleDiscoveredStation | null }
-			| null;
+		const state = location.state as {
+			prefilledGoogleStation?: GoogleDiscoveredStation | null;
+		} | null;
 		const candidate = state?.prefilledGoogleStation;
 
 		if (

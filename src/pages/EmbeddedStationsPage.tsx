@@ -60,7 +60,6 @@ function isSortOption(value: string | null): value is SortOption {
 export default function EmbeddedStationsPage() {
 	const embedRootRef = useRef<HTMLDivElement>(null);
 	const [searchParams, setSearchParams] = useSearchParams();
-	const { provinces, citiesByProvince } = useGeoReferences();
 	const searchQuery = searchParams.get("q") ?? "";
 	const fuelFilter = isFuelFilter(searchParams.get("fuel"))
 		? searchParams.get("fuel")!
@@ -76,6 +75,7 @@ export default function EmbeddedStationsPage() {
 		: "price_asc";
 	const provinceCode = searchParams.get("provinceCode") ?? "";
 	const cityMunicipalityCode = searchParams.get("cityMunicipalityCode") ?? "";
+	const { provinces, citiesByProvince } = useGeoReferences({ provinceCode });
 	const currentPage = parsePageParam(searchParams.get("page"));
 	const pageSize = parsePageSizeParam(searchParams.get("pageSize"));
 	const availableCities = useMemo(

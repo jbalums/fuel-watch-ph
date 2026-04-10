@@ -531,6 +531,7 @@ export function buildStationPayload(
 	existingStation?: GasStationRow | null,
 	options?: {
 		allowEmptyPricing?: boolean;
+		allowProvinceOnlyScope?: boolean;
 	},
 ) {
 	const lat = Number.parseFloat(stationForm.lat);
@@ -544,7 +545,10 @@ export function buildStationPayload(
 	if (!stationForm.provinceCode.trim()) {
 		throw new Error("Province is required");
 	}
-	if (!stationForm.cityMunicipalityCode.trim()) {
+	if (
+		!options?.allowProvinceOnlyScope &&
+		!stationForm.cityMunicipalityCode.trim()
+	) {
 		throw new Error("City or municipality is required");
 	}
 
@@ -587,7 +591,8 @@ export function buildStationPayload(
 				station_brand_logo_id:
 					stationForm.stationBrandLogoId.trim() || null,
 				province_code: stationForm.provinceCode.trim(),
-				city_municipality_code: stationForm.cityMunicipalityCode.trim(),
+				city_municipality_code:
+					stationForm.cityMunicipalityCode.trim() || null,
 				prices,
 				fuel_availability: fuelAvailability,
 				previous_prices: nextPreviousPrices,
@@ -638,7 +643,8 @@ export function buildStationPayload(
 		google_place_id: stationForm.googlePlaceId.trim() || null,
 		station_brand_logo_id: stationForm.stationBrandLogoId.trim() || null,
 		province_code: stationForm.provinceCode.trim(),
-		city_municipality_code: stationForm.cityMunicipalityCode.trim(),
+		city_municipality_code:
+			stationForm.cityMunicipalityCode.trim() || null,
 		prices,
 		fuel_availability: fuelAvailability,
 		previous_prices: nextPreviousPrices,

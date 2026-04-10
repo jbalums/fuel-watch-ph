@@ -13,14 +13,16 @@ import { useUserAccess } from "@/hooks/useUserAccess";
 const STATIONS_PER_PAGE = 10;
 
 export default function Index() {
-	const { isLguOperator } = useUserAccess();
-	const { data: currentUserScope } = useCurrentUserScope(isLguOperator);
-	const { provinces, citiesByProvince } = useGeoReferences();
-	const { data: stationSummary } = usePublicStationSummary();
-	const [currentPage, setCurrentPage] = useState(1);
 	const [selectedProvinceCode, setSelectedProvinceCode] = useState("");
 	const [selectedCityMunicipalityCode, setSelectedCityMunicipalityCode] =
 		useState("");
+	const { isLguOperator } = useUserAccess();
+	const { data: currentUserScope } = useCurrentUserScope(isLguOperator);
+	const { provinces, citiesByProvince } = useGeoReferences({
+		provinceCode: selectedProvinceCode,
+	});
+	const { data: stationSummary } = usePublicStationSummary();
+	const [currentPage, setCurrentPage] = useState(1);
 	const hasInitializedScopeFilters = useRef(false);
 	const {
 		stations,

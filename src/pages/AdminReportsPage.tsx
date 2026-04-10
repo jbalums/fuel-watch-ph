@@ -52,7 +52,9 @@ export default function AdminReportsPage() {
 	const navigate = useNavigate();
 	const { data: stations = [] } = useAdminStations();
 	const { data: reports = [], isLoading: reportsLoading } = useAdminReports();
-	const { provinces, cities = [] } = useGeoReferences();
+	const { provinces, cities = [] } = useGeoReferences({
+		provinceCode: easyApprovalForm?.provinceCode,
+	});
 	const [reportSearch, setReportSearch] = useState("");
 	const [reportFilter, setReportFilter] = useState<ReportFilter>("pending");
 	const [reportPhotoPreview, setReportPhotoPreview] = useState<{

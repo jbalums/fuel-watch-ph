@@ -52,7 +52,10 @@ function EditorForm({
 	onSubmit,
 	onCancel,
 }: Omit<AdminStationEditorProps, "open" | "isMobile" | "onOpenChange">) {
-	const { provinces, cities, citiesByProvince } = useGeoReferences();
+	const { provinces, cities, citiesByProvince } = useGeoReferences({
+		provinceCode: form.provinceCode,
+		includeAllCities: true,
+	});
 	const { data: stationBrandLogos = [] } = useStationBrandLogos();
 	const visibleCities = form.provinceCode
 		? citiesByProvince.get(form.provinceCode) ?? []

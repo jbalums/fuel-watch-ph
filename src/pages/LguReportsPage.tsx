@@ -47,7 +47,9 @@ export default function LguReportsPage() {
 	const { data: stations = [] } = useScopedAdminStations();
 	const { data: reports = [], isLoading: reportsLoading } =
 		useScopedAdminReports();
-	const { provinces, cities = [] } = useGeoReferences();
+	const { provinces, cities = [] } = useGeoReferences({
+		provinceCode: easyApprovalForm?.provinceCode,
+	});
 	const [reportSearch, setReportSearch] = useState("");
 	const [reportFilter, setReportFilter] = useState<ReportFilter>("pending");
 	const [reportPhotoPreview, setReportPhotoPreview] = useState<{
