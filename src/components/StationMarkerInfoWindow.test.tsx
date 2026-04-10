@@ -1,6 +1,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { StationMarkerInfoWindow } from "@/components/StationMarkerInfoWindow";
+import type { StationBrandAverage } from "@/lib/station-brand-logos";
 import type { GasStation } from "@/types/station";
 
 const station: GasStation = {
@@ -54,6 +55,18 @@ const station: GasStation = {
 	updatedAt: new Date().toISOString(),
 	lastUpdated: "2 hours ago",
 	reportCount: 4,
+};
+
+const brandAverage: StationBrandAverage = {
+	brandName: "FuelWatch",
+	sampleCount: 2,
+	averagePrices: {
+		Unleaded: 61.25,
+		Premium: 64.1,
+		Diesel: null,
+		"Premium Diesel": null,
+		Kerosene: null,
+	},
 };
 
 describe("StationMarkerInfoWindow", () => {
@@ -131,5 +144,20 @@ describe("StationMarkerInfoWindow", () => {
 		);
 
 		expect(onReportFuelPrices).toHaveBeenCalledTimes(1);
+	});
+
+	it("shows the brand average card when provided", () => {
+		render(
+			<StationMarkerInfoWindow
+				station={station}
+				brandAverage={brandAverage}
+			/>,
+		);
+
+		expect(
+			screen.getByText(/average from other/i),
+		).toBeInTheDocument();
+		expect(screen.getByText(/based on 2 stations/i)).toBeInTheDocument();
+		expect(screen.getByText("₱ 61.25")).toBeInTheDocument();
 	});
 });

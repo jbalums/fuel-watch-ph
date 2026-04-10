@@ -9,6 +9,7 @@ import {
 } from "@react-google-maps/api";
 import { Loader2, MapPinned } from "lucide-react";
 import type { GasStation } from "@/types/station";
+import { fuelTypes } from "@/lib/fuel-prices";
 import {
 	GOOGLE_MAPS_API_KEY,
 	GOOGLE_MAPS_CONTAINER_STYLE,
@@ -39,6 +40,17 @@ const DEFAULT_CURRENT_LOCATION_ZOOM = 15;
 const DEFAULT_EMPTY_MAP_ZOOM = 15;
 const DEFAULT_SINGLE_STATION_ZOOM = 15;
 const FOCUSED_STATION_ZOOM = 16;
+
+function hasAnyUsableStationPrice(station: GasStation) {
+	return fuelTypes.some((fuelType) => {
+		const price = station.prices[fuelType];
+		return (
+			typeof price === "number" &&
+			Number.isFinite(price) &&
+			price > 0
+		);
+	});
+}
 
 type MapBounds = {
 	north: number;
@@ -254,6 +266,20 @@ function GoogleStationMap({
 				: null,
 		[allStations, selectedGoogleStation, stationBrandLogos],
 	);
+	const focusedStationBrandAverage = useMemo(() => {
+		if (!focusedStation || hasAnyUsableStationPrice(focusedStation)) {
+			return null;
+		}
+
+		return buildStationBrandAverage(
+			{
+				name: focusedStation.name,
+				stationBrandLogoId: focusedStation.stationBrandLogoId,
+			},
+			allStations.filter((station) => station.id !== focusedStation.id),
+			stationBrandLogos,
+		);
+	}, [allStations, focusedStation, stationBrandLogos]);
 	const stationBoundsKey = useMemo(
 		() =>
 			stations
@@ -675,6 +701,7 @@ function GoogleStationMap({
 				>
 					<StationMarkerInfoWindow
 						station={focusedStation}
+						brandAverage={focusedStationBrandAverage}
 						showDirectionsAction
 						showReportAction
 						onReportFuelPrices={reportFocusedStation}

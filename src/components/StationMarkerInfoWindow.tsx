@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { LguVerifiedBadge } from "@/components/LguVerifiedBadge";
 import { PriceTrendIndicator } from "@/components/PriceTrendIndicator";
 import { VerifiedStationBadge } from "@/components/VerifiedStationBadge";
+import type { StationBrandAverage } from "@/lib/station-brand-logos";
 import {
 	buildGoogleMapsDirectionsUrl,
 	openGoogleMapsDirections,
@@ -22,6 +23,7 @@ const statusColors: Record<StationStatus, string> = {
 
 interface StationMarkerInfoWindowProps {
 	station: GasStation;
+	brandAverage?: StationBrandAverage | null;
 	showDirectionsAction?: boolean;
 	showReportAction?: boolean;
 	onReportFuelPrices?: () => void;
@@ -29,6 +31,7 @@ interface StationMarkerInfoWindowProps {
 
 export const StationMarkerInfoWindow = memo(function StationMarkerInfoWindow({
 	station,
+	brandAverage = null,
 	showDirectionsAction = false,
 	showReportAction = false,
 	onReportFuelPrices,
@@ -117,6 +120,60 @@ export const StationMarkerInfoWindow = memo(function StationMarkerInfoWindow({
 					</div>
 				);
 			})}
+			{brandAverage ? (
+				<div className="mt-3 rounded-lg border border-border bg-slate-100 px-3 py-2 text-xs text-muted-foreground dark:border-slate-300">
+					<div className="font-medium text-indigo-700">
+						Average from other <u>{brandAverage.brandName}</u>{" "}
+						stations
+					</div>
+					<p className="mt-0.5 text-[11px] text-muted-foreground">
+						Based on {brandAverage.sampleCount} station
+						{brandAverage.sampleCount === 1 ? "" : "s"}
+					</p>
+					{fuelTypes.some(
+						(fuelType) =>
+							typeof brandAverage.averagePrices[fuelType] ===
+							"number",
+					) ? (
+						<>
+							<div className="mb-2 mt-2 grid grid-cols-2 gap-x-3 gap-y-1">
+								{fuelTypes.map((fuelType) => {
+									const averagePrice =
+										brandAverage.averagePrices[fuelType];
+									if (
+										typeof averagePrice !== "number" ||
+										!Number.isFinite(averagePrice) ||
+										averagePrice <= 0
+									) {
+										return null;
+									}
+
+									return (
+										<div key={fuelType} className="min-w-0">
+											<p
+												className={`text-[12px] font-medium ${fuelTypeTextColorClassNames[fuelType]}`}
+											>
+												{fuelType}
+											</p>
+											<p className="text-[16px] font-semibold text-black">
+												₱ {averagePrice.toFixed(2)}
+											</p>
+										</div>
+									);
+								})}
+							</div>
+							<span className="text-[10px] text-red-700">
+								Disclaimer: Prices are for reference only and
+								may not reflect current market prices.
+							</span>
+						</>
+					) : (
+						<p className="mt-2 text-[11px]">
+							No similar listed stations with price data yet.
+						</p>
+					)}
+				</div>
+			) : null}
 			{showReportAction || showDirectionsAction ? (
 				<div className="mt-2 flex flex-col gap-2">
 					{showReportAction && onReportFuelPrices ? (
