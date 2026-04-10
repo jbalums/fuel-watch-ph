@@ -44,11 +44,7 @@ const FOCUSED_STATION_ZOOM = 16;
 function hasAnyUsableStationPrice(station: GasStation) {
 	return fuelTypes.some((fuelType) => {
 		const price = station.prices[fuelType];
-		return (
-			typeof price === "number" &&
-			Number.isFinite(price) &&
-			price > 0
-		);
+		return typeof price === "number" && Number.isFinite(price) && price > 0;
 	});
 }
 
@@ -463,7 +459,7 @@ function GoogleStationMap({
 
 		discoverySearchTimeoutRef.current = window.setTimeout(() => {
 			searchDiscoveredStations(bounds, boundsKey);
-		}, 1200);
+		}, 500);
 	}, [map, searchDiscoveredStations]);
 
 	useEffect(() => {
