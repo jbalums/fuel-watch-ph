@@ -247,6 +247,7 @@ export function ReportForm() {
 	const { user } = useAuth();
 	const { data: stations = [] } = useStations();
 	const { coordinates: currentLocation } = useCurrentLocation();
+	const [provinceCode, setProvinceCode] = useState("");
 	const { provinces, cities, citiesByProvince } = useGeoReferences({
 		provinceCode,
 		includeAllCities: true,
@@ -263,7 +264,6 @@ export function ReportForm() {
 	const [selectedStationId, setSelectedStationId] = useState<string | null>(
 		null,
 	);
-	const [provinceCode, setProvinceCode] = useState("");
 	const [cityMunicipalityCode, setCityMunicipalityCode] = useState("");
 	const [reportedAddress, setReportedAddress] = useState<string | null>(null);
 	const [submitted, setSubmitted] = useState(false);
