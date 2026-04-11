@@ -156,7 +156,7 @@ export function StationCard({
 									<img
 										src={matchedBrandLogo.logoUrl}
 										alt={`${matchedBrandLogo.brandName} logo`}
-										className="h-24 w-24 absolute right-2 top-12 opacity-20"
+										className="h-24 w-24 absolute right-1 top-12 opacity-20"
 										loading="lazy"
 									/>
 								) : null}
