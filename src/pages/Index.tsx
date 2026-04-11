@@ -35,10 +35,12 @@ import { useStations } from "@/hooks/useStations";
 import { useCurrentUserScope } from "@/hooks/useCurrentUserScope";
 import { useStationBrowse } from "@/hooks/useStationBrowse";
 import { useUserAccess } from "@/hooks/useUserAccess";
+import { detectGeoScopeFromAddress } from "@/lib/geo-detection";
 import {
 	getStoredCurrentProvinceCode,
 	setStoredCurrentProvinceCode,
 } from "@/lib/current-province";
+import { reverseGeocodeCoordinatesWithNominatim } from "@/lib/nominatim";
 
 const STATIONS_PER_PAGE = 10;
 const HOMEPAGE_LOCATION_PROMPT_DISMISSED_KEY =
@@ -59,6 +61,9 @@ export default function Index() {
 	const [provincePromptPopoverOpen, setProvincePromptPopoverOpen] =
 		useState(false);
 	const [pendingProvinceCode, setPendingProvinceCode] = useState("");
+	const [isDetectingProvince, setIsDetectingProvince] = useState(false);
+	const [provinceDetectionMessage, setProvinceDetectionMessage] =
+		useState<string | null>(null);
 	const [confirmedCurrentProvinceCode, setConfirmedCurrentProvinceCode] =
 		useState(() => getStoredCurrentProvinceCode());
 	const [locationPromptDismissed, setLocationPromptDismissed] = useState(
@@ -210,6 +215,70 @@ export default function Index() {
 	]);
 
 	useEffect(() => {
+		if (!provincePromptOpen || !currentLocation || provinces.length === 0) {
+			return;
+		}
+
+		let isCancelled = false;
+
+		const detectProvinceFromCurrentLocation = async () => {
+			setIsDetectingProvince(true);
+			setProvinceDetectionMessage(null);
+
+			try {
+				const result =
+					await reverseGeocodeCoordinatesWithNominatim(currentLocation);
+
+				if (isCancelled) {
+					return;
+				}
+
+				const detectedScope = detectGeoScopeFromAddress({
+					address: result.addressText,
+					provinces,
+					cities: [],
+				});
+
+				if (!detectedScope?.provinceCode) {
+					setProvinceDetectionMessage(
+						"We couldn't confidently detect your province. Please choose it manually.",
+					);
+					return;
+				}
+
+				setPendingProvinceCode(detectedScope.provinceCode);
+				const detectedProvinceName =
+					provinces.find(
+						(province) =>
+							province.code === detectedScope.provinceCode,
+					)?.name ?? "your province";
+				setProvinceDetectionMessage(
+					`Detected province: ${detectedProvinceName}`,
+				);
+			} catch (error) {
+				if (isCancelled) {
+					return;
+				}
+
+				console.error("Failed to detect province with Nominatim", error);
+				setProvinceDetectionMessage(
+					"Auto-detect is unavailable right now. Please choose your province manually.",
+				);
+			} finally {
+				if (!isCancelled) {
+					setIsDetectingProvince(false);
+				}
+			}
+		};
+
+		void detectProvinceFromCurrentLocation();
+
+		return () => {
+			isCancelled = true;
+		};
+	}, [currentLocation, provincePromptOpen, provinces]);
+
+	useEffect(() => {
 		setCurrentPage(1);
 	}, [
 		searchQuery,
@@ -325,6 +394,7 @@ export default function Index() {
 		setProvincePromptDismissed(true);
 		setProvincePromptOpen(false);
 		setProvincePromptPopoverOpen(false);
+		setProvinceDetectionMessage(null);
 	};
 
 	const handleConfirmProvincePrompt = () => {
@@ -347,6 +417,7 @@ export default function Index() {
 		setProvincePromptDismissed(true);
 		setProvincePromptOpen(false);
 		setProvincePromptPopoverOpen(false);
+		setProvinceDetectionMessage(null);
 	};
 
 	return (
@@ -551,10 +622,22 @@ export default function Index() {
 								</PopoverContent>
 							</Popover>
 						</div>
-						<p className="text-xs text-muted-foreground">
-							You can change this anytime from the homepage
-							location filter.
-						</p>
+						<div className="space-y-1">
+							<p className="text-xs text-muted-foreground">
+								You can change this anytime from the location
+								icon beside the theme toggle.
+							</p>
+							{isDetectingProvince ? (
+								<p className="inline-flex items-center gap-2 text-xs text-muted-foreground">
+									<Loader2 className="h-3.5 w-3.5 animate-spin" />
+									Detecting your current province...
+								</p>
+							) : provinceDetectionMessage ? (
+								<p className="text-xs text-primary">
+									{provinceDetectionMessage}
+								</p>
+							) : null}
+						</div>
 					</div>
 					<AlertDialogFooter className="flex !items-center !justify-center gap-4">
 						{/* <AlertDialogCancel
