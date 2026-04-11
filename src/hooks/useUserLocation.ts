@@ -70,6 +70,8 @@ export function useUserLocation() {
 		latitude: query.data?.latitude ?? null,
 		longitude: query.data?.longitude ?? null,
 		loading: query.isLoading,
+		isRetrying: query.isFetching && !query.isLoading,
 		error: query.data?.error ?? null,
+		retryLocation: () => query.refetch(),
 	};
 }

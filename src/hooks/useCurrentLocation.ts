@@ -3,7 +3,14 @@ import type { CoordinatePair } from "@/lib/google-maps";
 import { useUserLocation } from "@/hooks/useUserLocation";
 
 export function useCurrentLocation() {
-	const { latitude, longitude, loading, error } = useUserLocation();
+	const {
+		latitude,
+		longitude,
+		loading,
+		isRetrying,
+		error,
+		retryLocation,
+	} = useUserLocation();
 	const coordinates: CoordinatePair | null = useMemo(
 		() =>
 			latitude !== null && longitude !== null
@@ -18,6 +25,8 @@ export function useCurrentLocation() {
 	return {
 		coordinates,
 		isLoading: loading,
+		isRetrying,
 		locationError: error,
+		retryLocation,
 	};
 }
