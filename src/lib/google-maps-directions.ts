@@ -2,6 +2,8 @@ export interface GoogleMapsDirectionsDestination {
 	lat: number | null | undefined;
 	lng: number | null | undefined;
 	placeId?: string | null;
+	originLat?: number | null;
+	originLng?: number | null;
 }
 
 function isValidLatitude(value: number | null | undefined) {
@@ -43,6 +45,13 @@ export function buildGoogleMapsDirectionsUrl(
 		travelmode: "driving",
 	});
 	const normalizedPlaceId = destination.placeId?.trim();
+	const hasValidOrigin =
+		isValidLatitude(destination.originLat) &&
+		isValidLongitude(destination.originLng);
+
+	if (hasValidOrigin) {
+		params.set("origin", `${destination.originLat},${destination.originLng}`);
+	}
 
 	if (normalizedPlaceId) {
 		params.set("destination_place_id", normalizedPlaceId);

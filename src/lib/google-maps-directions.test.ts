@@ -28,6 +28,19 @@ describe("google maps directions helper", () => {
 		);
 	});
 
+	it("includes origin coordinates when available", () => {
+		expect(
+			buildGoogleMapsDirectionsUrl({
+				lat: 9.647,
+				lng: 123.855,
+				originLat: 9.61,
+				originLng: 123.87,
+			}),
+		).toBe(
+			"https://www.google.com/maps/dir/?api=1&destination=9.647%2C123.855&travelmode=driving&origin=9.61%2C123.87",
+		);
+	});
+
 	it("returns null for invalid destination coordinates", () => {
 		expect(
 			buildGoogleMapsDirectionsUrl({

@@ -14,7 +14,7 @@ import {
 	fuelTypeTextColorClassNames,
 	isFuelSellable,
 } from "@/lib/fuel-prices";
-import { Navigation } from "lucide-react";
+import { FileEdit, Navigation } from "lucide-react";
 const statusColors: Record<StationStatus, string> = {
 	Available: "#22c55e",
 	Low: "#f59e0b",
@@ -27,6 +27,8 @@ interface StationMarkerInfoWindowProps {
 	showDirectionsAction?: boolean;
 	showReportAction?: boolean;
 	onReportFuelPrices?: () => void;
+	onGetDirections?: () => void;
+	onOpenInMaps?: () => void;
 }
 
 export const StationMarkerInfoWindow = memo(function StationMarkerInfoWindow({
@@ -35,6 +37,8 @@ export const StationMarkerInfoWindow = memo(function StationMarkerInfoWindow({
 	showDirectionsAction = false,
 	showReportAction = false,
 	onReportFuelPrices,
+	onGetDirections,
+	onOpenInMaps,
 }: StationMarkerInfoWindowProps) {
 	const directionsUrl = buildGoogleMapsDirectionsUrl({
 		lat: station.lat,
@@ -43,7 +47,7 @@ export const StationMarkerInfoWindow = memo(function StationMarkerInfoWindow({
 	});
 
 	return (
-		<div className="flex max-w-[288px] flex-col gap-1.5 text-sm pr-3">
+		<div className="flex max-w-[288px] flex-col gap-1.5 pr-3 md:pr-0 text-sm">
 			<span className="font-semibold !text-black pr-4">
 				{station.name}
 			</span>
@@ -175,40 +179,81 @@ export const StationMarkerInfoWindow = memo(function StationMarkerInfoWindow({
 				</div>
 			) : null}
 			{showReportAction || showDirectionsAction ? (
-				<div className="mt-2 flex flex-col gap-2">
+				<div className="-mt-1 flex flex-col gap-2 px-1">
 					{showReportAction && onReportFuelPrices ? (
 						<Button
 							type="button"
-							variant="outlineprimary"
+							variant="destructive"
 							size="sm"
-							className="mt-5 mb-2 h-8 w-full justify-center text-xs"
+							className="mt-5 mb-0 h-8 w-full justify-center text-xs"
 							onClick={onReportFuelPrices}
 						>
+							<FileEdit className="h-4 w-4" />
 							Report Fuel Prices!
 						</Button>
 					) : null}
 					{showDirectionsAction ? (
-						<Button
-							type="button"
-							variant="default"
-							size="sm"
-							className="h-8 w-full justify-center text-xs"
-							onClick={() => {
-								openGoogleMapsDirections({
-									lat: station.lat,
-									lng: station.lng,
-									placeId: station.googlePlaceId,
-								});
-							}}
-							disabled={!directionsUrl}
-						>
-							<Navigation className="h-4 w-4" />
-							Get Directions
-						</Button>
+						<div className="grid grid-cols-2 gap-2">
+							<Button
+								type="button"
+								variant="outline"
+								size="sm"
+								className="h-8 w-full justify-center text-xs"
+								onClick={() => {
+									if (onOpenInMaps) {
+										onOpenInMaps();
+										return;
+									}
+
+									if (onGetDirections) {
+										openGoogleMapsDirections({
+											lat: station.lat,
+											lng: station.lng,
+											placeId: station.googlePlaceId,
+										});
+										return;
+									}
+
+									openGoogleMapsDirections({
+										lat: station.lat,
+										lng: station.lng,
+										placeId: station.googlePlaceId,
+									});
+								}}
+								disabled={!directionsUrl}
+							>
+								<Navigation className="h-4 w-4" />
+								Open in Maps
+							</Button>
+							<Button
+								type="button"
+								variant="outlineprimary"
+								size="sm"
+								className="h-8 w-full transition-all duration-200 justify-center text-xs"
+								onClick={() => {
+									if (onGetDirections) {
+										onGetDirections();
+										return;
+									}
+
+									openGoogleMapsDirections({
+										lat: station.lat,
+										lng: station.lng,
+										placeId: station.googlePlaceId,
+									});
+								}}
+								disabled={!directionsUrl}
+							>
+								<Navigation className="h-4 w-4" />
+								Get Directions
+							</Button>
+						</div>
 					) : null}
 				</div>
 			) : null}
-			<span className="text-xs text-gray-400">{station.lastUpdated}</span>
+			<span className="text-xs text-gray-400 mt-1 mb-1">
+				Last updated: {station.lastUpdated}
+			</span>
 		</div>
 	);
 });

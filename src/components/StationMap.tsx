@@ -7,7 +7,10 @@ import {
 	MarkerF,
 	OverlayViewF,
 } from "@react-google-maps/api";
-import { Loader2, MapPinned } from "lucide-react";
+import { Clock3, Loader2, MapPinned, Navigation, Route, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { toast } from "@/lib/app-toast";
+import { openGoogleMapsDirections } from "@/lib/google-maps-directions";
 import type { GasStation } from "@/types/station";
 import { fuelTypes } from "@/lib/fuel-prices";
 import {
@@ -55,6 +58,13 @@ type MapBounds = {
 	west: number;
 };
 
+type RenderedRouteState = {
+	destinationId: string;
+	destinationName: string;
+	result: google.maps.DirectionsResult;
+	selectedRouteIndex: number;
+};
+
 interface StationMapProps {
 	stations: GasStation[];
 	allStations?: GasStation[];
@@ -89,6 +99,10 @@ function GoogleStationMap({
 		GoogleDiscoveredStation[]
 	>([]);
 	const [map, setMap] = useState<google.maps.Map | null>(null);
+	const [directionsRenderer, setDirectionsRenderer] =
+		useState<google.maps.DirectionsRenderer | null>(null);
+	const [renderedRoute, setRenderedRoute] =
+		useState<RenderedRouteState | null>(null);
 	const [visibleBounds, setVisibleBounds] = useState<MapBounds | null>(null);
 	const [renderCenter, setRenderCenter] =
 		useState<CoordinatePair>(MANILA_CENTER);
@@ -311,6 +325,112 @@ function GoogleStationMap({
 		}),
 		[],
 	);
+	const routeOptions = useMemo(() => {
+		if (!renderedRoute) {
+			return [];
+		}
+
+		return renderedRoute.result.routes.map((route, index) => {
+			const leg = route.legs[0];
+
+			return {
+				index,
+				summary: route.summary?.trim() || `Route ${index + 1}`,
+				distanceText: leg?.distance?.text ?? "Distance unavailable",
+				durationText: leg?.duration?.text ?? "Duration unavailable",
+			};
+		});
+	}, [renderedRoute]);
+	const closeRenderedRoute = useCallback(() => {
+		directionsRenderer?.setDirections({
+			routes: [],
+		} as google.maps.DirectionsResult);
+		setRenderedRoute(null);
+	}, [directionsRenderer]);
+	const applyRenderedRouteIndex = useCallback(
+		(routeIndex: number) => {
+			if (!renderedRoute || !directionsRenderer || !map) {
+				return;
+			}
+
+			directionsRenderer.setDirections(renderedRoute.result);
+			directionsRenderer.setRouteIndex(routeIndex);
+			setRenderedRoute((current) =>
+				current
+					? {
+							...current,
+							selectedRouteIndex: routeIndex,
+						}
+					: current,
+			);
+
+			const routeBounds = renderedRoute.result.routes[routeIndex]?.bounds;
+			if (routeBounds) {
+				map.fitBounds(routeBounds, 80);
+			}
+		},
+		[directionsRenderer, map, renderedRoute],
+	);
+	const renderDirectionsToFocusedStation = useCallback(async () => {
+		if (!googleMaps || !map || !focusedStation) {
+			return;
+		}
+
+		if (!currentLocation) {
+			toast.info(
+				"Current location is required to show directions on the map.",
+			);
+			return;
+		}
+
+		const service = new googleMaps.DirectionsService();
+		const nextRenderer =
+			directionsRenderer ??
+			new googleMaps.DirectionsRenderer({
+				preserveViewport: false,
+				suppressMarkers: false,
+				hideRouteList: true,
+				polylineOptions: {
+					strokeColor: "#2563eb",
+					strokeOpacity: 0.9,
+					strokeWeight: 6,
+				},
+			});
+
+		nextRenderer.setMap(map);
+		if (!directionsRenderer) {
+			setDirectionsRenderer(nextRenderer);
+		}
+
+		try {
+			const result = await service.route({
+				origin: currentLocation,
+				destination: {
+					lat: focusedStation.lat,
+					lng: focusedStation.lng,
+				},
+				travelMode: googleMaps.TravelMode.DRIVING,
+				provideRouteAlternatives: true,
+			});
+
+			nextRenderer.setDirections(result);
+			nextRenderer.setRouteIndex(0);
+			setRenderedRoute({
+				destinationId: focusedStation.id,
+				destinationName: focusedStation.name,
+				result,
+				selectedRouteIndex: 0,
+			});
+
+			const routeBounds = result.routes[0]?.bounds;
+			if (routeBounds) {
+				map.fitBounds(routeBounds, 80);
+			}
+		} catch (error) {
+			console.error("Failed to render map directions", error);
+			toast.error("Directions could not be loaded on the map right now.");
+		}
+	}, [currentLocation, directionsRenderer, focusedStation, googleMaps, map]);
 	const openSelectedGoogleStationInDiscovery = useCallback(() => {
 		if (!selectedGoogleStation) {
 			return;
@@ -345,6 +465,19 @@ function GoogleStationMap({
 			},
 		});
 	}, [focusedStation, navigate]);
+	const openFocusedStationInGoogleMaps = useCallback(() => {
+		if (!focusedStation) {
+			return;
+		}
+
+		openGoogleMapsDirections({
+			lat: focusedStation.lat,
+			lng: focusedStation.lng,
+			placeId: focusedStation.googlePlaceId,
+			originLat: currentLocation?.lat,
+			originLng: currentLocation?.lng,
+		});
+	}, [currentLocation?.lat, currentLocation?.lng, focusedStation]);
 
 	const setSelectedStationId = (stationId: string | null) => {
 		setSelectedGoogleStation(null);
@@ -543,8 +676,22 @@ function GoogleStationMap({
 			if (discoverySearchTimeoutRef.current !== null) {
 				window.clearTimeout(discoverySearchTimeoutRef.current);
 			}
+
+			directionsRenderer?.setMap(null);
 		};
-	}, []);
+	}, [directionsRenderer]);
+
+	useEffect(() => {
+		if (!focusedStation || !renderedRoute) {
+			return;
+		}
+
+		if (focusedStation.id === renderedRoute.destinationId) {
+			return;
+		}
+
+		setRenderedRoute(null);
+	}, [focusedStation, renderedRoute]);
 
 	useEffect(() => {
 		if (focusedStation) {
@@ -600,128 +747,213 @@ function GoogleStationMap({
 		},
 	];
 	return (
-		<GoogleMap
-			mapContainerStyle={{
-				// ...showOnlyRoadsStyle,
-				...GOOGLE_MAPS_CONTAINER_STYLE,
-				height: "calc(100dvh - 185px)",
-			}}
-			center={renderCenter}
-			zoom={
-				focusedStation ? FOCUSED_STATION_ZOOM : DEFAULT_EMPTY_MAP_ZOOM
-			}
-			onLoad={(map) => {
-				setMap(map);
-			}}
-			onUnmount={() => {
-				setMap(null);
-			}}
-			onIdle={() => {
-				updateVisibleBounds();
-				scheduleDiscoverySearch();
-			}}
-			options={mapOptions}
-		>
-			{highlightLocation && (
-				<>
-					<MarkerF
-						position={highlightLocation}
-						icon={highlightedLocationIcon ?? undefined}
-						zIndex={9_000}
-					/>
-					<OverlayViewF
-						position={highlightLocation}
-						mapPaneName="overlayMouseTarget"
-						zIndex={9_001}
-					>
-						<div className="pointer-events-none -translate-x-1/2 -translate-y-full pb-3">
-							<div className="rounded-full bg-orange-500 px-3 py-1 text-xs font-semibold text-white shadow-lg">
-								{highlightLocation.label ?? "Reported location"}
+		<div className="relative">
+			<GoogleMap
+				mapContainerStyle={{
+					// ...showOnlyRoadsStyle,
+					...GOOGLE_MAPS_CONTAINER_STYLE,
+					height: "calc(100dvh - 185px)",
+				}}
+				center={renderCenter}
+				zoom={
+					focusedStation
+						? FOCUSED_STATION_ZOOM
+						: DEFAULT_EMPTY_MAP_ZOOM
+				}
+				onLoad={(map) => {
+					setMap(map);
+				}}
+				onUnmount={() => {
+					setMap(null);
+				}}
+				onIdle={() => {
+					updateVisibleBounds();
+					scheduleDiscoverySearch();
+				}}
+				options={mapOptions}
+			>
+				{highlightLocation && (
+					<>
+						<MarkerF
+							position={highlightLocation}
+							icon={highlightedLocationIcon ?? undefined}
+							zIndex={9_000}
+						/>
+						<OverlayViewF
+							position={highlightLocation}
+							mapPaneName="overlayMouseTarget"
+							zIndex={9_001}
+						>
+							<div className="pointer-events-none -translate-x-1/2 -translate-y-full pb-3">
+								<div className="rounded-full bg-orange-500 px-3 py-1 text-xs font-semibold text-white shadow-lg">
+									{highlightLocation.label ??
+										"Reported location"}
+								</div>
 							</div>
-						</div>
-					</OverlayViewF>
-				</>
-			)}
-			{currentLocation && (
-				<>
-					<MarkerF
-						position={currentLocation}
-						icon={currentLocationIcon ?? undefined}
-						zIndex={10_000}
-					/>
-					<OverlayViewF
-						position={currentLocation}
-						mapPaneName="overlayMouseTarget"
-						zIndex={10_001}
-					>
-						<div className="pointer-events-none -translate-x-1/2 -translate-y-full pb-3.5">
-							<div className="rounded-full bg-red-600 px-3 py-1 text-[10px] font-semibold text-white shadow-lg">
-								You are here
+						</OverlayViewF>
+					</>
+				)}
+				{currentLocation && (
+					<>
+						<MarkerF
+							position={currentLocation}
+							icon={currentLocationIcon ?? undefined}
+							zIndex={10_000}
+						/>
+						<OverlayViewF
+							position={currentLocation}
+							mapPaneName="overlayMouseTarget"
+							zIndex={10_001}
+						>
+							<div className="pointer-events-none -translate-x-1/2 -translate-y-full pb-3.5">
+								<div className="rounded-full bg-red-600 px-3 py-1 text-[10px] font-semibold text-white shadow-lg">
+									You are here
+								</div>
 							</div>
+						</OverlayViewF>
+					</>
+				)}
+				{visibleStations.map((stationMarker) => (
+					<MarkerF
+						key={stationMarker.id}
+						position={stationMarker.position}
+						icon={stationMarker.icon ?? undefined}
+						onClick={() => setSelectedStationId(stationMarker.id)}
+					/>
+				))}
+				{filteredDiscoveredStations.map((station) => (
+					<MarkerF
+						key={`google-discovered-${station.placeId}`}
+						position={{ lat: station.lat, lng: station.lng }}
+						icon={
+							googleMaps
+								? buildResolvedStationMarkerIcon(
+										googleMaps,
+										{
+											name: station.name,
+											stationBrandLogoId: null,
+										},
+										stationBrandLogos,
+									)
+								: undefined
+						}
+						onClick={() => handleSelectGoogleStation(station)}
+						zIndex={4_500}
+					/>
+				))}
+				{focusedStation && selectedStationPosition ? (
+					<InfoWindowF
+						position={selectedStationPosition}
+						onCloseClick={() => {
+							setSelectedStationId(null);
+						}}
+					>
+						<StationMarkerInfoWindow
+							station={focusedStation}
+							brandAverage={focusedStationBrandAverage}
+							showDirectionsAction
+							showReportAction
+							onOpenInMaps={openFocusedStationInGoogleMaps}
+							onGetDirections={() => {
+								void renderDirectionsToFocusedStation();
+							}}
+							onReportFuelPrices={reportFocusedStation}
+						/>
+					</InfoWindowF>
+				) : null}
+				{selectedGoogleStation && selectedGoogleStationPosition ? (
+					<InfoWindowF
+						position={selectedGoogleStationPosition}
+						onCloseClick={() => handleSelectGoogleStation(null)}
+					>
+						<DiscoveredStationInfoWindow
+							station={selectedGoogleStation}
+							brandAverage={selectedGoogleStationBrandAverage}
+							showAdminAction={isAdmin}
+							onOpenInDiscovery={
+								openSelectedGoogleStationInDiscovery
+							}
+							showReportAction
+							onReportGasStation={reportSelectedGoogleStation}
+						/>
+					</InfoWindowF>
+				) : null}
+			</GoogleMap>
+			{renderedRoute && routeOptions.length > 0 ? (
+				<div className="pointer-events-auto absolute right-4 bottom-4 z-20 w-[min(360px,calc(100%-2rem))] rounded-2xl border-2 border-primary bg-card/95 p-4 shadow-sovereign backdrop-blur">
+					<div className="flex items-start justify-between gap-3">
+						<div>
+							<p className="text-sm font-semibold text-foreground">
+								Routes to {renderedRoute.destinationName}
+							</p>
+							<p className="mt-1 text-xs text-muted-foreground">
+								Choose a route to compare distance and travel
+								time.
+							</p>
 						</div>
-					</OverlayViewF>
-				</>
-			)}
-			{visibleStations.map((stationMarker) => (
-				<MarkerF
-					key={stationMarker.id}
-					position={stationMarker.position}
-					icon={stationMarker.icon ?? undefined}
-					onClick={() => setSelectedStationId(stationMarker.id)}
-				/>
-			))}
-			{filteredDiscoveredStations.map((station) => (
-				<MarkerF
-					key={`google-discovered-${station.placeId}`}
-					position={{ lat: station.lat, lng: station.lng }}
-					icon={
-						googleMaps
-							? buildResolvedStationMarkerIcon(
-									googleMaps,
-									{
-										name: station.name,
-										stationBrandLogoId: null,
-									},
-									stationBrandLogos,
-								)
-							: undefined
-					}
-					onClick={() => handleSelectGoogleStation(station)}
-					zIndex={4_500}
-				/>
-			))}
-			{focusedStation && selectedStationPosition ? (
-				<InfoWindowF
-					position={selectedStationPosition}
-					onCloseClick={() => {
-						setSelectedStationId(null);
-					}}
-				>
-					<StationMarkerInfoWindow
-						station={focusedStation}
-						brandAverage={focusedStationBrandAverage}
-						showDirectionsAction
-						showReportAction
-						onReportFuelPrices={reportFocusedStation}
-					/>
-				</InfoWindowF>
+						<Button
+							type="button"
+							variant="ghost"
+							size="icon"
+							className="h-8 w-8 shrink-0"
+							onClick={closeRenderedRoute}
+						>
+							<X className="h-4 w-4" />
+						</Button>
+					</div>
+					<div className="mt-3 flex flex-col gap-2">
+						{routeOptions.map((routeOption) => {
+							const isSelected =
+								renderedRoute.selectedRouteIndex ===
+								routeOption.index;
+
+							return (
+								<button
+									key={`${renderedRoute.destinationId}-${routeOption.index}`}
+									type="button"
+									onClick={() =>
+										applyRenderedRouteIndex(
+											routeOption.index,
+										)
+									}
+									className={`rounded-xl border px-3 py-3 text-left transition-colors ${
+										isSelected
+											? "border-primary bg-primary/10"
+											: "border-border bg-background hover:bg-secondary/40"
+									}`}
+								>
+									<div className="flex items-center justify-between gap-3">
+										<div className="min-w-0">
+											<p className="flex items-center gap-2 text-sm font-medium text-foreground">
+												<Route className="h-4 w-4 shrink-0 text-primary" />
+												<span className="truncate">
+													{routeOption.summary}
+												</span>
+											</p>
+											<p className="mt-1 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+												<span className="inline-flex items-center gap-1">
+													<Navigation className="h-3.5 w-3.5" />
+													{routeOption.distanceText}
+												</span>
+												<span className="inline-flex items-center gap-1">
+													<Clock3 className="h-3.5 w-3.5" />
+													{routeOption.durationText}
+												</span>
+											</p>
+										</div>
+										{isSelected ? (
+											<span className="rounded-full bg-primary px-2 py-1 text-[10px] font-semibold text-primary-foreground">
+												Showing
+											</span>
+										) : null}
+									</div>
+								</button>
+							);
+						})}
+					</div>
+				</div>
 			) : null}
-			{selectedGoogleStation && selectedGoogleStationPosition ? (
-				<InfoWindowF
-					position={selectedGoogleStationPosition}
-					onCloseClick={() => handleSelectGoogleStation(null)}
-				>
-					<DiscoveredStationInfoWindow
-						station={selectedGoogleStation}
-						brandAverage={selectedGoogleStationBrandAverage}
-						showAdminAction={isAdmin}
-						onOpenInDiscovery={openSelectedGoogleStationInDiscovery}
-						showReportAction
-						onReportGasStation={reportSelectedGoogleStation}
-					/>
-				</InfoWindowF>
-			) : null}
-		</GoogleMap>
+		</div>
 	);
 }
 

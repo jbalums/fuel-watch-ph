@@ -128,6 +128,43 @@ describe("StationMarkerInfoWindow", () => {
 		);
 	});
 
+	it("uses the internal directions callback when provided", () => {
+		const onGetDirections = vi.fn();
+
+		render(
+			<StationMarkerInfoWindow
+				station={station}
+				showDirectionsAction
+				onGetDirections={onGetDirections}
+			/>,
+		);
+
+		fireEvent.click(screen.getByRole("button", { name: /get directions/i }));
+
+		expect(onGetDirections).toHaveBeenCalledTimes(1);
+		expect(window.open).not.toHaveBeenCalled();
+	});
+
+	it("uses the dedicated open in maps callback when provided", () => {
+		const onOpenInMaps = vi.fn();
+		const onGetDirections = vi.fn();
+
+		render(
+			<StationMarkerInfoWindow
+				station={station}
+				showDirectionsAction
+				onGetDirections={onGetDirections}
+				onOpenInMaps={onOpenInMaps}
+			/>,
+		);
+
+		fireEvent.click(screen.getByRole("button", { name: /open in maps/i }));
+
+		expect(onOpenInMaps).toHaveBeenCalledTimes(1);
+		expect(onGetDirections).not.toHaveBeenCalled();
+		expect(window.open).not.toHaveBeenCalled();
+	});
+
 	it("renders and triggers the report action when enabled", () => {
 		const onReportFuelPrices = vi.fn();
 

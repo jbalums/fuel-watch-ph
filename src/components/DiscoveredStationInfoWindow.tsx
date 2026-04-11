@@ -22,7 +22,7 @@ export function DiscoveredStationInfoWindow({
 	onReportGasStation,
 }: DiscoveredStationInfoWindowProps) {
 	return (
-		<div className="flex max-w-[288px] flex-col gap-2 pr-3 text-sm">
+		<div className="flex max-w-[288px] flex-col gap-2 pr-3 md:pr-0 text-sm">
 			<div className="flex flex-wrap items-center gap-2">
 				<span className="font-semibold !text-black pr-2">
 					{station.name}
@@ -100,7 +100,7 @@ export function DiscoveredStationInfoWindow({
 					)}
 				</div>
 			) : null}
-			<div className="mt-1 flex flex-col gap-2">
+			<div className="mt-1 flex flex-col gap-2 px-1 pb-2">
 				{showReportAction && onReportGasStation ? (
 					<Button
 						type="button"
