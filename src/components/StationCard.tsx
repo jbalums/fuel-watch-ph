@@ -12,7 +12,10 @@ import {
 	buildGoogleMapsDirectionsUrl,
 	openGoogleMapsDirections,
 } from "@/lib/google-maps-directions";
-import { resolveStationBrandLogo } from "@/lib/station-brand-logos";
+import {
+	buildStationBrandAverage,
+	resolveStationBrandLogo,
+} from "@/lib/station-brand-logos";
 import { calculateDistanceKm } from "@/utils/distance";
 import { LguVerifiedBadge } from "./LguVerifiedBadge";
 import { PriceTrendIndicator } from "./PriceTrendIndicator";
@@ -26,18 +29,22 @@ interface StationCardProps {
 		lat: number;
 		lng: number;
 	} | null;
+	brandAverageSourceStations?: GasStation[];
 	openOnMapInNewTab?: boolean;
 	hideDistanceLabel?: boolean;
 	activeFuelFilter?: FilterFuelType;
+	showBrandAverageFallback?: boolean;
 }
 
 export function StationCard({
 	station,
 	index,
 	userLocation,
+	brandAverageSourceStations = [],
 	openOnMapInNewTab = false,
 	hideDistanceLabel = false,
 	activeFuelFilter = "All",
+	showBrandAverageFallback = false,
 }: StationCardProps) {
 	const navigate = useNavigate();
 	const location = useLocation();
@@ -91,6 +98,55 @@ export function StationCard({
 				stationBrandLogos,
 			),
 		[station.name, station.stationBrandLogoId, stationBrandLogos],
+	);
+	const hasAnyUsableStationPrice = useMemo(
+		() =>
+			fuelTypes.some((fuelType) => {
+				const price = station.prices?.[fuelType];
+				return (
+					typeof price === "number" &&
+					Number.isFinite(price) &&
+					price > 0
+				);
+			}),
+		[station.prices],
+	);
+	const brandAverage = useMemo(() => {
+		if (!showBrandAverageFallback || hasAnyUsableStationPrice) {
+			return null;
+		}
+
+		return buildStationBrandAverage(
+			{
+				name: station.name,
+				stationBrandLogoId: station.stationBrandLogoId,
+			},
+			brandAverageSourceStations.filter(
+				(candidate) => candidate.id !== station.id,
+			),
+			stationBrandLogos,
+		);
+	}, [
+		brandAverageSourceStations,
+		hasAnyUsableStationPrice,
+		showBrandAverageFallback,
+		station.name,
+		station.stationBrandLogoId,
+		station.id,
+		stationBrandLogos,
+	]);
+	const hasAnyBrandAveragePrice = useMemo(
+		() =>
+			!!brandAverage &&
+			fuelTypes.some((fuelType) => {
+				const price = brandAverage.averagePrices[fuelType];
+				return (
+					typeof price === "number" &&
+					Number.isFinite(price) &&
+					price > 0
+				);
+			}),
+		[brandAverage],
 	);
 
 	const handleOpenOnMap = () => {
@@ -188,6 +244,12 @@ export function StationCard({
 								typeof price === "number" &&
 								Number.isFinite(price) &&
 								price > 0;
+							const averagePrice =
+								brandAverage?.averagePrices[fuelType] ?? null;
+							const hasAveragePrice =
+								typeof averagePrice === "number" &&
+								Number.isFinite(averagePrice) &&
+								averagePrice > 0;
 							const availability =
 								station.fuelAvailability[fuelType] ??
 								(hasPrice ? station.status : null);
@@ -232,6 +294,15 @@ export function StationCard({
 											</span>
 										) : hasPrice ? (
 											`₱ ${price.toFixed(2)}`
+										) : hasAveragePrice ? (
+											<span className="flex flex-col">
+												<span>
+													₱ {averagePrice.toFixed(2)}
+												</span>
+												<span className="text-[10px] font-medium uppercase tracking-wide text-primary">
+													Brand Avg
+												</span>
+											</span>
 										) : (
 											<span className="opacity-10">
 												—
@@ -255,6 +326,15 @@ export function StationCard({
 							);
 						})}
 					</div>
+					{hasAnyBrandAveragePrice && brandAverage ? (
+						<p className="mt-3 text-[11px] text-muted-foreground">
+							Based on similar{" "}
+							<span className="font-medium text-foreground">
+								{brandAverage.brandName}
+							</span>{" "}
+							stations.
+						</p>
+					) : null}
 					<div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground mt-2">
 						<Button
 							type="button"

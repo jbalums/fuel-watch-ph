@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 
 interface StationResultsListProps {
 	stations: GasStation[];
+	brandAverageSourceStations?: GasStation[];
 	loading: boolean;
 	emptyMessage?: string;
 	emptyActionLabel?: string;
@@ -17,10 +18,12 @@ interface StationResultsListProps {
 	openOnMapInNewTab?: boolean;
 	hideDistanceLabel?: boolean;
 	activeFuelFilter?: FilterFuelType;
+	showBrandAverageFallback?: boolean;
 }
 
 export function StationResultsList({
 	stations,
+	brandAverageSourceStations = [],
 	loading,
 	emptyMessage = "No stations found matching your criteria.",
 	emptyActionLabel,
@@ -31,6 +34,7 @@ export function StationResultsList({
 	openOnMapInNewTab = false,
 	hideDistanceLabel = false,
 	activeFuelFilter = "All",
+	showBrandAverageFallback = false,
 }: StationResultsListProps) {
 	const { latitude, longitude } = useUserLocation();
 	const userLocation = useMemo(
@@ -103,9 +107,11 @@ export function StationResultsList({
 							station={station}
 							index={index}
 							userLocation={userLocation}
+							brandAverageSourceStations={brandAverageSourceStations}
 							openOnMapInNewTab={openOnMapInNewTab}
 							hideDistanceLabel={hideDistanceLabel}
 							activeFuelFilter={activeFuelFilter}
+							showBrandAverageFallback={showBrandAverageFallback}
 						/>
 					))}
 					{stations.length === 0 && (

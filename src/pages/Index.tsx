@@ -31,6 +31,7 @@ import { StationResultsList } from "@/components/StationResultsList";
 import { useCurrentLocation } from "@/hooks/useCurrentLocation";
 import { useGeoReferences } from "@/hooks/useGeoReferences";
 import { usePublicStationSummary } from "@/hooks/usePublicStationSummary";
+import { useStations } from "@/hooks/useStations";
 import { useCurrentUserScope } from "@/hooks/useCurrentUserScope";
 import { useStationBrowse } from "@/hooks/useStationBrowse";
 import { useUserAccess } from "@/hooks/useUserAccess";
@@ -92,6 +93,7 @@ export default function Index() {
 		provinceCode: selectedProvinceCode,
 	});
 	const { data: stationSummary } = usePublicStationSummary();
+	const { data: allStations = [] } = useStations();
 	const [currentPage, setCurrentPage] = useState(1);
 	const hasInitializedScopeFilters = useRef(false);
 	const hasManualLocationOverrideRef = useRef(false);
@@ -112,7 +114,7 @@ export default function Index() {
 		pageSize: STATIONS_PER_PAGE,
 		provinceCode: selectedProvinceCode,
 		cityMunicipalityCode: selectedCityMunicipalityCode,
-		excludeUnpriced: true,
+		excludeUnpriced: false,
 	});
 	const availableCities = selectedProvinceCode
 		? (citiesByProvince.get(selectedProvinceCode) ?? [])
@@ -341,6 +343,7 @@ export default function Index() {
 			) : null}
 			<StationResultsList
 				stations={stations}
+				brandAverageSourceStations={allStations}
 				loading={stationsLoading}
 				emptyMessage={emptyMessage}
 				emptyActionLabel={
@@ -357,6 +360,7 @@ export default function Index() {
 				totalPages={totalPages}
 				onPageChange={setCurrentPage}
 				activeFuelFilter={fuelFilter}
+				showBrandAverageFallback
 			/>
 			<AlertDialog
 				open={locationPromptOpen}
