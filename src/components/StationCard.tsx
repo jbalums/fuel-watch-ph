@@ -156,7 +156,7 @@ export function StationCard({
 									<img
 										src={matchedBrandLogo.logoUrl}
 										alt={`${matchedBrandLogo.brandName} logo`}
-										className="h-24 w-24 absolute right-2 top-12 opacity-10"
+										className="h-24 w-24 absolute right-2 top-12 opacity-20"
 										loading="lazy"
 									/>
 								) : null}
@@ -181,7 +181,7 @@ export function StationCard({
 				</div>
 
 				<div className="flex flex-col">
-					<div className="grid grid-cols-3 xl:grid-cols-5 gap-4">
+					<div className="grid grid-cols-3 xl:grid-cols-5 gap-x-3 gap-y-3">
 						{fuelTypes.map((fuelType) => {
 							const price = station.prices?.[fuelType];
 							const hasPrice =
@@ -191,8 +191,8 @@ export function StationCard({
 							const availability =
 								station.fuelAvailability[fuelType] ??
 								(hasPrice ? station.status : null);
-							const shouldShowRow =
-								availability !== null || hasPrice;
+							const shouldShowRow = true;
+							//								availability !== null || hasPrice;
 
 							return (
 								<div
@@ -217,20 +217,26 @@ export function StationCard({
 										) : (
 											fuelType
 										)}
-										{availability ? (
+										{/* {availability ? (
 											<StatusBadge
 												status={availability}
 												compact
 												className="ml-1 px-1 !rounded-sm !py-1 text-[8px]"
 											/>
-										) : null}
+										) : null} */}
 									</span>
-									<p className="mt-0.5 text-base font-bold tabular-nums text-foreground md:text-lg">
-										{availability === "Out"
-											? "—"
-											: hasPrice
-												? `₱ ${price.toFixed(2)}`
-												: "—"}
+									<p className="mt-0 text-base font-bold tabular-nums text-foreground md:text-lg">
+										{availability === "Out" ? (
+											<span className="opacity-10">
+												—
+											</span>
+										) : hasPrice ? (
+											`₱ ${price.toFixed(2)}`
+										) : (
+											<span className="opacity-10">
+												—
+											</span>
+										)}
 									</p>
 
 									<div className="">

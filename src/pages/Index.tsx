@@ -1,9 +1,7 @@
 import { useEffect, useRef, useState } from "react";
-import { AlertBanner } from "@/components/AlertBanner";
 import { HeroStatus } from "@/components/HeroStatus";
 import { SearchFilter } from "@/components/SearchFilter";
 import { StationResultsList } from "@/components/StationResultsList";
-import { mockAlerts } from "@/data/mockStations";
 import { useGeoReferences } from "@/hooks/useGeoReferences";
 import { usePublicStationSummary } from "@/hooks/usePublicStationSummary";
 import { useCurrentUserScope } from "@/hooks/useCurrentUserScope";
@@ -43,19 +41,23 @@ export default function Index() {
 		cityMunicipalityCode: selectedCityMunicipalityCode,
 	});
 	const availableCities = selectedProvinceCode
-		? citiesByProvince.get(selectedProvinceCode) ?? []
+		? (citiesByProvince.get(selectedProvinceCode) ?? [])
 		: [];
 	const totalPages = Math.max(1, Math.ceil(totalCount / STATIONS_PER_PAGE));
 
 	useEffect(() => {
-		if (!isLguOperator || !currentUserScope || hasInitializedScopeFilters.current) {
+		if (
+			!isLguOperator ||
+			!currentUserScope ||
+			hasInitializedScopeFilters.current
+		) {
 			return;
 		}
 
 		setSelectedProvinceCode(currentUserScope.provinceCode);
 		setSelectedCityMunicipalityCode(
 			currentUserScope.scopeType === "city"
-				? currentUserScope.cityMunicipalityCode ?? ""
+				? (currentUserScope.cityMunicipalityCode ?? "")
 				: "",
 		);
 		hasInitializedScopeFilters.current = true;
@@ -85,7 +87,6 @@ export default function Index() {
 	return (
 		<>
 			<HeroStatus summary={stationSummary ?? null} />
-			<AlertBanner alerts={mockAlerts} />
 			<SearchFilter
 				searchQuery={searchQuery}
 				onSearchChange={setSearchQuery}

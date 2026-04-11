@@ -211,7 +211,7 @@ export default function EmbeddedStationsPage() {
 	return (
 		<div ref={embedRootRef} className="bg-background p-3 md:p-5 relative">
 			<div className="mx-auto max-w-5xl">
-				<div className="h-12 pt-1 w-full top-0 backdrop-blur-lg px-4 sticky flex z-[2000] ">
+				<div className="h-12 pt-1 w-full top-0 backdrop-blur-lg px-1 lg:px-4 sticky flex z-[2000] ">
 					<a
 						href="https://fuelwatchph.com/"
 						target="_blank"
@@ -239,7 +239,7 @@ export default function EmbeddedStationsPage() {
 							className="inline-flex h-8 shrink-0 items-center gap-2 rounded-sm border border-primary dark:border-border bg-surface-alt px-2 text-xs font-medium text-primary dark:text-muted-foreground sovereign-ease transition-colors hover:text-foreground"
 						>
 							<Map className="h-4 w-4" />
-							Map
+							Map View
 						</a>
 						{fullscreenSupported ? (
 							<button
@@ -257,9 +257,7 @@ export default function EmbeddedStationsPage() {
 								) : (
 									<Expand className="h-4 w-4" />
 								)}
-								{isFullscreen
-									? "Exit fullscreen"
-									: "Fullscreen"}
+								{isFullscreen ? "" : ""}
 							</button>
 						) : null}
 					</div>
