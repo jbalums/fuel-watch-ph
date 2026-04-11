@@ -156,7 +156,7 @@ export function StationCard({
 									<img
 										src={matchedBrandLogo.logoUrl}
 										alt={`${matchedBrandLogo.brandName} logo`}
-										className="h-24 w-24 absolute right-1 top-12 opacity-20"
+										className="h-24 w-24 absolute right-1 top-12 opacity-10"
 										loading="lazy"
 									/>
 								) : null}
@@ -166,8 +166,8 @@ export function StationCard({
 							</div>
 						</div>
 						<div className="mt-1 flex items-start gap-1.5 text-muted-foreground">
-							<MapPin className="h-3.5 w-3.5 mt-[3px] shrink-0" />
-							<span className=" text-sm pr-4 line-clamp-1">
+							<MapPin className="h-2.5 w-2.5 mt-[3px] shrink-0" />
+							<span className="text-[11px] pr-4 line-clamp-1">
 								{station.address}
 							</span>
 						</div>
@@ -180,7 +180,7 @@ export function StationCard({
 					</div>
 				</div>
 
-				<div className="flex flex-col">
+				<div className="flex flex-col mt-1 mb-2">
 					<div className="grid grid-cols-3 xl:grid-cols-5 gap-x-3 gap-y-3">
 						{fuelTypes.map((fuelType) => {
 							const price = station.prices?.[fuelType];
