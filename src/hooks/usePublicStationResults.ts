@@ -14,6 +14,7 @@ interface UsePublicStationResultsOptions {
 	fuelFilter?: FilterFuelType;
 	statusFilter?: StatusFilter;
 	sortBy?: SortOption;
+	excludeUnpriced?: boolean;
 	page: number;
 	pageSize: number;
 	provinceCode?: string;
@@ -75,6 +76,7 @@ async function fetchPublicStationResults({
 	pageSize,
 	userLat,
 	userLng,
+	excludeUnpriced,
 }: {
 	searchQuery: string;
 	fuelFilter: FilterFuelType;
@@ -86,6 +88,7 @@ async function fetchPublicStationResults({
 	pageSize: number;
 	userLat?: number;
 	userLng?: number;
+	excludeUnpriced?: boolean;
 }) {
 	const { data, error } = await supabase.rpc("list_public_gas_stations", {
 		_search: searchQuery.trim() || null,
@@ -98,6 +101,7 @@ async function fetchPublicStationResults({
 		_page_size: pageSize,
 		_user_lat: userLat ?? null,
 		_user_lng: userLng ?? null,
+		_exclude_unpriced: excludeUnpriced ?? false,
 	});
 
 	if (error) {
@@ -126,6 +130,7 @@ export function usePublicStationResults({
 	pageSize,
 	provinceCode,
 	cityMunicipalityCode,
+	excludeUnpriced = false,
 	searchDebounceMs = 300,
 }: UsePublicStationResultsOptions) {
 	const { coordinates: currentLocation } = useCurrentLocation();
@@ -145,6 +150,7 @@ export function usePublicStationResults({
 			cityMunicipalityCode ?? "",
 			page,
 			pageSize,
+			excludeUnpriced,
 			fuelFilter === "All" ? (currentLocation?.lat ?? null) : null,
 			fuelFilter === "All" ? (currentLocation?.lng ?? null) : null,
 		],
@@ -158,6 +164,7 @@ export function usePublicStationResults({
 				cityMunicipalityCode,
 				page,
 				pageSize,
+				excludeUnpriced,
 				userLat:
 					fuelFilter === "All" ? currentLocation?.lat : undefined,
 				userLng:

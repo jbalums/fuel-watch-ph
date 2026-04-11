@@ -39,6 +39,7 @@ export default function Index() {
 		pageSize: STATIONS_PER_PAGE,
 		provinceCode: selectedProvinceCode,
 		cityMunicipalityCode: selectedCityMunicipalityCode,
+		excludeUnpriced: true,
 	});
 	const availableCities = selectedProvinceCode
 		? (citiesByProvince.get(selectedProvinceCode) ?? [])

@@ -788,6 +788,7 @@ export type Database = {
           _search?: string | null
           _sort_by?: string | null
           _status_filter?: string | null
+          _exclude_unpriced?: boolean | null
           _user_lat?: number | null
           _user_lng?: number | null
         }

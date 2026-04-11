@@ -12,6 +12,7 @@ interface UseStationBrowseOptions {
 	pageSize: number;
 	provinceCode?: string;
 	cityMunicipalityCode?: string;
+	excludeUnpriced?: boolean;
 }
 
 function isFuelFilter(value: string | null): value is FilterFuelType {
@@ -31,6 +32,7 @@ export function useStationBrowse({
 	pageSize,
 	provinceCode,
 	cityMunicipalityCode,
+	excludeUnpriced = false,
 }: UseStationBrowseOptions) {
 	const [searchParams, setSearchParams] = useSearchParams();
 
@@ -71,6 +73,7 @@ export function useStationBrowse({
 		pageSize,
 		provinceCode,
 		cityMunicipalityCode,
+		excludeUnpriced,
 	});
 
 	return {
