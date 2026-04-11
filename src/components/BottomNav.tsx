@@ -51,7 +51,7 @@ export function BottomNav({
 
 	return (
 		<div className="sticky bottom-4 flex items-center justify-center pt-4">
-			<nav className=" bottom-4 z-50 flex gap-1 rounded-2xl p-1.5 surface-glass shadow-sovereign-lg">
+			<nav className="bottom-4 z-50 flex gap-1 rounded-2xl p-1.5 surface-glass shadow-sovereign-lg">
 				{tabs.map(({ id, path, icon: Icon, label }) => (
 					<button
 						key={id}
@@ -70,7 +70,7 @@ export function BottomNav({
 							"flex flex-col items-center gap-0.5 rounded-md px-4 md:px-5 py-2 text-xs font-medium sovereign-ease transition-colors duration-300 relative",
 							isActivePath(path)
 								? "bg-primary text-primary-foreground border border-amber-500"
-								: "text-muted-foreground hover:text-foreground",
+								: "text-muted-foreground dark:text-white hover:text-foreground",
 						)}
 					>
 						<Icon className="h-5 w-5" />

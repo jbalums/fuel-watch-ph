@@ -63,7 +63,7 @@ export function SearchFilter({
 	}, [hasActiveGeoFilter]);
 
 	return (
-		<div className="flex flex-col gap-3">
+		<div className="flex flex-col gap-1">
 			<div className="flex items-center gap-2">
 				<input
 					type="text"
@@ -125,7 +125,7 @@ export function SearchFilter({
 						key={type}
 						onClick={() => onFuelFilterChange(type)}
 						className={cn(
-							"shrink-0 rounded-full px-3 py-1.5 text-sm sovereign-ease transition-colors",
+							"shrink-0 rounded-sm px-2 py-1 text-[11px] sovereign-ease transition-colors",
 							fuelFilter === type
 								? "bg-primary text-primary-foreground"
 								: "bg-surface-alt text-muted-foreground hover:text-foreground",
@@ -136,22 +136,6 @@ export function SearchFilter({
 				))}
 
 				<div className="md:ml-auto flex shrink-0 items-center gap-2">
-					{showStatusFilter ? (
-						<select
-							value={statusFilter}
-							onChange={(e) =>
-								onStatusFilterChange(e.target.value as StatusFilter)
-							}
-							className="rounded-full bg-surface-alt px-3 py-1.5 text-sm text-foreground outline-none focus:ring-2 focus:ring-primary/20 sovereign-ease transition-all"
-						>
-							{statusOptions.map((status) => (
-								<option key={status} value={status}>
-									{status === "All" ? "All Statuses" : status}
-								</option>
-							))}
-						</select>
-					) : null}
-
 					<div className="flex shrink-0 items-center gap-1">
 						<ArrowDownUp
 							className={cn(
@@ -167,7 +151,7 @@ export function SearchFilter({
 								onClick={() => onSortChange(opt.value)}
 								disabled={!priceSortEnabled}
 								className={cn(
-									"rounded-full px-3 py-1.5 text-sm sovereign-ease transition-colors",
+									"rounded-sm px-2 py-1 text-[11px] sovereign-ease transition-colors",
 									priceSortEnabled && sortBy === opt.value
 										? "bg-accent text-accent-foreground"
 										: priceSortEnabled

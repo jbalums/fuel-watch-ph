@@ -205,7 +205,7 @@ export function AppShellLayout() {
 				</AlertDialogContent>
 			</AlertDialog>
 
-			<main className="container flex flex-col gap-5 px-5 pt-5">
+			<main className="container flex flex-col gap-5 px-5 pt-1 lg:pt-5">
 				<Outlet />
 			</main>
 

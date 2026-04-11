@@ -35,6 +35,23 @@ vi.mock("react-router-dom", async () => {
 	};
 });
 
+vi.mock("@/hooks/useStationBrandLogos", () => ({
+	useStationBrandLogos: () => ({
+		data: [
+			{
+				id: "brand-shell",
+				brandName: "Shell",
+				matchKeywords: ["Shell"],
+				logoPath: "station-brand-logos/shell.png",
+				logoUrl: "https://example.com/shell-logo.png",
+				isActive: true,
+				createdAt: new Date().toISOString(),
+				updatedAt: new Date().toISOString(),
+			},
+		],
+	}),
+}));
+
 const station: GasStation = {
 	id: "station-1",
 	name: "FuelWatch Central",
@@ -88,6 +105,12 @@ const station: GasStation = {
 	reportCount: 4,
 };
 
+const shellStation: GasStation = {
+	...station,
+	id: "station-shell",
+	name: "Shell Tagbilaran",
+};
+
 describe("StationCard", () => {
 	beforeEach(() => {
 		mockNavigate.mockReset();
@@ -130,5 +153,22 @@ describe("StationCard", () => {
 		expect(
 			screen.getByText(/get directions/i, { selector: "button" }),
 		).toBeDisabled();
+	});
+
+	it("shows the matched station logo when the brand is recognized", () => {
+		render(
+			<MemoryRouter>
+				<StationCard
+					station={shellStation}
+					index={0}
+					userLocation={null}
+				/>
+			</MemoryRouter>,
+		);
+
+		expect(screen.getByAltText(/shell logo/i)).toHaveAttribute(
+			"src",
+			"https://example.com/shell-logo.png",
+		);
 	});
 });
