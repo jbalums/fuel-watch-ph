@@ -9,11 +9,11 @@ export function LguVerifiedBadge({ className }: LguVerifiedBadgeProps) {
 	return (
 		<span
 			className={cn(
-				"inline-flex items-center gap-1 rounded-full bg-yellow-300/50 dark:bg-amber-950 px-2 py-1 text-xs font-medium text-red-600 dark:text-amber-300",
+				"inline-flex items-center gap-1 rounded-full shadow-sm shadow-amber-400 bg-yellow-300/80 dark:bg-amber-950 px-2 py-1 text-[10px] font-medium text-red-600 dark:text-amber-300",
 				className,
 			)}
 		>
-			<BadgeCheck className="h-4 w-4" />
+			<BadgeCheck className="h-3 w-3" />
 			LGU Verified
 		</span>
 	);

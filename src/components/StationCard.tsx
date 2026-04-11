@@ -156,7 +156,7 @@ export function StationCard({
 									<img
 										src={matchedBrandLogo.logoUrl}
 										alt={`${matchedBrandLogo.brandName} logo`}
-										className="h-24 w-24 absolute right-2 top-2 opacity-10"
+										className="h-24 w-24 absolute right-2 top-12 opacity-10"
 										loading="lazy"
 									/>
 								) : null}
@@ -172,7 +172,7 @@ export function StationCard({
 							</span>
 						</div>
 						{(station.isLguVerified || station.isVerified) && (
-							<div className="mt-3 flex flex-wrap items-center gap-2">
+							<div className="absolute top-2 right-2 mt-3 flex flex-wrap items-center gap-2">
 								{station.isLguVerified && <LguVerifiedBadge />}
 								{station.isVerified && <VerifiedStationBadge />}
 							</div>
@@ -181,7 +181,7 @@ export function StationCard({
 				</div>
 
 				<div className="flex flex-col">
-					<div className="grid grid-cols-3 lg:grid-cols-5 gap-4">
+					<div className="grid grid-cols-3 xl:grid-cols-5 gap-4">
 						{fuelTypes.map((fuelType) => {
 							const price = station.prices?.[fuelType];
 							const hasPrice =
@@ -225,7 +225,7 @@ export function StationCard({
 											/>
 										) : null}
 									</span>
-									<p className="mt-0.5 text-base font-bold tabular-nums text-foreground md:text-xl">
+									<p className="mt-0.5 text-base font-bold tabular-nums text-foreground md:text-lg">
 										{availability === "Out"
 											? "—"
 											: hasPrice
