@@ -25,7 +25,7 @@ export function PriceTrendIndicator({
 	return (
 		<span
 			className={cn(
-				"mt-1 inline-flex items-center gap-1 text-[11px] font-medium tabular-nums",
+				"-mt-2 inline-flex items-center gap-1 text-[11px] font-medium tabular-nums",
 				isIncrease
 					? "text-rose-600 dark:text-rose-400"
 					: "text-emerald-600 dark:text-emerald-400",
@@ -37,7 +37,7 @@ export function PriceTrendIndicator({
 			) : (
 				<ArrowDownRight className="h-3 w-3" />
 			)}
-			{isIncrease ? "+" : "-"}₱{Math.abs(normalizedDelta).toFixed(2)}
+			{isIncrease ? "+" : "-"}₱ {Math.abs(normalizedDelta).toFixed(2)}
 		</span>
 	);
 }

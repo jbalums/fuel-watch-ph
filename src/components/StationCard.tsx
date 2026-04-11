@@ -239,7 +239,7 @@ export function StationCard({
 										)}
 									</p>
 
-									<div className="">
+									<div className="h-4 flex items-center justify-start">
 										<PriceTrendIndicator
 											delta={
 												!isFuelSellable(availability) ||
