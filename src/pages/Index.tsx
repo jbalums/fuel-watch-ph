@@ -1,5 +1,4 @@
-import { useEffect, useRef, useState } from "react";
-import { useJsApiLoader } from "@react-google-maps/api";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
 	AlertDialog,
@@ -11,7 +10,21 @@ import {
 	AlertDialogHeader,
 	AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Loader2, Map, MapPin } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+	Command,
+	CommandEmpty,
+	CommandInput,
+	CommandItem,
+	CommandList,
+} from "@/components/ui/command";
+import {
+	Popover,
+	PopoverContent,
+	PopoverTrigger,
+} from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
+import { Check, ChevronsUpDown, Loader2, Map, MapPin } from "lucide-react";
 import { HeroStatus } from "@/components/HeroStatus";
 import { SearchFilter } from "@/components/SearchFilter";
 import { StationResultsList } from "@/components/StationResultsList";
@@ -21,37 +34,25 @@ import { usePublicStationSummary } from "@/hooks/usePublicStationSummary";
 import { useCurrentUserScope } from "@/hooks/useCurrentUserScope";
 import { useStationBrowse } from "@/hooks/useStationBrowse";
 import { useUserAccess } from "@/hooks/useUserAccess";
-import { detectGeoScopeFromAddress } from "@/lib/geo-detection";
-import {
-	formatCoordinate,
-	GOOGLE_MAPS_API_KEY,
-	GOOGLE_MAPS_LIBRARIES,
-	GOOGLE_MAPS_SCRIPT_ID,
-	reverseGeocodeCoordinates,
-} from "@/lib/google-maps";
 
 const STATIONS_PER_PAGE = 10;
 const HOMEPAGE_LOCATION_PROMPT_DISMISSED_KEY =
 	"homepage_location_prompt_dismissed";
+const HOMEPAGE_PROVINCE_PROMPT_DISMISSED_KEY =
+	"homepage_province_prompt_dismissed";
 
 export default function Index() {
 	const navigate = useNavigate();
-	const { isLoaded: isGoogleMapsLoaded, loadError: googleMapsLoadError } =
-		useJsApiLoader({
-			id: GOOGLE_MAPS_SCRIPT_ID,
-			googleMapsApiKey: GOOGLE_MAPS_API_KEY,
-			libraries: GOOGLE_MAPS_LIBRARIES,
-			preventGoogleFontsLoading: true,
-		});
 	const [selectedProvinceCode, setSelectedProvinceCode] = useState("");
 	const [selectedCityMunicipalityCode, setSelectedCityMunicipalityCode] =
 		useState("");
 	const [locationPromptOpen, setLocationPromptOpen] = useState(false);
-	const [autoDetectedProvinceCode, setAutoDetectedProvinceCode] =
-		useState("");
-	const [detectedLocationAddress, setDetectedLocationAddress] = useState("");
-	const [isResolvingLocationAddress, setIsResolvingLocationAddress] =
+	const [provincePromptOpen, setProvincePromptOpen] = useState(false);
+	const [provincePromptPopoverOpen, setProvincePromptPopoverOpen] =
 		useState(false);
+	const [pendingProvinceCode, setPendingProvinceCode] = useState("");
+	const [confirmedCurrentProvinceCode, setConfirmedCurrentProvinceCode] =
+		useState("");
 	const [locationPromptDismissed, setLocationPromptDismissed] = useState(
 		() => {
 			if (typeof window === "undefined") {
@@ -65,6 +66,19 @@ export default function Index() {
 			);
 		},
 	);
+	const [provincePromptDismissed, setProvincePromptDismissed] = useState(
+		() => {
+			if (typeof window === "undefined") {
+				return false;
+			}
+
+			return (
+				window.localStorage.getItem(
+					HOMEPAGE_PROVINCE_PROMPT_DISMISSED_KEY,
+				) === "true"
+			);
+		},
+	);
 	const { isLguOperator } = useUserAccess();
 	const {
 		coordinates: currentLocation,
@@ -74,15 +88,12 @@ export default function Index() {
 		retryLocation,
 	} = useCurrentLocation();
 	const { data: currentUserScope } = useCurrentUserScope(isLguOperator);
-	const shouldLoadAllCitiesForDetection = !isLguOperator && !!currentLocation;
-	const { provinces, cities, citiesByProvince } = useGeoReferences({
+	const { provinces, citiesByProvince } = useGeoReferences({
 		provinceCode: selectedProvinceCode,
-		includeAllCities: shouldLoadAllCitiesForDetection,
 	});
 	const { data: stationSummary } = usePublicStationSummary();
 	const [currentPage, setCurrentPage] = useState(1);
 	const hasInitializedScopeFilters = useRef(false);
-	const hasAttemptedProvinceDetectionRef = useRef(false);
 	const hasManualLocationOverrideRef = useRef(false);
 	const {
 		stations,
@@ -127,113 +138,27 @@ export default function Index() {
 	}, [currentUserScope, isLguOperator]);
 
 	useEffect(() => {
-		if (!currentLocation) {
-			setDetectedLocationAddress("");
-			setIsResolvingLocationAddress(false);
-			return;
-		}
-
 		if (
-			GOOGLE_MAPS_API_KEY &&
-			!isGoogleMapsLoaded &&
-			!googleMapsLoadError
+			!currentLocation ||
+			isLguOperator ||
+			selectedProvinceCode ||
+			provincePromptDismissed ||
+			hasManualLocationOverrideRef.current
 		) {
-			setIsResolvingLocationAddress(true);
-			setDetectedLocationAddress(
-				`${formatCoordinate(currentLocation.lat)}, ${formatCoordinate(
-					currentLocation.lng,
-				)}`,
-			);
+			setProvincePromptOpen(false);
 			return;
 		}
 
-		let isCancelled = false;
+		if (provinces.length === 0) {
+			return;
+		}
 
-		const syncDetectedLocation = async () => {
-			setIsResolvingLocationAddress(true);
-
-			try {
-				const address =
-					googleMapsLoadError || !GOOGLE_MAPS_API_KEY
-						? null
-						: await reverseGeocodeCoordinates(currentLocation);
-				if (isCancelled) {
-					return;
-				}
-
-				setDetectedLocationAddress(
-					address ||
-						`${formatCoordinate(currentLocation.lat)}, ${formatCoordinate(
-							currentLocation.lng,
-						)}`,
-				);
-
-				if (isLguOperator || provinces.length === 0) {
-					return;
-				}
-
-				if (
-					hasAttemptedProvinceDetectionRef.current ||
-					hasManualLocationOverrideRef.current
-				) {
-					return;
-				}
-
-				if (selectedProvinceCode) {
-					hasAttemptedProvinceDetectionRef.current = true;
-					return;
-				}
-
-				hasAttemptedProvinceDetectionRef.current = true;
-
-				if (!address) {
-					return;
-				}
-
-				const detectedScope = detectGeoScopeFromAddress({
-					address,
-					provinces,
-					cities,
-				});
-
-				if (!detectedScope?.provinceCode || isCancelled) {
-					return;
-				}
-
-				setSelectedProvinceCode(detectedScope.provinceCode);
-				setSelectedCityMunicipalityCode("");
-				setAutoDetectedProvinceCode(detectedScope.provinceCode);
-			} catch (error) {
-				if (!isCancelled) {
-					setDetectedLocationAddress(
-						`${formatCoordinate(currentLocation.lat)}, ${formatCoordinate(
-							currentLocation.lng,
-						)}`,
-					);
-					console.error(
-						"Failed to sync homepage location details",
-						error,
-					);
-				}
-			} finally {
-				if (!isCancelled) {
-					setIsResolvingLocationAddress(false);
-				}
-			}
-		};
-
-		void syncDetectedLocation();
-
-		return () => {
-			isCancelled = true;
-		};
+		setProvincePromptOpen(true);
 	}, [
 		currentLocation,
-		googleMapsLoadError,
-		isGoogleMapsLoaded,
 		isLguOperator,
-		cities,
-		provinces,
+		provincePromptDismissed,
+		provinces.length,
 		selectedProvinceCode,
 	]);
 
@@ -293,22 +218,35 @@ export default function Index() {
 			window.localStorage.removeItem(
 				HOMEPAGE_LOCATION_PROMPT_DISMISSED_KEY,
 			);
+			window.localStorage.removeItem(
+				HOMEPAGE_PROVINCE_PROMPT_DISMISSED_KEY,
+			);
 		}
 
-		hasAttemptedProvinceDetectionRef.current = false;
 		setLocationPromptDismissed(false);
+		setProvincePromptDismissed(false);
 		await retryLocation();
 	};
 
-	const detectedProvinceName =
-		provinces.find((province) => province.code === autoDetectedProvinceCode)
+	const selectedProvinceName =
+		provinces.find((province) => province.code === selectedProvinceCode)
 			?.name ?? "";
+	const confirmedCurrentProvinceName =
+		provinces.find(
+			(province) => province.code === confirmedCurrentProvinceCode,
+		)?.name ?? "";
+	const selectedProvinceOption = useMemo(
+		() =>
+			provinces.find((province) => province.code === pendingProvinceCode) ??
+			null,
+		[pendingProvinceCode, provinces],
+	);
 	const shouldShowMapFallback =
 		!stationsLoading &&
 		stations.length === 0 &&
 		!!currentLocation &&
-		!!autoDetectedProvinceCode &&
-		selectedProvinceCode === autoDetectedProvinceCode;
+		!!confirmedCurrentProvinceCode &&
+		selectedProvinceCode === confirmedCurrentProvinceCode;
 	const emptyMessage = shouldShowMapFallback
 		? "We couldn't find listed stations yet in your current province. Open the live map to explore a wider area and discover nearby fuel stations."
 		: "No stations found matching your criteria.";
@@ -326,6 +264,40 @@ export default function Index() {
 			pathname: "/map",
 			search: params.toString() ? `?${params.toString()}` : "",
 		});
+	};
+
+	const handleDismissProvincePrompt = () => {
+		if (typeof window !== "undefined") {
+			window.localStorage.setItem(
+				HOMEPAGE_PROVINCE_PROMPT_DISMISSED_KEY,
+				"true",
+			);
+		}
+
+		setProvincePromptDismissed(true);
+		setProvincePromptOpen(false);
+		setProvincePromptPopoverOpen(false);
+	};
+
+	const handleConfirmProvincePrompt = () => {
+		if (!pendingProvinceCode) {
+			return;
+		}
+
+		if (typeof window !== "undefined") {
+			window.localStorage.setItem(
+				HOMEPAGE_PROVINCE_PROMPT_DISMISSED_KEY,
+				"true",
+			);
+		}
+
+		hasManualLocationOverrideRef.current = true;
+		setSelectedProvinceCode(pendingProvinceCode);
+		setSelectedCityMunicipalityCode("");
+		setConfirmedCurrentProvinceCode(pendingProvinceCode);
+		setProvincePromptDismissed(true);
+		setProvincePromptOpen(false);
+		setProvincePromptPopoverOpen(false);
 	};
 
 	return (
@@ -347,7 +319,7 @@ export default function Index() {
 				autoOpenGeoFiltersOnActive={false}
 				onProvinceChange={(provinceCode) => {
 					hasManualLocationOverrideRef.current = true;
-					setAutoDetectedProvinceCode("");
+					setConfirmedCurrentProvinceCode("");
 					setSelectedProvinceCode(provinceCode);
 					setSelectedCityMunicipalityCode("");
 				}}
@@ -358,12 +330,12 @@ export default function Index() {
 			/>
 
 			{stations.length === 0 &&
-			detectedProvinceName &&
-			selectedProvinceCode === autoDetectedProvinceCode ? (
+			confirmedCurrentProvinceName &&
+			selectedProvinceCode === confirmedCurrentProvinceCode ? (
 				<div className="rounded-xl border border-primary/20 bg-primary/5 px-4 py-3 text-sm text-primary">
 					Showing stations in your current province:{" "}
 					<span className="font-semibold">
-						{detectedProvinceName}
+						{confirmedCurrentProvinceName}
 					</span>
 				</div>
 			) : null}
@@ -438,6 +410,114 @@ export default function Index() {
 							) : (
 								"Try again"
 							)}
+						</AlertDialogAction>
+					</AlertDialogFooter>
+				</AlertDialogContent>
+			</AlertDialog>
+			<AlertDialog
+				open={provincePromptOpen}
+				onOpenChange={(open) => {
+					if (!open) {
+						handleDismissProvincePrompt();
+					}
+				}}
+			>
+				<AlertDialogContent>
+					<AlertDialogHeader>
+						<AlertDialogTitle className="flex items-center gap-2">
+							<MapPin className="h-5 w-5 text-primary" />
+							Which province are you currently in?
+						</AlertDialogTitle>
+						<AlertDialogDescription>
+							Choose your current province so FuelWatch PH can
+							show stations near you without using extra Google
+							Maps location lookups.
+						</AlertDialogDescription>
+					</AlertDialogHeader>
+					<div className="space-y-3 rounded-xl border border-border bg-secondary/30 p-4">
+						<div className="space-y-1.5">
+							<label className="text-sm font-medium text-foreground">
+								Current province
+							</label>
+							<Popover
+								open={provincePromptPopoverOpen}
+								onOpenChange={setProvincePromptPopoverOpen}
+							>
+								<PopoverTrigger asChild>
+									<Button
+										type="button"
+										variant="outline"
+										role="combobox"
+										aria-expanded={provincePromptPopoverOpen}
+										className={cn(
+											"h-auto min-h-12 w-full justify-between rounded-xl border-border bg-background px-4 py-3 text-sm font-normal text-foreground hover:bg-background",
+											!selectedProvinceOption &&
+												"text-muted-foreground",
+										)}
+									>
+										<span className="truncate text-left">
+											{selectedProvinceOption?.name ??
+												"Select your current province"}
+										</span>
+										<ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+									</Button>
+								</PopoverTrigger>
+								<PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
+									<Command>
+										<CommandInput placeholder="Search provinces..." />
+										<CommandList>
+											<CommandEmpty>
+												No provinces found.
+											</CommandEmpty>
+											{provinces.map((province) => (
+												<CommandItem
+													key={province.code}
+													value={`${province.name} ${province.code}`}
+													onSelect={() => {
+														setPendingProvinceCode(
+															province.code,
+														);
+														setProvincePromptPopoverOpen(
+															false,
+														);
+													}}
+												>
+													<Check
+														className={cn(
+															"mr-2 h-4 w-4",
+															pendingProvinceCode ===
+																province.code
+																? "opacity-100"
+																: "opacity-0",
+														)}
+													/>
+													{province.name}
+												</CommandItem>
+											))}
+										</CommandList>
+									</Command>
+								</PopoverContent>
+							</Popover>
+						</div>
+						<p className="text-xs text-muted-foreground">
+							You can change this anytime from the homepage
+							location filter.
+						</p>
+					</div>
+					<AlertDialogFooter>
+						<AlertDialogCancel
+							onClick={handleDismissProvincePrompt}
+						>
+							Not now
+						</AlertDialogCancel>
+						<AlertDialogAction
+							onClick={(event) => {
+								event.preventDefault();
+								handleConfirmProvincePrompt();
+							}}
+							disabled={!pendingProvinceCode}
+						>
+							Use this province
 						</AlertDialogAction>
 					</AlertDialogFooter>
 				</AlertDialogContent>
