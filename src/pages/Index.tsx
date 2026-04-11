@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState } from "react";
+import { useJsApiLoader } from "@react-google-maps/api";
+import { useNavigate } from "react-router-dom";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -19,16 +21,40 @@ import { usePublicStationSummary } from "@/hooks/usePublicStationSummary";
 import { useCurrentUserScope } from "@/hooks/useCurrentUserScope";
 import { useStationBrowse } from "@/hooks/useStationBrowse";
 import { useUserAccess } from "@/hooks/useUserAccess";
+import { detectGeoScopeFromAddress } from "@/lib/geo-detection";
+import {
+	formatCoordinate,
+	GOOGLE_MAPS_API_KEY,
+	GOOGLE_MAPS_LIBRARIES,
+	GOOGLE_MAPS_SCRIPT_ID,
+	reverseGeocodeCoordinates,
+} from "@/lib/google-maps";
 
 const STATIONS_PER_PAGE = 10;
 const HOMEPAGE_LOCATION_PROMPT_DISMISSED_KEY =
 	"homepage_location_prompt_dismissed";
 
 export default function Index() {
+	const navigate = useNavigate();
+	const {
+		isLoaded: isGoogleMapsLoaded,
+		loadError: googleMapsLoadError,
+	} = useJsApiLoader({
+		id: GOOGLE_MAPS_SCRIPT_ID,
+		googleMapsApiKey: GOOGLE_MAPS_API_KEY,
+		libraries: GOOGLE_MAPS_LIBRARIES,
+		preventGoogleFontsLoading: true,
+	});
 	const [selectedProvinceCode, setSelectedProvinceCode] = useState("");
 	const [selectedCityMunicipalityCode, setSelectedCityMunicipalityCode] =
 		useState("");
 	const [locationPromptOpen, setLocationPromptOpen] = useState(false);
+	const [autoDetectedProvinceCode, setAutoDetectedProvinceCode] =
+		useState("");
+	const [detectedLocationAddress, setDetectedLocationAddress] =
+		useState("");
+	const [isResolvingLocationAddress, setIsResolvingLocationAddress] =
+		useState(false);
 	const [locationPromptDismissed, setLocationPromptDismissed] = useState(
 		() => {
 			if (typeof window === "undefined") {
@@ -51,12 +77,17 @@ export default function Index() {
 		retryLocation,
 	} = useCurrentLocation();
 	const { data: currentUserScope } = useCurrentUserScope(isLguOperator);
-	const { provinces, citiesByProvince } = useGeoReferences({
+	const shouldLoadAllCitiesForDetection =
+		!isLguOperator && !!currentLocation;
+	const { provinces, cities, citiesByProvince } = useGeoReferences({
 		provinceCode: selectedProvinceCode,
+		includeAllCities: shouldLoadAllCitiesForDetection,
 	});
 	const { data: stationSummary } = usePublicStationSummary();
 	const [currentPage, setCurrentPage] = useState(1);
 	const hasInitializedScopeFilters = useRef(false);
+	const hasAttemptedProvinceDetectionRef = useRef(false);
+	const hasManualLocationOverrideRef = useRef(false);
 	const {
 		stations,
 		totalCount,
@@ -98,6 +129,113 @@ export default function Index() {
 		);
 		hasInitializedScopeFilters.current = true;
 	}, [currentUserScope, isLguOperator]);
+
+	useEffect(() => {
+		if (!currentLocation) {
+			setDetectedLocationAddress("");
+			setIsResolvingLocationAddress(false);
+			return;
+		}
+
+		if (GOOGLE_MAPS_API_KEY && !isGoogleMapsLoaded && !googleMapsLoadError) {
+			setIsResolvingLocationAddress(true);
+			setDetectedLocationAddress(
+				`${formatCoordinate(currentLocation.lat)}, ${formatCoordinate(
+					currentLocation.lng,
+				)}`,
+			);
+			return;
+		}
+
+		let isCancelled = false;
+
+		const syncDetectedLocation = async () => {
+			setIsResolvingLocationAddress(true);
+
+			try {
+				const address =
+					googleMapsLoadError || !GOOGLE_MAPS_API_KEY
+						? null
+						: await reverseGeocodeCoordinates(currentLocation);
+				if (isCancelled) {
+					return;
+				}
+
+				setDetectedLocationAddress(
+					address ||
+						`${formatCoordinate(currentLocation.lat)}, ${formatCoordinate(
+							currentLocation.lng,
+						)}`,
+				);
+
+				if (isLguOperator || provinces.length === 0) {
+					return;
+				}
+
+				if (
+					hasAttemptedProvinceDetectionRef.current ||
+					hasManualLocationOverrideRef.current
+				) {
+					return;
+				}
+
+				if (selectedProvinceCode) {
+					hasAttemptedProvinceDetectionRef.current = true;
+					return;
+				}
+
+				hasAttemptedProvinceDetectionRef.current = true;
+
+				if (!address) {
+					return;
+				}
+
+				const detectedScope = detectGeoScopeFromAddress({
+					address,
+					provinces,
+					cities,
+				});
+
+				if (!detectedScope?.provinceCode || isCancelled) {
+					return;
+				}
+
+				setSelectedProvinceCode(detectedScope.provinceCode);
+				setSelectedCityMunicipalityCode("");
+				setAutoDetectedProvinceCode(detectedScope.provinceCode);
+			} catch (error) {
+				if (!isCancelled) {
+					setDetectedLocationAddress(
+						`${formatCoordinate(currentLocation.lat)}, ${formatCoordinate(
+							currentLocation.lng,
+						)}`,
+					);
+					console.error(
+						"Failed to sync homepage location details",
+						error,
+					);
+				}
+			} finally {
+				if (!isCancelled) {
+					setIsResolvingLocationAddress(false);
+				}
+			}
+		};
+
+		void syncDetectedLocation();
+
+		return () => {
+			isCancelled = true;
+		};
+	}, [
+		currentLocation,
+		googleMapsLoadError,
+		isGoogleMapsLoaded,
+		isLguOperator,
+		cities,
+		provinces,
+		selectedProvinceCode,
+	]);
 
 	useEffect(() => {
 		setCurrentPage(1);
@@ -157,8 +295,37 @@ export default function Index() {
 			);
 		}
 
+		hasAttemptedProvinceDetectionRef.current = false;
 		setLocationPromptDismissed(false);
 		await retryLocation();
+	};
+
+	const detectedProvinceName =
+		provinces.find((province) => province.code === autoDetectedProvinceCode)
+			?.name ?? "";
+	const shouldShowMapFallback =
+		!stationsLoading &&
+		stations.length === 0 &&
+		!!currentLocation &&
+		!!autoDetectedProvinceCode &&
+		selectedProvinceCode === autoDetectedProvinceCode;
+	const emptyMessage = shouldShowMapFallback
+		? "We couldn't find listed stations yet in your current province. Open the live map to explore a wider area and discover nearby fuel stations."
+		: "No stations found matching your criteria.";
+
+	const handleOpenMapFallback = () => {
+		const params = new URLSearchParams();
+		if (selectedProvinceCode) {
+			params.set("provinceCode", selectedProvinceCode);
+		}
+		if (selectedCityMunicipalityCode) {
+			params.set("cityMunicipalityCode", selectedCityMunicipalityCode);
+		}
+
+		navigate({
+			pathname: "/map",
+			search: params.toString() ? `?${params.toString()}` : "",
+		});
 	};
 
 	return (
@@ -178,14 +345,69 @@ export default function Index() {
 				provinceCode={selectedProvinceCode}
 				cityMunicipalityCode={selectedCityMunicipalityCode}
 				onProvinceChange={(provinceCode) => {
+					hasManualLocationOverrideRef.current = true;
+					setAutoDetectedProvinceCode("");
 					setSelectedProvinceCode(provinceCode);
 					setSelectedCityMunicipalityCode("");
 				}}
-				onCityChange={setSelectedCityMunicipalityCode}
+				onCityChange={(cityCode) => {
+					hasManualLocationOverrideRef.current = true;
+					setSelectedCityMunicipalityCode(cityCode);
+				}}
 			/>
+			{currentLocation ? (
+				<div className="rounded-xl border border-border/70 bg-card/80 px-4 py-3">
+					<div className="flex items-start gap-3">
+						<div className="mt-0.5 rounded-full bg-primary/10 p-2 text-primary">
+							<MapPin className="h-4 w-4" />
+						</div>
+						<div className="min-w-0">
+							<p className="text-sm font-semibold text-foreground">
+								Current location detected
+							</p>
+							<p className="mt-1 text-sm text-muted-foreground">
+								{isResolvingLocationAddress ? (
+									<span className="inline-flex items-center gap-2">
+										<Loader2 className="h-4 w-4 animate-spin" />
+										Resolving your current location...
+									</span>
+								) : (
+									detectedLocationAddress ||
+									`${formatCoordinate(currentLocation.lat)}, ${formatCoordinate(
+										currentLocation.lng,
+									)}`
+								)}
+							</p>
+							<p className="mt-1 text-xs text-muted-foreground">
+								Coordinates: {formatCoordinate(currentLocation.lat)},{" "}
+								{formatCoordinate(currentLocation.lng)}
+							</p>
+							<p className="mt-1 text-xs text-muted-foreground">
+								Province:{" "}
+								<span className="font-medium text-foreground">
+									{detectedProvinceName || "Detecting province..."}
+								</span>
+							</p>
+						</div>
+					</div>
+				</div>
+			) : null}
+			{detectedProvinceName && selectedProvinceCode === autoDetectedProvinceCode ? (
+				<div className="rounded-xl border border-primary/20 bg-primary/5 px-4 py-3 text-sm text-primary">
+					Showing stations in your current province:{" "}
+					<span className="font-semibold">{detectedProvinceName}</span>
+				</div>
+			) : null}
 			<StationResultsList
 				stations={stations}
 				loading={stationsLoading}
+				emptyMessage={emptyMessage}
+				emptyActionLabel={
+					shouldShowMapFallback ? "Go to Map" : undefined
+				}
+				onEmptyAction={
+					shouldShowMapFallback ? handleOpenMapFallback : undefined
+				}
 				currentPage={currentPage}
 				totalPages={totalPages}
 				onPageChange={setCurrentPage}

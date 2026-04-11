@@ -104,7 +104,7 @@ export function DiscoveredStationInfoWindow({
 				{showReportAction && onReportGasStation ? (
 					<Button
 						type="button"
-						variant="default"
+						variant="outline-primary"
 						size="sm"
 						className="h-8 w-full justify-center text-xs"
 						onClick={onReportGasStation}

@@ -9,6 +9,8 @@ interface StationResultsListProps {
 	stations: GasStation[];
 	loading: boolean;
 	emptyMessage?: string;
+	emptyActionLabel?: string;
+	onEmptyAction?: () => void;
 	currentPage?: number;
 	totalPages?: number;
 	onPageChange?: (page: number) => void;
@@ -21,6 +23,8 @@ export function StationResultsList({
 	stations,
 	loading,
 	emptyMessage = "No stations found matching your criteria.",
+	emptyActionLabel,
+	onEmptyAction,
 	currentPage = 1,
 	totalPages = 1,
 	onPageChange,
@@ -105,9 +109,21 @@ export function StationResultsList({
 						/>
 					))}
 					{stations.length === 0 && (
-						<p className="py-24 text-center text-sm text-muted-foreground">
-							{emptyMessage}
-						</p>
+						<div className="col-span-full flex flex-col items-center justify-center gap-5 rounded-3xl border border-dashed border-border/80 bg-card/50 px-6 py-16 text-center">
+							<p className="max-w-xl text-sm text-muted-foreground">
+								{emptyMessage}
+							</p>
+							{emptyActionLabel && onEmptyAction ? (
+								<Button
+									type="button"
+									size="lg"
+									onClick={onEmptyAction}
+									className="min-h-14 rounded-2xl px-8 text-base font-semibold shadow-lg shadow-primary/20"
+								>
+									{emptyActionLabel}
+								</Button>
+							) : null}
+						</div>
 					)}
 				</div>
 			)}

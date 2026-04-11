@@ -24,6 +24,25 @@ function containsWholePhrase(haystack: string, needle: string) {
 	return pattern.test(haystack);
 }
 
+function getProvinceAliases(province: GeoProvince) {
+	const aliases = new Set<string>([province.name]);
+
+	for (const fragment of province.name.split("/")) {
+		const trimmedFragment = fragment.trim();
+		if (trimmedFragment) {
+			aliases.add(trimmedFragment);
+		}
+	}
+
+	if (province.code === "PH-NCR") {
+		aliases.add("NCR");
+		aliases.add("Metro Manila");
+		aliases.add("National Capital Region");
+	}
+
+	return [...aliases];
+}
+
 export function detectGeoScopeFromAddress({
 	address,
 	provinces,
@@ -53,7 +72,9 @@ export function detectGeoScopeFromAddress({
 
 	const matchedProvince =
 		sortedProvinces.find((province) =>
-			containsWholePhrase(normalizedAddress, normalizeText(province.name)),
+			getProvinceAliases(province).some((alias) =>
+				containsWholePhrase(normalizedAddress, normalizeText(alias)),
+			),
 		) ?? null;
 
 	if (matchedCity) {
