@@ -263,13 +263,16 @@ export function AppShellLayout() {
 								</DropdownMenuContent>
 							</DropdownMenu>
 						) : (
-							<button
-								onClick={() => navigate("/auth")}
-								className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-xs text-primary-foreground sovereign-ease transition-colors hover:bg-primary-hover"
-							>
-								<LogIn className="h-3.5 w-3.5" />
-								Sign in
-							</button>
+							<>
+								<ThemeToggle />
+								<button
+									onClick={() => navigate("/auth")}
+									className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-xs text-primary-foreground sovereign-ease transition-colors hover:bg-primary-hover"
+								>
+									<LogIn className="h-3.5 w-3.5" />
+									Sign in
+								</button>
+							</>
 						)}
 					</div>
 				</div>

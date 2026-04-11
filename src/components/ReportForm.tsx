@@ -172,7 +172,7 @@ function StationSearchField({
 			</div>
 
 			{locationFiltersOpen ? (
-				<div className="rounded-2xl border border-border bg-background p-4">
+				<div className="rounded border border-border bg-background p-4">
 					<GeoScopeFields
 						provinces={provinces}
 						cities={availableCities}

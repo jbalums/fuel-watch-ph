@@ -105,7 +105,7 @@ export function SearchFilter({
 			{showGeoFilters ? (
 				<div className="flex flex-col gap-2">
 					{geoFiltersOpen ? (
-						<div className="rounded-xl border border-border bg-card p-3">
+						<div className="rounded-md border border-border bg-card p-3">
 							<GeoScopeFields
 								provinces={provinces}
 								cities={cities}
