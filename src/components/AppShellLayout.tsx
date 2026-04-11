@@ -23,7 +23,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useProfile } from "@/hooks/useProfile";
 import { useUserAccess } from "@/hooks/useUserAccess";
 import { getDashboardPathForAccessLevel } from "@/lib/access-control";
-import { LogIn } from "lucide-react";
+import { LogIn, MapPin } from "lucide-react";
 import logo from "@/assets/images/fuelwatch-ph-icon.png";
 
 function formatCompactUserName(rawName: string) {
@@ -105,6 +105,20 @@ export function AppShellLayout() {
 		navigate("/");
 	};
 
+	const handleChangeCurrentProvince = () => {
+		navigate(
+			{
+				pathname: "/",
+				search: location.pathname === "/" ? location.search : "",
+			},
+			{
+				state: {
+					openProvincePrompt: true,
+				},
+			},
+		);
+	};
+
 	return (
 		<div className="min-h-screen bg-background pb-8">
 			<header className="sticky top-0 z-40 surface-glass px-1 py-4 md:px-5">
@@ -128,6 +142,18 @@ export function AppShellLayout() {
 						</div>
 					</button>
 					<div className="flex items-center gap-3">
+						<button
+							type="button"
+							onClick={handleChangeCurrentProvince}
+							className="relative flex h-8 px-2 gap-0.5 items-center justify-center rounded-lg bg-secondary text-foreground sovereign-ease hover:bg-muted transition-colors"
+							aria-label="Change current province"
+							title="Change current province"
+						>
+							<MapPin className="h-4 w-4" />
+							<span className="hidden md:block text-xs">
+								Change Province
+							</span>
+						</button>
 						<ThemeToggle />
 						{user ? (
 							<DropdownMenu>

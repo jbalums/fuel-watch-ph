@@ -49,14 +49,16 @@ export function SearchFilter({
 	cityMunicipalityCode = "",
 	onProvinceChange,
 	onCityChange,
-	autoOpenGeoFiltersOnActive = true,
+	autoOpenGeoFiltersOnActive = false,
 }: SearchFilterProps) {
 	const priceSortEnabled = fuelFilter !== "All";
 	const showStatusFilter = fuelFilter !== "All";
 	const showGeoFilters =
 		!!provinces && !!cities && !!onProvinceChange && !!onCityChange;
 	const hasActiveGeoFilter = !!provinceCode || !!cityMunicipalityCode;
-	const [geoFiltersOpen, setGeoFiltersOpen] = useState(hasActiveGeoFilter);
+	const [geoFiltersOpen, setGeoFiltersOpen] = useState(
+		autoOpenGeoFiltersOnActive && hasActiveGeoFilter,
+	);
 
 	useEffect(() => {
 		if (autoOpenGeoFiltersOnActive && hasActiveGeoFilter) {

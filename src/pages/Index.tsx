@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -35,6 +35,10 @@ import { useStations } from "@/hooks/useStations";
 import { useCurrentUserScope } from "@/hooks/useCurrentUserScope";
 import { useStationBrowse } from "@/hooks/useStationBrowse";
 import { useUserAccess } from "@/hooks/useUserAccess";
+import {
+	getStoredCurrentProvinceCode,
+	setStoredCurrentProvinceCode,
+} from "@/lib/current-province";
 
 const STATIONS_PER_PAGE = 10;
 const HOMEPAGE_LOCATION_PROMPT_DISMISSED_KEY =
@@ -44,7 +48,10 @@ const HOMEPAGE_PROVINCE_PROMPT_DISMISSED_KEY =
 
 export default function Index() {
 	const navigate = useNavigate();
-	const [selectedProvinceCode, setSelectedProvinceCode] = useState("");
+	const location = useLocation();
+	const [selectedProvinceCode, setSelectedProvinceCode] = useState(() =>
+		getStoredCurrentProvinceCode(),
+	);
 	const [selectedCityMunicipalityCode, setSelectedCityMunicipalityCode] =
 		useState("");
 	const [locationPromptOpen, setLocationPromptOpen] = useState(false);
@@ -53,7 +60,7 @@ export default function Index() {
 		useState(false);
 	const [pendingProvinceCode, setPendingProvinceCode] = useState("");
 	const [confirmedCurrentProvinceCode, setConfirmedCurrentProvinceCode] =
-		useState("");
+		useState(() => getStoredCurrentProvinceCode());
 	const [locationPromptDismissed, setLocationPromptDismissed] = useState(
 		() => {
 			if (typeof window === "undefined") {
@@ -138,6 +145,44 @@ export default function Index() {
 		);
 		hasInitializedScopeFilters.current = true;
 	}, [currentUserScope, isLguOperator]);
+
+	useEffect(() => {
+		const state = location.state as {
+			openProvincePrompt?: boolean;
+		} | null;
+
+		if (
+			!state?.openProvincePrompt ||
+			isLguOperator ||
+			provinces.length === 0
+		) {
+			return;
+		}
+
+		setPendingProvinceCode(
+			confirmedCurrentProvinceCode || selectedProvinceCode || "",
+		);
+		setProvincePromptOpen(true);
+
+		navigate(
+			{
+				pathname: "/",
+				search: location.search,
+			},
+			{
+				replace: true,
+				state: null,
+			},
+		);
+	}, [
+		confirmedCurrentProvinceCode,
+		isLguOperator,
+		location.search,
+		location.state,
+		navigate,
+		provinces.length,
+		selectedProvinceCode,
+	]);
 
 	useEffect(() => {
 		if (
@@ -239,8 +284,9 @@ export default function Index() {
 		)?.name ?? "";
 	const selectedProvinceOption = useMemo(
 		() =>
-			provinces.find((province) => province.code === pendingProvinceCode) ??
-			null,
+			provinces.find(
+				(province) => province.code === pendingProvinceCode,
+			) ?? null,
 		[pendingProvinceCode, provinces],
 	);
 	const shouldShowMapFallback =
@@ -294,6 +340,7 @@ export default function Index() {
 		}
 
 		hasManualLocationOverrideRef.current = true;
+		setStoredCurrentProvinceCode(pendingProvinceCode);
 		setSelectedProvinceCode(pendingProvinceCode);
 		setSelectedCityMunicipalityCode("");
 		setConfirmedCurrentProvinceCode(pendingProvinceCode);
@@ -321,7 +368,6 @@ export default function Index() {
 				autoOpenGeoFiltersOnActive={false}
 				onProvinceChange={(provinceCode) => {
 					hasManualLocationOverrideRef.current = true;
-					setConfirmedCurrentProvinceCode("");
 					setSelectedProvinceCode(provinceCode);
 					setSelectedCityMunicipalityCode("");
 				}}
@@ -452,7 +498,9 @@ export default function Index() {
 										type="button"
 										variant="outline"
 										role="combobox"
-										aria-expanded={provincePromptPopoverOpen}
+										aria-expanded={
+											provincePromptPopoverOpen
+										}
 										className={cn(
 											"h-auto min-h-12 w-full justify-between rounded-xl border-border bg-background px-4 py-3 text-sm font-normal text-foreground hover:bg-background",
 											!selectedProvinceOption &&
@@ -508,12 +556,12 @@ export default function Index() {
 							location filter.
 						</p>
 					</div>
-					<AlertDialogFooter>
-						<AlertDialogCancel
+					<AlertDialogFooter className="flex !items-center !justify-center gap-4">
+						{/* <AlertDialogCancel
 							onClick={handleDismissProvincePrompt}
 						>
 							Not now
-						</AlertDialogCancel>
+						</AlertDialogCancel> */}
 						<AlertDialogAction
 							onClick={(event) => {
 								event.preventDefault();

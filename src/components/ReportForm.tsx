@@ -250,7 +250,7 @@ export function ReportForm() {
 	const [provinceCode, setProvinceCode] = useState("");
 	const { provinces, cities, citiesByProvince } = useGeoReferences({
 		provinceCode,
-		includeAllCities: true,
+		includeAllCities: false,
 	});
 	const fileInputRef = useRef<HTMLInputElement | null>(null);
 	const [submissionMode, setSubmissionMode] =
