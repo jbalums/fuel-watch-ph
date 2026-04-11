@@ -77,12 +77,6 @@ export default function MapPage() {
 	}, [filteredStations, stationParam]);
 
 	useEffect(() => {
-		if (hasActiveGeoFilter) {
-			setLocationFiltersOpen(true);
-		}
-	}, [hasActiveGeoFilter]);
-
-	useEffect(() => {
 		if (
 			!isLguOperator ||
 			!currentUserScope ||
