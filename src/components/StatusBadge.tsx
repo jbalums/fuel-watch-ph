@@ -46,11 +46,6 @@ export function StatusBadge({
 					status !== "Out" && "animate-pulse-status",
 				)}
 			/>
-			{compact
-				? status === "Available"
-					? "Avbl"
-					: status
-				: config.label}
 		</span>
 	);
 }

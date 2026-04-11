@@ -137,7 +137,7 @@ export function StationCard({
 				<div className="flex items-start justify-between gap-3 flex-wrap">
 					<div className="flex flex-col w-full">
 						<div className="flex w-full justify-between flex-wrap">
-							<h3 className=" font-semibold text-foreground max-w-[calc(100%-90px)]">
+							<h3 className=" font-semibold text-foreground max-w-[calc(100%-90px)] line-clamp-1">
 								{station.name}
 							</h3>
 							{activeFuelFilter !== "All" &&
@@ -163,8 +163,8 @@ export function StationCard({
 					</div>
 				</div>
 
-				<div className="flex flex-wrap items-end justify-between">
-					<div className="grid min-w-0 grid-cols-2 gap-x-4 gap-y-3 pb-4 sm:grid-cols-3 xl:grid-cols-5">
+				<div className="flex flex-col">
+					<div className="grid grid-cols-3 lg:grid-cols-5 gap-4">
 						{fuelTypes.map((fuelType) => {
 							const price = station.prices?.[fuelType];
 							const hasPrice =
@@ -184,13 +184,22 @@ export function StationCard({
 								>
 									<span
 										className={cn(
-											"text-label flex items-center relative",
+											"text-label flex items-center relative font-semibold",
 											fuelTypeTextColorClassNames[
 												fuelType
 											],
 										)}
 									>
-										{fuelType}
+										{fuelType == "Premium Diesel" ? (
+											<span>
+												<span className="absolute -top-[10px] text-[10px]">
+													Premium
+												</span>
+												<span>Diesel</span>
+											</span>
+										) : (
+											fuelType
+										)}
 										{availability ? (
 											<StatusBadge
 												status={availability}
@@ -199,7 +208,7 @@ export function StationCard({
 											/>
 										) : null}
 									</span>
-									<p className="mt-0.5 text-lg font-bold tabular-nums text-foreground md:text-2xl">
+									<p className="mt-0.5 text-base font-bold tabular-nums text-foreground md:text-xl">
 										{availability === "Out"
 											? "—"
 											: hasPrice
@@ -207,24 +216,28 @@ export function StationCard({
 												: "—"}
 									</p>
 
-									<PriceTrendIndicator
-										delta={
-											!isFuelSellable(availability) ||
-											!hasPrice
-												? null
-												: station.priceTrends[fuelType]
-										}
-									/>
+									<div className="">
+										<PriceTrendIndicator
+											delta={
+												!isFuelSellable(availability) ||
+												!hasPrice
+													? null
+													: station.priceTrends[
+															fuelType
+														]
+											}
+										/>
+									</div>
 								</div>
 							);
 						})}
 					</div>
-					<div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+					<div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground mt-2">
 						<Button
 							type="button"
 							variant="outlineprimary"
-							size="sm"
-							className="py-1 px-2 text-xs sm:text-sm"
+							size="xs"
+							className="py-0 px-2 !text-[11px] sm:text-sm"
 							onClick={handleGetDirections}
 							onKeyDown={(event) => {
 								if (
@@ -236,7 +249,7 @@ export function StationCard({
 							}}
 							disabled={!directionsUrl}
 						>
-							<Navigation className="h-4 w-4" />
+							<Navigation className="h-2 w-2" />
 							Get Directions
 						</Button>
 						{!hideDistanceLabel ? (
