@@ -145,7 +145,7 @@ export function AppShellLayout() {
 						<button
 							type="button"
 							onClick={handleChangeCurrentProvince}
-							className="relative flex h-8 px-2 gap-0.5 items-center justify-center rounded-lg bg-secondary text-foreground sovereign-ease hover:bg-muted transition-colors"
+							className="relative flex h-8 px-2 gap-1 items-center justify-center rounded-lg bg-secondary text-foreground sovereign-ease hover:bg-muted transition-colors"
 							aria-label="Change current province"
 							title="Change current province"
 						>

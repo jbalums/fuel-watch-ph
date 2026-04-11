@@ -62,8 +62,9 @@ export default function Index() {
 		useState(false);
 	const [pendingProvinceCode, setPendingProvinceCode] = useState("");
 	const [isDetectingProvince, setIsDetectingProvince] = useState(false);
-	const [provinceDetectionMessage, setProvinceDetectionMessage] =
-		useState<string | null>(null);
+	const [provinceDetectionMessage, setProvinceDetectionMessage] = useState<
+		string | null
+	>(null);
 	const [confirmedCurrentProvinceCode, setConfirmedCurrentProvinceCode] =
 		useState(() => getStoredCurrentProvinceCode());
 	const [locationPromptDismissed, setLocationPromptDismissed] = useState(
@@ -227,7 +228,9 @@ export default function Index() {
 
 			try {
 				const result =
-					await reverseGeocodeCoordinatesWithNominatim(currentLocation);
+					await reverseGeocodeCoordinatesWithNominatim(
+						currentLocation,
+					);
 
 				if (isCancelled) {
 					return;
@@ -260,7 +263,10 @@ export default function Index() {
 					return;
 				}
 
-				console.error("Failed to detect province with Nominatim", error);
+				console.error(
+					"Failed to detect province with Nominatim",
+					error,
+				);
 				setProvinceDetectionMessage(
 					"Auto-detect is unavailable right now. Please choose your province manually.",
 				);
@@ -551,8 +557,7 @@ export default function Index() {
 						</AlertDialogTitle>
 						<AlertDialogDescription>
 							Choose your current province so FuelWatch PH can
-							show stations near you without using extra Google
-							Maps location lookups.
+							show stations near you.
 						</AlertDialogDescription>
 					</AlertDialogHeader>
 					<div className="space-y-3 rounded-xl border border-border bg-secondary/30 p-4">
@@ -622,7 +627,7 @@ export default function Index() {
 								</PopoverContent>
 							</Popover>
 						</div>
-						<div className="space-y-1">
+						<div className="space-y-2">
 							<p className="text-xs text-muted-foreground">
 								You can change this anytime from the location
 								icon beside the theme toggle.
@@ -633,7 +638,7 @@ export default function Index() {
 									Detecting your current province...
 								</p>
 							) : provinceDetectionMessage ? (
-								<p className="text-xs text-primary">
+								<p className="text-xs text-primary dark:text-sky-300">
 									{provinceDetectionMessage}
 								</p>
 							) : null}
