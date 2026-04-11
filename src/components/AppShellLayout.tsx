@@ -12,6 +12,7 @@ import {
 	AlertDialogHeader,
 	AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { motion, AnimatePresence } from "framer-motion";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -23,8 +24,9 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useProfile } from "@/hooks/useProfile";
 import { useUserAccess } from "@/hooks/useUserAccess";
 import { getDashboardPathForAccessLevel } from "@/lib/access-control";
-import { LogIn, MapPin } from "lucide-react";
+import { LogIn, MapPin, Moon, Sun } from "lucide-react";
 import logo from "@/assets/images/fuelwatch-ph-icon.png";
+import { useTheme } from "@/contexts/ThemeContext";
 
 function formatCompactUserName(rawName: string) {
 	const parts = rawName.trim().split(/\s+/).filter(Boolean);
@@ -57,6 +59,7 @@ function getUserNameFallback(email?: string | null) {
 }
 
 export function AppShellLayout() {
+	const { theme, toggleTheme } = useTheme();
 	const { user, signOut } = useAuth();
 	const { data: profile } = useProfile();
 	const { accessLevel, isLoading: accessLoading } = useUserAccess();
@@ -129,14 +132,14 @@ export function AppShellLayout() {
 						className="flex items-center gap-0 rounded-xl text-left sovereign-ease transition-opacity hover:opacity-90"
 					>
 						<div className="flex h-9 w-9 items-center justify-center">
-							<img src={logo} className="h-9" />
+							<img src={logo} className="w-6" />
 						</div>
 						<div>
-							<h1 className="text-base font-bold tracking-tight text-foreground">
+							<h1 className="text-xs md:text-base font-bold tracking-tight text-foreground">
 								<span className="text-primary">FuelWatch</span>{" "}
 								<span className="text-amber-600">PH</span>
 							</h1>
-							<p className="text-[10px] text-muted-foreground">
+							<p className="text-[8px] md:text-[10px] text-muted-foreground">
 								Know before you fill up
 							</p>
 						</div>
@@ -154,7 +157,6 @@ export function AppShellLayout() {
 								Change Province
 							</span>
 						</button>
-						<ThemeToggle />
 						{user ? (
 							<DropdownMenu>
 								<DropdownMenuTrigger asChild>
@@ -187,6 +189,70 @@ export function AppShellLayout() {
 									>
 										My profile
 									</DropdownMenuItem>
+									<DropdownMenuItem
+										onClick={(e) => {
+											e.preventDefault();
+											e.stopPropagation();
+											toggleTheme();
+										}}
+									>
+										Theme{" "}
+										<div
+											className={`flex ml-auto gap-2 bg-slate-200 dark:bg-slate-900 rounded-xl px-3 py-1 text-slate-950 dark:text-white duration-200 text-xs`}
+										>
+											{theme}
+											{theme === "light" ? (
+												<motion.div
+													key="sun"
+													initial={{
+														opacity: 0,
+														scale: 0.6,
+														rotate: -90,
+													}}
+													animate={{
+														opacity: 1,
+														scale: 1,
+														rotate: 0,
+													}}
+													exit={{
+														opacity: 0,
+														scale: 0.6,
+														rotate: 90,
+													}}
+													transition={{
+														duration: 0.2,
+													}}
+												>
+													<Sun className="h-4 w-4" />
+												</motion.div>
+											) : (
+												<motion.div
+													key="moon"
+													initial={{
+														opacity: 0,
+														scale: 0.6,
+														rotate: 90,
+													}}
+													animate={{
+														opacity: 1,
+														scale: 1,
+														rotate: 0,
+													}}
+													exit={{
+														opacity: 0,
+														scale: 0.6,
+														rotate: -90,
+													}}
+													transition={{
+														duration: 0.2,
+													}}
+												>
+													<Moon className="h-4 w-4" />
+												</motion.div>
+											)}
+										</div>
+									</DropdownMenuItem>
+
 									<DropdownMenuItem
 										onSelect={() =>
 											setLogoutConfirmOpen(true)
