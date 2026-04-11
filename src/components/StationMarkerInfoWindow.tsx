@@ -180,7 +180,9 @@ export const StationMarkerInfoWindow = memo(function StationMarkerInfoWindow({
 					)}
 				</div>
 			) : null}
-			{showReportAction || showDirectionsAction || showOpenInMapsAction ? (
+			{showReportAction ||
+			showDirectionsAction ||
+			showOpenInMapsAction ? (
 				<div className="-mt-1 flex flex-col gap-2 px-1">
 					{showReportAction && onReportFuelPrices ? (
 						<Button
@@ -203,61 +205,61 @@ export const StationMarkerInfoWindow = memo(function StationMarkerInfoWindow({
 							}
 						>
 							{showOpenInMapsAction ? (
-							<Button
-								type="button"
-								variant="outline"
-								size="sm"
-								className="h-8 w-full justify-center text-xs"
-								onClick={() => {
-									if (onOpenInMaps) {
-										onOpenInMaps();
-										return;
-									}
+								<Button
+									type="button"
+									variant="outline-primary"
+									size="sm"
+									className="h-8 w-full justify-center text-xs"
+									onClick={() => {
+										if (onOpenInMaps) {
+											onOpenInMaps();
+											return;
+										}
 
-									if (onGetDirections) {
+										if (onGetDirections) {
+											openGoogleMapsDirections({
+												lat: station.lat,
+												lng: station.lng,
+												placeId: station.googlePlaceId,
+											});
+											return;
+										}
+
 										openGoogleMapsDirections({
 											lat: station.lat,
 											lng: station.lng,
 											placeId: station.googlePlaceId,
 										});
-										return;
-									}
-
-									openGoogleMapsDirections({
-										lat: station.lat,
-										lng: station.lng,
-										placeId: station.googlePlaceId,
-									});
-								}}
-								disabled={!directionsUrl}
-							>
-								<Navigation className="h-4 w-4" />
-								Open in Maps
-							</Button>
+									}}
+									disabled={!directionsUrl}
+								>
+									<Navigation className="h-4 w-4" />
+									Open in Maps
+								</Button>
 							) : null}
 							{showDirectionsAction ? (
-							<Button
-								type="button"
-								variant="outlineprimary"
-								size="sm"
-								className="h-8 w-full transition-all duration-200 justify-center text-xs"
-								onClick={() => {
-									if (onGetDirections) {
-										onGetDirections();
-										return;
-									}
+								<Button
+									type="button"
+									variant="outlineprimary"
+									size="sm"
+									className="h-8 w-full transition-all duration-200 justify-center text-xs"
+									onClick={() => {
+										if (onGetDirections) {
+											onGetDirections();
+											return;
+										}
 
-									openGoogleMapsDirections({
-										lat: station.lat,
-										lng: station.lng,
-										placeId: station.googlePlaceId,
-									});
-								}}
-								disabled={!directionsUrl}
-							>
-								<Navigation className="h-4 w-4" />
-								Get Directions
-							</Button>
+										openGoogleMapsDirections({
+											lat: station.lat,
+											lng: station.lng,
+											placeId: station.googlePlaceId,
+										});
+									}}
+									disabled={!directionsUrl}
+								>
+									<Navigation className="h-4 w-4" />
+									Get Directions
+								</Button>
 							) : null}
 						</div>
 					) : null}
