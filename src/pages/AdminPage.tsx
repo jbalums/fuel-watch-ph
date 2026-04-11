@@ -7,6 +7,7 @@ import {
 	ImagePlus,
 	Loader2,
 	MapPinned,
+	Route,
 	ShieldAlert,
 	UserPlus,
 	Users,
@@ -158,6 +159,13 @@ export default function AdminPage() {
 							"View province admins, city admins, and LGU staff accounts across all scopes.",
 						path: "/admin/lgu-users",
 						icon: Users,
+					},
+					{
+						label: "Platform Controls",
+						description:
+							"Toggle cost-sensitive map features like inline Get Directions on /map.",
+						path: "/admin/platform-controls",
+						icon: Route,
 					},
 					{
 						label: "Access Requests",

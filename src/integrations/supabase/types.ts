@@ -233,6 +233,30 @@ export type Database = {
         }
         Relationships: []
       }
+      system_feature_flags: {
+        Row: {
+          created_at: string
+          description: string
+          feature_key: string
+          is_enabled: boolean
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string
+          feature_key: string
+          is_enabled?: boolean
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          feature_key?: string
+          is_enabled?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
       admin_access_requests: {
         Row: {
           city_municipality_code: string | null

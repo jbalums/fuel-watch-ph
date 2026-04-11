@@ -36,6 +36,7 @@ import {
 	searchGoogleFuelStationsInBounds,
 	type GoogleDiscoveredStation,
 } from "@/lib/station-discovery";
+import { useMapDirectionsFeature } from "@/hooks/useSystemFeatureFlags";
 import { DiscoveredStationInfoWindow } from "./DiscoveredStationInfoWindow";
 import { StationMarkerInfoWindow } from "./StationMarkerInfoWindow";
 const DEFAULT_HIGHLIGHT_ZOOM = 15;
@@ -86,6 +87,7 @@ function GoogleStationMap({
 }: StationMapProps) {
 	const navigate = useNavigate();
 	const { isAdmin } = useUserAccess();
+	const { data: mapDirectionsFeature } = useMapDirectionsFeature();
 	const { data: stationBrandLogos = [] } = useStationBrandLogos();
 	const { provinces, cities } = useGeoReferences({
 		includeAllCities: true,
@@ -114,6 +116,7 @@ function GoogleStationMap({
 	const { coordinates: currentLocation } = useCurrentLocation();
 	const googleMaps =
 		typeof window !== "undefined" ? window.google?.maps : undefined;
+	const isInlineDirectionsEnabled = mapDirectionsFeature?.isEnabled ?? false;
 	const selectedStationId =
 		focusedStationId !== undefined
 			? focusedStationId
@@ -682,6 +685,14 @@ function GoogleStationMap({
 	}, [directionsRenderer]);
 
 	useEffect(() => {
+		if (isInlineDirectionsEnabled || !renderedRoute) {
+			return;
+		}
+
+		closeRenderedRoute();
+	}, [closeRenderedRoute, isInlineDirectionsEnabled, renderedRoute]);
+
+	useEffect(() => {
 		if (!focusedStation || !renderedRoute) {
 			return;
 		}
@@ -851,7 +862,8 @@ function GoogleStationMap({
 						<StationMarkerInfoWindow
 							station={focusedStation}
 							brandAverage={focusedStationBrandAverage}
-							showDirectionsAction
+							showDirectionsAction={isInlineDirectionsEnabled}
+							showOpenInMapsAction
 							showReportAction
 							onOpenInMaps={openFocusedStationInGoogleMaps}
 							onGetDirections={() => {

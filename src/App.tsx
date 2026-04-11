@@ -29,6 +29,7 @@ import AdminAccessRequestsPage from "./pages/AdminAccessRequestsPage";
 import AdminAccessRequestDetailPage from "./pages/AdminAccessRequestDetailPage";
 import AdminInvitesPage from "./pages/AdminInvitesPage";
 import AdminGeoBackfillPage from "./pages/AdminGeoBackfillPage";
+import AdminPlatformControlsPage from "./pages/AdminPlatformControlsPage";
 import SystemPreviewPage from "./pages/SystemPreviewPage";
 import Auth from "./pages/Auth";
 import AboutUs from "./pages/AboutUs";
@@ -134,6 +135,10 @@ function RouterContent() {
 							<Route
 								path="geo-backfill"
 								element={<AdminGeoBackfillPage />}
+							/>
+							<Route
+								path="platform-controls"
+								element={<AdminPlatformControlsPage />}
 							/>
 							<Route
 								path="system-preview"

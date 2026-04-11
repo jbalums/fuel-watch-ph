@@ -21,6 +21,10 @@ export function AdminLayout() {
 					{ label: "Users", to: "/admin/users" },
 					{ label: "LGU Users", to: "/admin/lgu-users" },
 					{
+						label: "Platform Controls",
+						to: "/admin/platform-controls",
+					},
+					{
 						label: "Access Requests",
 						to: "/admin/access-requests",
 					},

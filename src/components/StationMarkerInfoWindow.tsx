@@ -25,6 +25,7 @@ interface StationMarkerInfoWindowProps {
 	station: GasStation;
 	brandAverage?: StationBrandAverage | null;
 	showDirectionsAction?: boolean;
+	showOpenInMapsAction?: boolean;
 	showReportAction?: boolean;
 	onReportFuelPrices?: () => void;
 	onGetDirections?: () => void;
@@ -35,6 +36,7 @@ export const StationMarkerInfoWindow = memo(function StationMarkerInfoWindow({
 	station,
 	brandAverage = null,
 	showDirectionsAction = false,
+	showOpenInMapsAction = showDirectionsAction,
 	showReportAction = false,
 	onReportFuelPrices,
 	onGetDirections,
@@ -178,7 +180,7 @@ export const StationMarkerInfoWindow = memo(function StationMarkerInfoWindow({
 					)}
 				</div>
 			) : null}
-			{showReportAction || showDirectionsAction ? (
+			{showReportAction || showDirectionsAction || showOpenInMapsAction ? (
 				<div className="-mt-1 flex flex-col gap-2 px-1">
 					{showReportAction && onReportFuelPrices ? (
 						<Button
@@ -192,8 +194,15 @@ export const StationMarkerInfoWindow = memo(function StationMarkerInfoWindow({
 							Report Fuel Prices!
 						</Button>
 					) : null}
-					{showDirectionsAction ? (
-						<div className="grid grid-cols-2 gap-2">
+					{showOpenInMapsAction || showDirectionsAction ? (
+						<div
+							className={
+								showOpenInMapsAction && showDirectionsAction
+									? "grid grid-cols-2 gap-2"
+									: "grid grid-cols-1 gap-2"
+							}
+						>
+							{showOpenInMapsAction ? (
 							<Button
 								type="button"
 								variant="outline"
@@ -225,6 +234,8 @@ export const StationMarkerInfoWindow = memo(function StationMarkerInfoWindow({
 								<Navigation className="h-4 w-4" />
 								Open in Maps
 							</Button>
+							) : null}
+							{showDirectionsAction ? (
 							<Button
 								type="button"
 								variant="outlineprimary"
@@ -247,6 +258,7 @@ export const StationMarkerInfoWindow = memo(function StationMarkerInfoWindow({
 								<Navigation className="h-4 w-4" />
 								Get Directions
 							</Button>
+							) : null}
 						</div>
 					) : null}
 				</div>
