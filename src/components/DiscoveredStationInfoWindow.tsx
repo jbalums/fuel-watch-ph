@@ -2,7 +2,14 @@ import { Button } from "@/components/ui/button";
 import { fuelTypes, fuelTypeTextColorClassNames } from "@/lib/fuel-prices";
 import type { StationBrandAverage } from "@/lib/station-brand-logos";
 import type { GoogleDiscoveredStation } from "@/lib/station-discovery";
-import { BadgePlus, MapPinned } from "lucide-react";
+import {
+	BadgePlus,
+	CheckCircle2,
+	CheckIcon,
+	FileIcon,
+	FilePlus2,
+	MapPinned,
+} from "lucide-react";
 
 interface DiscoveredStationInfoWindowProps {
 	station: GoogleDiscoveredStation;
@@ -104,11 +111,12 @@ export function DiscoveredStationInfoWindow({
 				{showReportAction && onReportGasStation ? (
 					<Button
 						type="button"
-						variant="outline-primary"
+						variant="outline-destructive"
 						size="sm"
 						className="h-8 w-full justify-center text-xs"
 						onClick={onReportGasStation}
 					>
+						<FileIcon className="h-4 w-4" />
 						Report Fuel Prices!
 					</Button>
 				) : null}

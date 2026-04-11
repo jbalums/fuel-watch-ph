@@ -11,7 +11,7 @@ import {
 	AlertDialogHeader,
 	AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Loader2, MapPin } from "lucide-react";
+import { Loader2, Map, MapPin } from "lucide-react";
 import { HeroStatus } from "@/components/HeroStatus";
 import { SearchFilter } from "@/components/SearchFilter";
 import { StationResultsList } from "@/components/StationResultsList";
@@ -36,23 +36,20 @@ const HOMEPAGE_LOCATION_PROMPT_DISMISSED_KEY =
 
 export default function Index() {
 	const navigate = useNavigate();
-	const {
-		isLoaded: isGoogleMapsLoaded,
-		loadError: googleMapsLoadError,
-	} = useJsApiLoader({
-		id: GOOGLE_MAPS_SCRIPT_ID,
-		googleMapsApiKey: GOOGLE_MAPS_API_KEY,
-		libraries: GOOGLE_MAPS_LIBRARIES,
-		preventGoogleFontsLoading: true,
-	});
+	const { isLoaded: isGoogleMapsLoaded, loadError: googleMapsLoadError } =
+		useJsApiLoader({
+			id: GOOGLE_MAPS_SCRIPT_ID,
+			googleMapsApiKey: GOOGLE_MAPS_API_KEY,
+			libraries: GOOGLE_MAPS_LIBRARIES,
+			preventGoogleFontsLoading: true,
+		});
 	const [selectedProvinceCode, setSelectedProvinceCode] = useState("");
 	const [selectedCityMunicipalityCode, setSelectedCityMunicipalityCode] =
 		useState("");
 	const [locationPromptOpen, setLocationPromptOpen] = useState(false);
 	const [autoDetectedProvinceCode, setAutoDetectedProvinceCode] =
 		useState("");
-	const [detectedLocationAddress, setDetectedLocationAddress] =
-		useState("");
+	const [detectedLocationAddress, setDetectedLocationAddress] = useState("");
 	const [isResolvingLocationAddress, setIsResolvingLocationAddress] =
 		useState(false);
 	const [locationPromptDismissed, setLocationPromptDismissed] = useState(
@@ -77,8 +74,7 @@ export default function Index() {
 		retryLocation,
 	} = useCurrentLocation();
 	const { data: currentUserScope } = useCurrentUserScope(isLguOperator);
-	const shouldLoadAllCitiesForDetection =
-		!isLguOperator && !!currentLocation;
+	const shouldLoadAllCitiesForDetection = !isLguOperator && !!currentLocation;
 	const { provinces, cities, citiesByProvince } = useGeoReferences({
 		provinceCode: selectedProvinceCode,
 		includeAllCities: shouldLoadAllCitiesForDetection,
@@ -137,7 +133,11 @@ export default function Index() {
 			return;
 		}
 
-		if (GOOGLE_MAPS_API_KEY && !isGoogleMapsLoaded && !googleMapsLoadError) {
+		if (
+			GOOGLE_MAPS_API_KEY &&
+			!isGoogleMapsLoaded &&
+			!googleMapsLoadError
+		) {
 			setIsResolvingLocationAddress(true);
 			setDetectedLocationAddress(
 				`${formatCoordinate(currentLocation.lat)}, ${formatCoordinate(
@@ -344,6 +344,7 @@ export default function Index() {
 				cities={availableCities}
 				provinceCode={selectedProvinceCode}
 				cityMunicipalityCode={selectedCityMunicipalityCode}
+				autoOpenGeoFiltersOnActive={false}
 				onProvinceChange={(provinceCode) => {
 					hasManualLocationOverrideRef.current = true;
 					setAutoDetectedProvinceCode("");
@@ -355,47 +356,15 @@ export default function Index() {
 					setSelectedCityMunicipalityCode(cityCode);
 				}}
 			/>
-			{currentLocation ? (
-				<div className="rounded-xl border border-border/70 bg-card/80 px-4 py-3">
-					<div className="flex items-start gap-3">
-						<div className="mt-0.5 rounded-full bg-primary/10 p-2 text-primary">
-							<MapPin className="h-4 w-4" />
-						</div>
-						<div className="min-w-0">
-							<p className="text-sm font-semibold text-foreground">
-								Current location detected
-							</p>
-							<p className="mt-1 text-sm text-muted-foreground">
-								{isResolvingLocationAddress ? (
-									<span className="inline-flex items-center gap-2">
-										<Loader2 className="h-4 w-4 animate-spin" />
-										Resolving your current location...
-									</span>
-								) : (
-									detectedLocationAddress ||
-									`${formatCoordinate(currentLocation.lat)}, ${formatCoordinate(
-										currentLocation.lng,
-									)}`
-								)}
-							</p>
-							<p className="mt-1 text-xs text-muted-foreground">
-								Coordinates: {formatCoordinate(currentLocation.lat)},{" "}
-								{formatCoordinate(currentLocation.lng)}
-							</p>
-							<p className="mt-1 text-xs text-muted-foreground">
-								Province:{" "}
-								<span className="font-medium text-foreground">
-									{detectedProvinceName || "Detecting province..."}
-								</span>
-							</p>
-						</div>
-					</div>
-				</div>
-			) : null}
-			{detectedProvinceName && selectedProvinceCode === autoDetectedProvinceCode ? (
+
+			{stations.length === 0 &&
+			detectedProvinceName &&
+			selectedProvinceCode === autoDetectedProvinceCode ? (
 				<div className="rounded-xl border border-primary/20 bg-primary/5 px-4 py-3 text-sm text-primary">
 					Showing stations in your current province:{" "}
-					<span className="font-semibold">{detectedProvinceName}</span>
+					<span className="font-semibold">
+						{detectedProvinceName}
+					</span>
 				</div>
 			) : null}
 			<StationResultsList
@@ -403,7 +372,11 @@ export default function Index() {
 				loading={stationsLoading}
 				emptyMessage={emptyMessage}
 				emptyActionLabel={
-					shouldShowMapFallback ? "Go to Map" : undefined
+					shouldShowMapFallback ? (
+						<div className="flex items-center justify-center gap-2">
+							<Map className="h-10 w-10" /> Go to Map
+						</div>
+					) : undefined
 				}
 				onEmptyAction={
 					shouldShowMapFallback ? handleOpenMapFallback : undefined

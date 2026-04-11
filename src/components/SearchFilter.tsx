@@ -24,6 +24,7 @@ interface SearchFilterProps {
 	cityMunicipalityCode?: string;
 	onProvinceChange?: (provinceCode: string) => void;
 	onCityChange?: (cityCode: string) => void;
+	autoOpenGeoFiltersOnActive?: boolean;
 }
 
 const fuelTypes: FilterFuelType[] = ["All", ...availableFuelTypes];
@@ -48,6 +49,7 @@ export function SearchFilter({
 	cityMunicipalityCode = "",
 	onProvinceChange,
 	onCityChange,
+	autoOpenGeoFiltersOnActive = true,
 }: SearchFilterProps) {
 	const priceSortEnabled = fuelFilter !== "All";
 	const showStatusFilter = fuelFilter !== "All";
@@ -57,10 +59,10 @@ export function SearchFilter({
 	const [geoFiltersOpen, setGeoFiltersOpen] = useState(hasActiveGeoFilter);
 
 	useEffect(() => {
-		if (hasActiveGeoFilter) {
+		if (autoOpenGeoFiltersOnActive && hasActiveGeoFilter) {
 			setGeoFiltersOpen(true);
 		}
-	}, [hasActiveGeoFilter]);
+	}, [autoOpenGeoFiltersOnActive, hasActiveGeoFilter]);
 
 	return (
 		<div className="flex flex-col gap-1">
