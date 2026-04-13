@@ -8,7 +8,7 @@ export function ThemeToggle({ showLabel: boolean = false }) {
 	return (
 		<button
 			onClick={toggleTheme}
-			className="relative flex h-8 w-8 items-center justify-center rounded-lg bg-secondary text-foreground sovereign-ease hover:bg-muted transition-colors"
+			className="relative flex h-8 w-8 items-center justify-center rounded-2xl bg-secondary text-foreground sovereign-ease hover:bg-muted transition-colors"
 			aria-label={`Switch to ${theme === "light" ? "dark" : "light"} mode`}
 		>
 			<AnimatePresence mode="wait" initial={false}>

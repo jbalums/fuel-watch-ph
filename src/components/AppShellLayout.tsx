@@ -148,20 +148,21 @@ export function AppShellLayout() {
 						<button
 							type="button"
 							onClick={handleChangeCurrentProvince}
-							className="relative flex h-8 px-2 gap-1 items-center justify-center rounded-lg bg-secondary text-foreground sovereign-ease hover:bg-muted transition-colors"
+							className="relative flex h-8 px-1 gap-1 items-center justify-center rounded-sm bg-background border border-dashed border-primary text-foreground sovereign-ease hover:bg-muted transition-colors"
 							aria-label="Change current province"
 							title="Change current province"
 						>
 							<MapPin className="h-4 w-4" />
-							<span className="hidden md:block text-xs">
+							<span className="hidden md:block text-primary text-[10px]">
 								Change Province
 							</span>
 						</button>
+						<ThemeToggle />
 						{user ? (
 							<DropdownMenu>
 								<DropdownMenuTrigger asChild>
 									<button className="flex items-center gap-1 outline-none sovereign-ease transition-transform hover:scale-105">
-										<Avatar className="h-8 w-8 ring-1 ring-border">
+										<Avatar className="h-8 w-8 ring-1 ring-border shadow-[0_0_0_2px] shadow-primary dark:shadow-sky-500">
 											<AvatarImage
 												src={
 													profile?.avatarUrl ||
@@ -175,9 +176,11 @@ export function AppShellLayout() {
 													.toUpperCase()}
 											</AvatarFallback>
 										</Avatar>
-										<span className="text-sm font-bold text-primary">
-											{compactUserName}
-										</span>
+										{/* <span className="text-sm font-bold text-primary">
+											{avatarLabel
+													.slice(0, 2)
+													.toUpperCase()}
+										</span> */}
 									</button>
 								</DropdownMenuTrigger>
 								<DropdownMenuContent
@@ -188,69 +191,6 @@ export function AppShellLayout() {
 										onClick={() => navigate("/profile")}
 									>
 										My profile
-									</DropdownMenuItem>
-									<DropdownMenuItem
-										onClick={(e) => {
-											e.preventDefault();
-											e.stopPropagation();
-											toggleTheme();
-										}}
-									>
-										Theme{" "}
-										<div
-											className={`flex ml-auto gap-2 bg-slate-200 dark:bg-slate-900 rounded-xl px-3 py-1 text-slate-950 dark:text-white duration-200 text-xs`}
-										>
-											{theme}
-											{theme === "light" ? (
-												<motion.div
-													key="sun"
-													initial={{
-														opacity: 0,
-														scale: 0.6,
-														rotate: -90,
-													}}
-													animate={{
-														opacity: 1,
-														scale: 1,
-														rotate: 0,
-													}}
-													exit={{
-														opacity: 0,
-														scale: 0.6,
-														rotate: 90,
-													}}
-													transition={{
-														duration: 0.2,
-													}}
-												>
-													<Sun className="h-4 w-4" />
-												</motion.div>
-											) : (
-												<motion.div
-													key="moon"
-													initial={{
-														opacity: 0,
-														scale: 0.6,
-														rotate: 90,
-													}}
-													animate={{
-														opacity: 1,
-														scale: 1,
-														rotate: 0,
-													}}
-													exit={{
-														opacity: 0,
-														scale: 0.6,
-														rotate: -90,
-													}}
-													transition={{
-														duration: 0.2,
-													}}
-												>
-													<Moon className="h-4 w-4" />
-												</motion.div>
-											)}
-										</div>
 									</DropdownMenuItem>
 
 									<DropdownMenuItem
@@ -264,7 +204,6 @@ export function AppShellLayout() {
 							</DropdownMenu>
 						) : (
 							<>
-								<ThemeToggle />
 								<button
 									onClick={() => navigate("/auth")}
 									className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-xs text-primary-foreground sovereign-ease transition-colors hover:bg-primary-hover"
