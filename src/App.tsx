@@ -25,6 +25,7 @@ import AdminClaimsPage from "./pages/AdminClaimsPage";
 import AdminUsersPage from "./pages/AdminUsersPage";
 import AdminLguUsersPage from "./pages/AdminLguUsersPage";
 import AdminBrandLogosPage from "./pages/AdminBrandLogosPage";
+import AdminDonationGatewaysPage from "./pages/AdminDonationGatewaysPage";
 import AdminStationDiscoveryPage from "./pages/AdminStationDiscoveryPage";
 import AdminAccessRequestsPage from "./pages/AdminAccessRequestsPage";
 import AdminAccessRequestDetailPage from "./pages/AdminAccessRequestDetailPage";
@@ -37,6 +38,7 @@ import AboutUs from "./pages/AboutUs";
 import AdminAccessRequestPage from "./pages/AdminAccessRequestPage";
 import AdminInviteRegistrationPage from "./pages/AdminInviteRegistrationPage";
 import ContactUs from "./pages/ContactUs";
+import DonatePage from "./pages/DonatePage";
 import LguPage from "./pages/LguPage";
 import LguStationsPage from "./pages/LguStationsPage";
 import LguStationsSummaryPage from "./pages/LguStationsSummaryPage";
@@ -127,6 +129,7 @@ function RouterContent() {
 						<Route path="/map" element={<MapPage />} />
 						<Route path="/search" element={<SearchPage />} />
 						<Route path="/report" element={<ReportPage />} />
+						<Route path="/donate" element={<DonatePage />} />
 						<Route path="/admin" element={<AdminLayout />}>
 							<Route index element={<AdminPage />} />
 							<Route
@@ -153,6 +156,10 @@ function RouterContent() {
 							<Route
 								path="brand-logos"
 								element={<AdminBrandLogosPage />}
+							/>
+							<Route
+								path="donation-gateways"
+								element={<AdminDonationGatewaysPage />}
 							/>
 							<Route
 								path="lgu-users"

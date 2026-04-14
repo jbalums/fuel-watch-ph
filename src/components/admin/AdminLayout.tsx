@@ -14,6 +14,7 @@ export function AdminLayout() {
 		{ label: "Stations Summary", to: "/admin/stations-summary" },
 		{ label: "Station Discovery", to: "/admin/station-discovery" },
 		{ label: "Brand Logos", to: "/admin/brand-logos" },
+		{ label: "Donation Gateways", to: "/admin/donation-gateways" },
 		{ label: "Reports", to: "/admin/reports" },
 		{ label: "Claims", to: "/admin/claims" },
 		...(isSuperAdmin

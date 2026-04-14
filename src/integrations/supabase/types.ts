@@ -257,6 +257,45 @@ export type Database = {
         }
         Relationships: []
       }
+      donation_gateways: {
+        Row: {
+          account_name: string | null
+          account_number: string | null
+          created_at: string
+          gateway_name: string
+          id: string
+          is_active: boolean
+          qr_image_path: string | null
+          sort_order: number
+          updated_at: string
+          wallet_details: string | null
+        }
+        Insert: {
+          account_name?: string | null
+          account_number?: string | null
+          created_at?: string
+          gateway_name: string
+          id?: string
+          is_active?: boolean
+          qr_image_path?: string | null
+          sort_order?: number
+          updated_at?: string
+          wallet_details?: string | null
+        }
+        Update: {
+          account_name?: string | null
+          account_number?: string | null
+          created_at?: string
+          gateway_name?: string
+          id?: string
+          is_active?: boolean
+          qr_image_path?: string | null
+          sort_order?: number
+          updated_at?: string
+          wallet_details?: string | null
+        }
+        Relationships: []
+      }
       admin_access_requests: {
         Row: {
           city_municipality_code: string | null

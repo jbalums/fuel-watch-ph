@@ -7,6 +7,7 @@ import {
 	ImagePlus,
 	Loader2,
 	MapPinned,
+	Wallet,
 	Route,
 	ShieldAlert,
 	UserPlus,
@@ -131,6 +132,13 @@ export default function AdminPage() {
 				"Manage brand match keywords and marker logos used across station maps.",
 			path: "/admin/brand-logos",
 			icon: ImagePlus,
+		},
+		{
+			label: "Donation Gateways",
+			description:
+				"Manage donation wallets, account details, and optional QR codes for the public Donate page.",
+			path: "/admin/donation-gateways",
+			icon: Wallet,
 		},
 		{
 			label: "Reports",

@@ -37,6 +37,12 @@ export function SiteFooter() {
 					>
 						Contact Us
 					</Link>
+					<Link
+						to="/donate"
+						className="font-bold dark:text-white transition-colors hover:text-foreground"
+					>
+						Donate
+					</Link>
 				</div>
 				<p className="text-xs text-muted-foreground mb-2">
 					FuelWatch PH is a community-powered platform.Prices may

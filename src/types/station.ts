@@ -50,6 +50,20 @@ export interface StationBrandLogo {
   updatedAt: string;
 }
 
+export interface DonationGateway {
+  id: string;
+  gatewayName: string;
+  accountName: string | null;
+  accountNumber: string | null;
+  walletDetails: string | null;
+  qrImagePath: string | null;
+  qrImageUrl: string | null;
+  isActive: boolean;
+  sortOrder: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface PublicStationSummary {
   totalStations: number;
   averagePrices: Record<FuelType, number | null>;
