@@ -14,7 +14,7 @@ import {
 	fuelTypeTextColorClassNames,
 	isFuelSellable,
 } from "@/lib/fuel-prices";
-import { FileEdit, Navigation } from "lucide-react";
+import { FileEdit, FilePlus2Icon, Navigation } from "lucide-react";
 const statusColors: Record<StationStatus, string> = {
 	Available: "#22c55e",
 	Low: "#f59e0b",
@@ -192,7 +192,7 @@ export const StationMarkerInfoWindow = memo(function StationMarkerInfoWindow({
 							className="mt-5 mb-0 h-8 w-full justify-center text-xs"
 							onClick={onReportFuelPrices}
 						>
-							<FileEdit className="h-4 w-4" />
+							<FilePlus2Icon className="h-4 w-4" />
 							Report Fuel Prices!
 						</Button>
 					) : null}

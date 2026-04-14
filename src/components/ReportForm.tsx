@@ -337,8 +337,6 @@ export function ReportForm() {
 				: null;
 		},
 	);
-	const previousSubmissionModeRef =
-		useRef<FuelReportSubmissionMode>(submissionMode);
 
 	useEffect(() => {
 		if (!photoFile) {
@@ -492,21 +490,6 @@ export function ReportForm() {
 		stationSearchProvinceCode,
 		stations,
 	]);
-
-	useEffect(() => {
-		const previousSubmissionMode = previousSubmissionModeRef.current;
-		previousSubmissionModeRef.current = submissionMode;
-
-		if (
-			submissionMode !== "easy" ||
-			previousSubmissionMode === "easy"
-		) {
-			return;
-		}
-
-		setSelectedStationId(null);
-		setStationName("");
-	}, [submissionMode]);
 
 	const uploadSelectedPhoto = async (file: File) => {
 		if (!user) {
