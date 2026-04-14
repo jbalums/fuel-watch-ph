@@ -32,6 +32,7 @@ import AdminAccessRequestDetailPage from "./pages/AdminAccessRequestDetailPage";
 import AdminInvitesPage from "./pages/AdminInvitesPage";
 import AdminGeoBackfillPage from "./pages/AdminGeoBackfillPage";
 import AdminPlatformControlsPage from "./pages/AdminPlatformControlsPage";
+import AdminStationExperiencesPage from "./pages/AdminStationExperiencesPage";
 import SystemPreviewPage from "./pages/SystemPreviewPage";
 import Auth from "./pages/Auth";
 import AboutUs from "./pages/AboutUs";
@@ -39,10 +40,12 @@ import AdminAccessRequestPage from "./pages/AdminAccessRequestPage";
 import AdminInviteRegistrationPage from "./pages/AdminInviteRegistrationPage";
 import ContactUs from "./pages/ContactUs";
 import DonatePage from "./pages/DonatePage";
+import StationExperiencesPage from "./pages/StationExperiencesPage";
 import LguPage from "./pages/LguPage";
 import LguStationsPage from "./pages/LguStationsPage";
 import LguStationsSummaryPage from "./pages/LguStationsSummaryPage";
 import LguReportsPage from "./pages/LguReportsPage";
+import LguStationExperiencesPage from "./pages/LguStationExperiencesPage";
 import LguTeamPage from "./pages/LguTeamPage";
 import Profile from "./pages/Profile";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
@@ -130,6 +133,10 @@ function RouterContent() {
 						<Route path="/search" element={<SearchPage />} />
 						<Route path="/report" element={<ReportPage />} />
 						<Route path="/donate" element={<DonatePage />} />
+						<Route
+							path="/station-experiences"
+							element={<StationExperiencesPage />}
+						/>
 						<Route path="/admin" element={<AdminLayout />}>
 							<Route index element={<AdminPage />} />
 							<Route
@@ -143,6 +150,10 @@ function RouterContent() {
 							<Route
 								path="reports"
 								element={<AdminReportsPage />}
+							/>
+							<Route
+								path="station-experiences"
+								element={<AdminStationExperiencesPage />}
 							/>
 							<Route
 								path="claims"
@@ -203,6 +214,10 @@ function RouterContent() {
 							<Route
 								path="reports"
 								element={<LguReportsPage />}
+							/>
+							<Route
+								path="station-experiences"
+								element={<LguStationExperiencesPage />}
 							/>
 							<Route path="team" element={<LguTeamPage />} />
 						</Route>

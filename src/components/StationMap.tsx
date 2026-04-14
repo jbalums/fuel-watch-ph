@@ -31,6 +31,11 @@ import {
 	buildStationBrandAverage,
 } from "@/lib/station-brand-logos";
 import {
+	buildStationExperienceIdentityFromDiscoveredStation,
+	buildStationExperienceIdentityFromStation,
+	buildStationExperienceSearch,
+} from "@/lib/station-experience";
+import {
 	buildAddressSearchText,
 	getResolvedDiscoveredStationAddress,
 	getDuplicateMatch,
@@ -461,6 +466,25 @@ function GoogleStationMap({
 			},
 		});
 	}, [navigate, selectedGoogleStation]);
+	const openSelectedGoogleStationExperiences = useCallback(() => {
+		if (!selectedGoogleStation) {
+			return;
+		}
+
+		const detectedScope = detectGeoScopeFromAddress({
+			address: buildAddressSearchText(selectedGoogleStation),
+			lat: selectedGoogleStation.lat,
+			lng: selectedGoogleStation.lng,
+			provinces,
+			cities,
+		});
+		const identity = buildStationExperienceIdentityFromDiscoveredStation(
+			selectedGoogleStation,
+			detectedScope,
+		);
+
+		navigate(`/station-experiences${buildStationExperienceSearch(identity)}`);
+	}, [cities, navigate, provinces, selectedGoogleStation]);
 	const reportSelectedGoogleStation = useCallback(() => {
 		if (!selectedGoogleStation) {
 			return;
@@ -472,6 +496,14 @@ function GoogleStationMap({
 			},
 		});
 	}, [navigate, selectedGoogleStation]);
+	const openFocusedStationExperiences = useCallback(() => {
+		if (!focusedStation) {
+			return;
+		}
+
+		const identity = buildStationExperienceIdentityFromStation(focusedStation);
+		navigate(`/station-experiences${buildStationExperienceSearch(identity)}`);
+	}, [focusedStation, navigate]);
 	const reportFocusedStation = useCallback(() => {
 		if (!focusedStation) {
 			return;
@@ -1024,6 +1056,7 @@ function GoogleStationMap({
 									}, 500);
 							}}
 							onReportFuelPrices={reportFocusedStation}
+							onOpenExperiences={openFocusedStationExperiences}
 						/>
 					</InfoWindowF>
 				) : null}
@@ -1044,6 +1077,9 @@ function GoogleStationMap({
 							}
 							showReportAction
 							onReportGasStation={reportSelectedGoogleStation}
+							onOpenExperiences={
+								openSelectedGoogleStationExperiences
+							}
 						/>
 					</InfoWindowF>
 				) : null}

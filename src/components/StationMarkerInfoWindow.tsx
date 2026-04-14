@@ -3,8 +3,10 @@ import type { GasStation, StationStatus } from "@/types/station";
 import { Button } from "@/components/ui/button";
 import { LguVerifiedBadge } from "@/components/LguVerifiedBadge";
 import { PriceTrendIndicator } from "@/components/PriceTrendIndicator";
+import { StationExperiencePreview } from "@/components/StationExperiencePreview";
 import { VerifiedStationBadge } from "@/components/VerifiedStationBadge";
 import type { StationBrandAverage } from "@/lib/station-brand-logos";
+import { buildStationExperienceIdentityFromStation } from "@/lib/station-experience";
 import {
 	buildGoogleMapsDirectionsUrl,
 	openGoogleMapsDirections,
@@ -30,6 +32,7 @@ interface StationMarkerInfoWindowProps {
 	onReportFuelPrices?: () => void;
 	onGetDirections?: () => void;
 	onOpenInMaps?: () => void;
+	onOpenExperiences?: () => void;
 }
 
 export const StationMarkerInfoWindow = memo(function StationMarkerInfoWindow({
@@ -41,12 +44,14 @@ export const StationMarkerInfoWindow = memo(function StationMarkerInfoWindow({
 	onReportFuelPrices,
 	onGetDirections,
 	onOpenInMaps,
+	onOpenExperiences,
 }: StationMarkerInfoWindowProps) {
 	const directionsUrl = buildGoogleMapsDirectionsUrl({
 		lat: station.lat,
 		lng: station.lng,
 		placeId: station.googlePlaceId,
 	});
+	const experienceIdentity = buildStationExperienceIdentityFromStation(station);
 
 	return (
 		<div className="flex max-w-[288px] flex-col gap-1.5 pr-3 md:pr-0 text-sm">
@@ -179,6 +184,12 @@ export const StationMarkerInfoWindow = memo(function StationMarkerInfoWindow({
 						</p>
 					)}
 				</div>
+			) : null}
+			{onOpenExperiences ? (
+				<StationExperiencePreview
+					identity={experienceIdentity}
+					onOpen={onOpenExperiences}
+				/>
 			) : null}
 			{showReportAction ||
 			showDirectionsAction ||

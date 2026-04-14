@@ -384,10 +384,16 @@ export async function refreshAdminData(queryClient: QueryClient) {
 			queryKey: ["admin", "station_claim_requests"],
 		}),
 		queryClient.invalidateQueries({
+			queryKey: ["admin", "station_experiences"],
+		}),
+		queryClient.invalidateQueries({
 			queryKey: ["lgu", "gas_stations"],
 		}),
 		queryClient.invalidateQueries({
 			queryKey: ["lgu", "fuel_reports"],
+		}),
+		queryClient.invalidateQueries({
+			queryKey: ["lgu", "station_experiences"],
 		}),
 		queryClient.invalidateQueries({
 			queryKey: ["lgu", "dashboard_stats"],
@@ -398,6 +404,9 @@ export async function refreshAdminData(queryClient: QueryClient) {
 		}),
 		queryClient.invalidateQueries({
 			queryKey: ["public_station_summary"],
+		}),
+		queryClient.invalidateQueries({
+			queryKey: ["station_experiences"],
 		}),
 	]);
 }

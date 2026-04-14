@@ -1,5 +1,7 @@
 import { Button } from "@/components/ui/button";
+import { StationExperiencePreview } from "@/components/StationExperiencePreview";
 import { fuelTypes, fuelTypeTextColorClassNames } from "@/lib/fuel-prices";
+import { buildStationExperienceIdentityFromDiscoveredStation } from "@/lib/station-experience";
 import type { StationBrandAverage } from "@/lib/station-brand-logos";
 import type { DiscoveredStation } from "@/lib/station-discovery";
 import {
@@ -19,6 +21,7 @@ interface DiscoveredStationInfoWindowProps {
 	onOpenInDiscovery?: () => void;
 	showReportAction?: boolean;
 	onReportGasStation?: () => void;
+	onOpenExperiences?: () => void;
 }
 
 export function DiscoveredStationInfoWindow({
@@ -29,7 +32,10 @@ export function DiscoveredStationInfoWindow({
 	onOpenInDiscovery,
 	showReportAction = false,
 	onReportGasStation,
+	onOpenExperiences,
 }: DiscoveredStationInfoWindowProps) {
+	const experienceIdentity = buildStationExperienceIdentityFromDiscoveredStation(station);
+
 	return (
 		<div className="flex max-w-[288px] flex-col gap-2 pr-3 md:pr-0 text-sm">
 			<div className="flex flex-wrap items-center gap-2">
@@ -113,6 +119,12 @@ export function DiscoveredStationInfoWindow({
 						</p>
 					)}
 				</div>
+			) : null}
+			{onOpenExperiences ? (
+				<StationExperiencePreview
+					identity={experienceIdentity}
+					onOpen={onOpenExperiences}
+				/>
 			) : null}
 			<div className="mt-1 flex flex-col gap-2 px-1 pb-2">
 				{showReportAction && onReportGasStation ? (

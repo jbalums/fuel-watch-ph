@@ -64,6 +64,7 @@ export function LguLayout() {
 		{ label: "Stations", to: "/lgu/stations" },
 		{ label: "Stations Summary", to: "/lgu/stations-summary" },
 		{ label: "Reports", to: "/lgu/reports" },
+		{ label: "Experiences", to: "/lgu/station-experiences" },
 		...((isProvinceAdmin || isCityAdmin)
 			? [{ label: "Team", to: "/lgu/team" }]
 			: []),

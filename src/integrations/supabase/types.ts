@@ -296,6 +296,86 @@ export type Database = {
         }
         Relationships: []
       }
+      station_experiences: {
+        Row: {
+          city_municipality_code: string | null
+          created_at: string
+          experience_text: string
+          external_id: string | null
+          id: string
+          lat: number | null
+          lng: number | null
+          photo_filenames: string[]
+          photo_paths: string[]
+          province_code: string | null
+          review_notes: string | null
+          review_status: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          sentiment: string
+          source: string | null
+          station_address: string
+          station_id: string | null
+          station_name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          city_municipality_code?: string | null
+          created_at?: string
+          experience_text: string
+          external_id?: string | null
+          id?: string
+          lat?: number | null
+          lng?: number | null
+          photo_filenames?: string[]
+          photo_paths?: string[]
+          province_code?: string | null
+          review_notes?: string | null
+          review_status?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          sentiment: string
+          source?: string | null
+          station_address: string
+          station_id?: string | null
+          station_name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          city_municipality_code?: string | null
+          created_at?: string
+          experience_text?: string
+          external_id?: string | null
+          id?: string
+          lat?: number | null
+          lng?: number | null
+          photo_filenames?: string[]
+          photo_paths?: string[]
+          province_code?: string | null
+          review_notes?: string | null
+          review_status?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          sentiment?: string
+          source?: string | null
+          station_address?: string
+          station_id?: string | null
+          station_name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "station_experiences_station_id_fkey"
+            columns: ["station_id"]
+            isOneToOne: false
+            referencedRelation: "gas_stations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       admin_access_requests: {
         Row: {
           city_municipality_code: string | null

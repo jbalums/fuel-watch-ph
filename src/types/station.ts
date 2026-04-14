@@ -9,6 +9,8 @@ export type FuelAvailabilityMap = Record<FuelType, StationStatus | null>;
 export type FuelReportReviewStatus = "pending" | "approved" | "rejected";
 export type StationClaimReviewStatus = "pending" | "approved" | "rejected";
 export type FuelReportSubmissionMode = "standard" | "easy";
+export type StationExperienceReviewStatus = "pending" | "approved" | "rejected";
+export type StationExperienceSentiment = "good" | "bad";
 
 export interface GasStation {
   id: string;
@@ -62,6 +64,35 @@ export interface DonationGateway {
   sortOrder: number;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface StationExperienceIdentity {
+  stationId: string | null;
+  source: string | null;
+  externalId: string | null;
+  stationName: string;
+  stationAddress: string;
+  lat: number | null;
+  lng: number | null;
+  provinceCode: string | null;
+  cityMunicipalityCode: string | null;
+}
+
+export interface StationExperience extends StationExperienceIdentity {
+  id: string;
+  userId: string;
+  sentiment: StationExperienceSentiment;
+  experienceText: string;
+  photoPaths: string[];
+  photoFilenames: string[];
+  photoUrls: string[];
+  reviewStatus: StationExperienceReviewStatus;
+  reviewNotes: string | null;
+  reviewedAt: string | null;
+  reviewedBy: string | null;
+  createdAt: string;
+  updatedAt: string;
+  reporterLabel: string;
 }
 
 export interface PublicStationSummary {
