@@ -51,9 +51,9 @@ import {
 	getDuplicateLabel,
 	getDuplicateMatch,
 	getDuplicateMessage,
-	searchGoogleFuelStationsInBounds,
+	searchDiscoveredFuelStationsInBounds,
 	type DuplicateMatch,
-	type GoogleDiscoveredStation,
+	type DiscoveredStation,
 } from "@/lib/station-discovery";
 import {
 	buildStationLguVerificationPayload,
@@ -262,15 +262,13 @@ function DiscoveryStationForm({
 						Create Station
 					</h3>
 					<p className="text-sm text-muted-foreground">
-						Google Maps prefills the station details. Complete the
+						Discovery results prefill the station details. Complete the
 						local fuel data before saving.
 					</p>
 				</div>
-				{form.googlePlaceId ? (
-					<span className="rounded-full bg-secondary px-3 py-1 text-xs font-medium text-muted-foreground">
-						Place ID linked
-					</span>
-				) : null}
+				<span className="rounded-full bg-secondary px-3 py-1 text-xs font-medium text-muted-foreground">
+					{form.googlePlaceId ? "Google Place ID linked" : "OpenStreetMap discovery"}
+				</span>
 			</div>
 
 			{duplicateMatch ? (
@@ -376,7 +374,7 @@ function DiscoveryStationForm({
 						Google Place ID
 					</p>
 					<p className="mt-1 break-all text-muted-foreground">
-						{form.googlePlaceId || "Not linked"}
+						{form.googlePlaceId || "Not available for OpenStreetMap discovery"}
 					</p>
 				</div>
 
@@ -571,7 +569,7 @@ function GoogleDiscoveryMap({
 	initialGoogleStation = null,
 }: {
 	stations: GasStationRow[];
-	initialGoogleStation?: GoogleDiscoveredStation | null;
+	initialGoogleStation?: DiscoveredStation | null;
 }) {
 	const { data: stationBrandLogos = [] } = useStationBrandLogos();
 	const queryClient = useQueryClient();
@@ -580,8 +578,7 @@ function GoogleDiscoveryMap({
 	const { accessLevel } = useUserAccess();
 	const { coordinates: currentLocation } = useCurrentLocation();
 	const [map, setMap] = useState<google.maps.Map | null>(null);
-	const [placesReady, setPlacesReady] = useState(false);
-	const [results, setResults] = useState<GoogleDiscoveredStation[]>([]);
+	const [results, setResults] = useState<DiscoveredStation[]>([]);
 	const [selectedResultId, setSelectedResultId] = useState<string | null>(
 		null,
 	);
@@ -631,7 +628,7 @@ function GoogleDiscoveryMap({
 	const duplicateMatches = useMemo(() => {
 		return new Map(
 			results.map((result) => [
-				result.placeId,
+				result.externalId,
 				getDuplicateMatch(result, normalizedStations),
 			]),
 		);
@@ -641,9 +638,9 @@ function GoogleDiscoveryMap({
 		return new Map<string, ResultAssessment>(
 			results.map((result) => {
 				const duplicateMatch =
-					duplicateMatches.get(result.placeId) ?? null;
+					duplicateMatches.get(result.externalId) ?? null;
 				const detectedScope =
-					resultScopeOverrides[result.placeId] ??
+					resultScopeOverrides[result.externalId] ??
 					(() => {
 						if (resultsProvinceFilter) {
 							return {
@@ -674,7 +671,7 @@ function GoogleDiscoveryMap({
 				}
 
 				return [
-					result.placeId,
+					result.externalId,
 					{
 						duplicateMatch,
 						detectedScope: detectedScope?.provinceCode
@@ -705,7 +702,7 @@ function GoogleDiscoveryMap({
 		return results.reduce(
 			(summary, result) => {
 				const assessment =
-					resultAssessments.get(result.placeId) ?? null;
+					resultAssessments.get(result.externalId) ?? null;
 				if (!assessment) {
 					return summary;
 				}
@@ -723,7 +720,7 @@ function GoogleDiscoveryMap({
 	}, [resultAssessments, results]);
 
 	const selectedResult = selectedResultId
-		? (results.find((result) => result.placeId === selectedResultId) ??
+		? (results.find((result) => result.externalId === selectedResultId) ??
 			null)
 		: null;
 	const selectedDuplicateMatch = selectedResultId
@@ -754,7 +751,7 @@ function GoogleDiscoveryMap({
 		},
 		onSuccess: async () => {
 			await refreshAdminData(queryClient);
-			toast.success("Station created from Google Maps");
+			toast.success("Station created from discovery results");
 			setSelectedResultId(null);
 			setStationForm(initialStationForm);
 		},
@@ -789,7 +786,7 @@ function GoogleDiscoveryMap({
 					detectedScope?.provinceCode &&
 					detectedScope?.cityMunicipalityCode
 				) {
-					nextOverrides[result.placeId] = {
+					nextOverrides[result.externalId] = {
 						provinceCode: detectedScope.provinceCode,
 						cityMunicipalityCode:
 							detectedScope.cityMunicipalityCode,
@@ -805,10 +802,10 @@ function GoogleDiscoveryMap({
 
 			if (selectedResultId) {
 				const selectedResult = results.find(
-					(result) => result.placeId === selectedResultId,
+					(result) => result.externalId === selectedResultId,
 				);
 				const selectedScope =
-					selectedResult && nextOverrides[selectedResult.placeId];
+					selectedResult && nextOverrides[selectedResult.externalId];
 
 				if (selectedResult && selectedScope) {
 					setStationForm((current) => ({
@@ -869,7 +866,7 @@ function GoogleDiscoveryMap({
 		mutationFn: async () => {
 			const eligibleResults = results.filter((result) => {
 				const assessment =
-					resultAssessments.get(result.placeId) ?? null;
+					resultAssessments.get(result.externalId) ?? null;
 				return assessment?.status === "eligible";
 			});
 
@@ -885,10 +882,10 @@ function GoogleDiscoveryMap({
 			}
 
 			const stationRows = eligibleResults.map((result) => {
-				const assessment = resultAssessments.get(result.placeId);
+				const assessment = resultAssessments.get(result.externalId);
 				if (!assessment?.detectedScope?.provinceCode) {
 					throw new Error(
-						"Auto Create could not resolve a valid province for one of the selected Google stations.",
+						"Auto Create could not resolve a valid province for one of the selected discovered stations.",
 					);
 				}
 
@@ -967,10 +964,8 @@ function GoogleDiscoveryMap({
 	});
 
 	const searchCurrentArea = useCallback(async () => {
-		if (!map || !placesReady) {
-			setSearchError(
-				"Google Places is not ready yet. Refresh the page once if this tab loaded Google Maps before Station Discovery.",
-			);
+		if (!map) {
+			setSearchError("The map is not ready yet. Try again in a moment.");
 			return;
 		}
 
@@ -984,12 +979,12 @@ function GoogleDiscoveryMap({
 		setSearchError(null);
 		try {
 			const normalizedResults =
-				await searchGoogleFuelStationsInBounds(bounds);
+				await searchDiscoveredFuelStationsInBounds(bounds);
 
 			setResults(normalizedResults);
 			setSearchError(
 				normalizedResults.length === 0
-					? "No Google fuel stations were found in the current map area."
+					? "No fuel stations were found in the current map area."
 					: null,
 			);
 		} catch (error) {
@@ -997,16 +992,16 @@ function GoogleDiscoveryMap({
 			setSearchError(
 				error instanceof Error
 					? error.message
-					: "Google Maps could not load stations for this area right now.",
+					: "OpenStreetMap discovery could not load stations for this area right now.",
 			);
 		} finally {
 			setIsSearching(false);
 		}
-	}, [map, placesReady]);
+	}, [map]);
 
 	const handleSelectResult = useCallback(
-		(result: GoogleDiscoveredStation) => {
-			setSelectedResultId(result.placeId);
+		(result: DiscoveredStation) => {
+			setSelectedResultId(result.externalId);
 			if (map) {
 				map.panTo({ lat: result.lat, lng: result.lng });
 				map.setZoom(SELECTED_RESULT_ZOOM);
@@ -1015,7 +1010,7 @@ function GoogleDiscoveryMap({
 			setIsPrefilling(true);
 			try {
 				const detectedScope = resultAssessments.get(
-					result.placeId,
+					result.externalId,
 				)?.detectedScope;
 
 				setStationForm(
@@ -1036,7 +1031,9 @@ function GoogleDiscoveryMap({
 		setResults((current) => {
 			if (
 				current.some(
-					(result) => result.placeId === initialGoogleStation.placeId,
+					(result) =>
+						result.externalId ===
+						initialGoogleStation.externalId,
 				)
 			) {
 				return current;
@@ -1065,7 +1062,7 @@ function GoogleDiscoveryMap({
 		}
 
 		const selectedStillExists = results.some(
-			(result) => result.placeId === selectedResultId,
+			(result) => result.externalId === selectedResultId,
 		);
 		if (!selectedStillExists) {
 			setSelectedResultId(null);
@@ -1080,11 +1077,11 @@ function GoogleDiscoveryMap({
 					<div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
 						<div>
 							<h3 className="text-xl font-semibold text-foreground">
-								Google Station Discovery
+								Fuel Station Discovery
 							</h3>
 							<p className="text-sm text-muted-foreground">
 								Move the map to the area you want, then search
-								Google Maps for fuel stations inside the current
+								OpenStreetMap for fuel stations inside the current
 								view.
 							</p>
 						</div>
@@ -1092,7 +1089,7 @@ function GoogleDiscoveryMap({
 							<Button
 								type="button"
 								onClick={searchCurrentArea}
-								disabled={isSearching || !placesReady}
+								disabled={isSearching}
 							>
 								{isSearching ? (
 									<>
@@ -1140,22 +1137,10 @@ function GoogleDiscoveryMap({
 							zoom={DEFAULT_DISCOVERY_ZOOM}
 							onLoad={(googleMap) => {
 								setMap(googleMap);
-								const placeClass =
-									window.google?.maps?.places?.Place;
-
-								if (placeClass) {
-									setPlacesReady(true);
-									setSearchError(null);
-								} else {
-									setPlacesReady(false);
-									setSearchError(
-										"Google Places (New) did not finish loading in this browser tab. Refresh the page once, then try again.",
-									);
-								}
+								setSearchError(null);
 							}}
 							onUnmount={() => {
 								setMap(null);
-								setPlacesReady(false);
 							}}
 							options={{
 								fullscreenControl: true,
@@ -1166,10 +1151,10 @@ function GoogleDiscoveryMap({
 						>
 							{results.map((result) => {
 								const isSelected =
-									result.placeId === selectedResultId;
+									result.externalId === selectedResultId;
 								return (
 									<MarkerF
-										key={result.placeId}
+										key={result.externalId}
 										position={{
 											lat: result.lat,
 											lng: result.lng,
@@ -1232,7 +1217,7 @@ function GoogleDiscoveryMap({
 					<div className="mb-4 flex items-center justify-between gap-3">
 						<div>
 							<h3 className="text-xl font-semibold text-foreground">
-								Google Results
+								Discovery Results
 							</h3>
 							<p className="text-sm text-muted-foreground">
 								Select one result to prefill the local station
@@ -1318,7 +1303,7 @@ function GoogleDiscoveryMap({
 							<span className="font-medium text-foreground">
 								Search this area
 							</span>{" "}
-							to load fuel stations from Google Maps.
+							to load discovered fuel stations.
 						</div>
 					) : (
 						<div className="flex flex-col gap-3">
@@ -1334,12 +1319,12 @@ function GoogleDiscoveryMap({
 							</div>
 							{results.map((result) => {
 								const duplicateMatch =
-									duplicateMatches.get(result.placeId) ??
+									duplicateMatches.get(result.externalId) ??
 									null;
 								const isSelected =
-									result.placeId === selectedResultId;
+									result.externalId === selectedResultId;
 								const assessment = resultAssessments.get(
-									result.placeId,
+									result.externalId,
 								) ?? {
 									duplicateMatch: null,
 									detectedScope: null,
@@ -1349,7 +1334,7 @@ function GoogleDiscoveryMap({
 
 								return (
 									<div
-										key={result.placeId}
+										key={result.externalId}
 										onClick={() =>
 											handleSelectResult(result)
 										}
@@ -1426,7 +1411,7 @@ function GoogleDiscoveryMap({
 						<div className="flex h-full min-h-[320px] items-center justify-center rounded-2xl bg-card p-6 shadow-sovereign">
 							<div className="flex items-center gap-3 text-sm text-muted-foreground">
 								<Loader2 className="h-5 w-5 animate-spin" />
-								Loading Google place details...
+								Loading discovered station details...
 							</div>
 						</div>
 					) : (
@@ -1446,7 +1431,7 @@ function GoogleDiscoveryMap({
 						<div>
 							<MapPinned className="mx-auto h-8 w-8 text-accent" />
 							<p className="mt-3 font-medium text-foreground">
-								Select a Google station result
+								Select a discovered station result
 							</p>
 							<p className="mt-1 text-sm text-muted-foreground">
 								The create form will appear here once you choose
@@ -1465,13 +1450,13 @@ export default function AdminStationDiscoveryPage() {
 	const { data: stations = [], isLoading } = useAdminStations();
 	const initialGoogleStation = useMemo(() => {
 		const state = location.state as {
-			prefilledGoogleStation?: GoogleDiscoveredStation | null;
+			prefilledGoogleStation?: DiscoveredStation | null;
 		} | null;
 		const candidate = state?.prefilledGoogleStation;
 
 		if (
 			!candidate ||
-			!candidate.placeId ||
+			!candidate.externalId ||
 			!candidate.name ||
 			!Number.isFinite(candidate.lat) ||
 			!Number.isFinite(candidate.lng)

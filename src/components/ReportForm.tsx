@@ -49,7 +49,7 @@ import {
 } from "@/lib/fuel-prices";
 import { GeoScopeFields } from "@/components/GeoScopeFields";
 import type { FuelReportSubmissionMode, GasStation } from "@/types/station";
-import type { GoogleDiscoveredStation } from "@/lib/station-discovery";
+import type { DiscoveredStation } from "@/lib/station-discovery";
 
 type UploadedPhoto = {
 	path: string;
@@ -296,9 +296,9 @@ export function ReportForm() {
 	const [stationSearchFiltersOpen, setStationSearchFiltersOpen] =
 		useState(false);
 	const [prefilledGoogleStation, setPrefilledGoogleStation] =
-		useState<GoogleDiscoveredStation | null>(() => {
+		useState<DiscoveredStation | null>(() => {
 			const state = location.state as {
-				prefilledGoogleStation?: GoogleDiscoveredStation | null;
+				prefilledGoogleStation?: DiscoveredStation | null;
 				prefilledStationId?: string | null;
 				prefilledSubmissionMode?: FuelReportSubmissionMode | null;
 			} | null;
@@ -306,7 +306,7 @@ export function ReportForm() {
 
 			if (
 				!candidate ||
-				!candidate.placeId ||
+				!candidate.externalId ||
 				!candidate.name ||
 				!Number.isFinite(candidate.lat) ||
 				!Number.isFinite(candidate.lng)
@@ -981,7 +981,7 @@ export function ReportForm() {
 					{prefilledGoogleStation ? (
 						<div className="mt-3 rounded-xl border border-amber-600/20 bg-amber-600/5 px-4 py-3 text-xs text-amber-900/80 dark:text-amber-700">
 							<p className="font-medium text-amber-700 dark:text-amber-500">
-								Reporting Google-only station
+								Reporting discovered station
 							</p>
 							<p className="mt-1">
 								{prefilledGoogleStation.name}

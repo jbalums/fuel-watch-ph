@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { fuelTypes, fuelTypeTextColorClassNames } from "@/lib/fuel-prices";
 import type { StationBrandAverage } from "@/lib/station-brand-logos";
-import type { GoogleDiscoveredStation } from "@/lib/station-discovery";
+import type { DiscoveredStation } from "@/lib/station-discovery";
 import {
 	BadgePlus,
 	CheckCircle2,
@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 
 interface DiscoveredStationInfoWindowProps {
-	station: GoogleDiscoveredStation;
+	station: DiscoveredStation;
 	brandAverage?: StationBrandAverage | null;
 	showAdminAction?: boolean;
 	onOpenInDiscovery?: () => void;
@@ -35,7 +35,7 @@ export function DiscoveredStationInfoWindow({
 					{station.name}
 				</span>
 				<span className="rounded-full bg-accent/10 px-2 py-0 text-[8px] font-medium text-accent">
-					Google Maps
+					OpenStreetMap
 				</span>
 			</div>
 			<span className="text-xs text-gray-500 whitespace-normal pr-4">

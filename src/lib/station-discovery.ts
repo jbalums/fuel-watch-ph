@@ -3,18 +3,22 @@ import {
 	initialStationForm,
 	type StationFormState,
 } from "@/components/admin/admin-shared";
+import {
+	searchOverpassFuelStationsInBounds,
+	type OverpassFuelStationResult,
+} from "@/lib/overpass-fuel-discovery";
 
-export type GoogleDiscoveredStation = {
-	placeId: string;
-	name: string;
-	address: string;
-	lat: number;
-	lng: number;
-	addressComponents?: google.maps.places.AddressComponent[];
+export type DiscoveredStation = OverpassFuelStationResult & {
+	googlePlaceId?: string | null;
 };
 
+export type GoogleDiscoveredStation = DiscoveredStation;
+
 export type DuplicateMatch = {
-	station: Pick<GasStation, "id" | "name" | "address" | "lat" | "lng" | "googlePlaceId">;
+	station: Pick<
+		GasStation,
+		"id" | "name" | "address" | "lat" | "lng" | "googlePlaceId"
+	>;
 	kind: "exact_place_id" | "name_and_distance" | "distance_only";
 	distanceMeters: number;
 };
@@ -81,79 +85,37 @@ export function calculateDistanceMeters(
 	);
 }
 
-export function dedupeDiscoveredStations(results: GoogleDiscoveredStation[]) {
-	const deduped = new Map<string, GoogleDiscoveredStation>();
+export function dedupeDiscoveredStations(results: DiscoveredStation[]) {
+	const deduped = new Map<string, DiscoveredStation>();
 
 	for (const result of results) {
-		deduped.set(result.placeId, result);
+		deduped.set(result.externalId, result);
 	}
 
 	return Array.from(deduped.values());
 }
 
-export function mapPlaceResult(
-	result: google.maps.places.Place,
-): GoogleDiscoveredStation | null {
-	const placeId = result.id?.trim();
-	const name = result.displayName?.trim();
-	const location = result.location;
-
-	if (!placeId || !name || !location) {
-		return null;
-	}
-
-	return {
-		placeId,
-		name,
-		address: result.formattedAddress?.trim() || "Address unavailable",
-		lat: location.lat(),
-		lng: location.lng(),
-		addressComponents: result.addressComponents,
-	};
-}
-
-export async function searchGoogleFuelStationsInBounds(
+export async function searchDiscoveredFuelStationsInBounds(
 	bounds: google.maps.LatLngBounds,
 ) {
-	const { Place, SearchByTextRankPreference } =
-		(await google.maps.importLibrary("places")) as google.maps.PlacesLibrary;
-	const response = await Place.searchByText({
-		textQuery: "gas station",
-		fields: [
-			"id",
-			"displayName",
-			"formattedAddress",
-			"location",
-			"viewport",
-			"addressComponents",
-		],
-		locationRestriction: bounds,
-		includedType: "gas_station",
-		maxResultCount: 20,
-		rankPreference: SearchByTextRankPreference.RELEVANCE,
-		useStrictTypeFiltering: true,
-	});
-
 	return dedupeDiscoveredStations(
-		(response.places ?? [])
-			.map(mapPlaceResult)
-			.filter((result): result is GoogleDiscoveredStation => Boolean(result)),
+		await searchOverpassFuelStationsInBounds(bounds),
 	);
 }
 
 export function getDuplicateMatch(
-	result: GoogleDiscoveredStation,
+	result: DiscoveredStation,
 	stations: Pick<
 		GasStation,
 		"id" | "name" | "address" | "lat" | "lng" | "googlePlaceId"
 	>[],
 ): DuplicateMatch | null {
 	const exactPlaceIdMatch =
-		result.placeId &&
+		result.googlePlaceId?.trim() &&
 		stations.find(
 			(station) =>
 				station.googlePlaceId?.trim() &&
-				station.googlePlaceId === result.placeId,
+				station.googlePlaceId === result.googlePlaceId,
 		);
 
 	if (exactPlaceIdMatch) {
@@ -192,8 +154,7 @@ export function getDuplicateMatch(
 
 	const nearbyCoordinateMatch = stationsByDistance.find(
 		(candidate) =>
-			candidate.distanceMeters <=
-			DISTANCE_ONLY_DUPLICATE_THRESHOLD_METERS,
+			candidate.distanceMeters <= DISTANCE_ONLY_DUPLICATE_THRESHOLD_METERS,
 	);
 
 	if (nearbyCoordinateMatch) {
@@ -221,23 +182,23 @@ export function getDuplicateLabel(match: DuplicateMatch) {
 
 export function getDuplicateMessage(match: DuplicateMatch) {
 	if (match.kind === "exact_place_id") {
-		return "This Google Maps station already exists in FuelWatch PH.";
+		return "This discovered station already exists in FuelWatch PH.";
 	}
 
 	if (match.kind === "name_and_distance") {
 		return `A station with the same name already exists about ${Math.round(match.distanceMeters)}m away.`;
 	}
 
-	return `A local station already exists about ${Math.round(match.distanceMeters)}m from this Google result.`;
+	return `A local station already exists about ${Math.round(match.distanceMeters)}m from this discovered station.`;
 }
 
-export function buildAddressSearchText(result: GoogleDiscoveredStation) {
-	const componentText = (result.addressComponents ?? [])
-		.map((component) => component.longText?.trim())
+export function buildAddressSearchText(result: DiscoveredStation) {
+	const tagText = Object.values(result.tags ?? {})
+		.map((value) => value.trim())
 		.filter(Boolean)
 		.join(", ");
 
-	return [result.address, componentText].filter(Boolean).join(", ");
+	return [result.address, result.brand, tagText].filter(Boolean).join(", ");
 }
 
 export function formatLatLng(value: number) {
@@ -258,7 +219,7 @@ export function getDiscoveredStationAutoCreateBrand(name: string) {
 }
 
 export function buildDiscoveredStationForm(
-	result: GoogleDiscoveredStation,
+	result: DiscoveredStation,
 	scope?: {
 		provinceCode?: string | null;
 		cityMunicipalityCode?: string | null;
@@ -270,7 +231,7 @@ export function buildDiscoveredStationForm(
 		address: result.address,
 		lat: formatLatLng(result.lat),
 		lng: formatLatLng(result.lng),
-		googlePlaceId: result.placeId,
+		googlePlaceId: result.googlePlaceId ?? "",
 		provinceCode: scope?.provinceCode ?? "",
 		cityMunicipalityCode: scope?.cityMunicipalityCode ?? "",
 	};

@@ -33,8 +33,8 @@ import {
 import {
 	buildAddressSearchText,
 	getDuplicateMatch,
-	searchGoogleFuelStationsInBounds,
-	type GoogleDiscoveredStation,
+	searchDiscoveredFuelStationsInBounds,
+	type DiscoveredStation,
 } from "@/lib/station-discovery";
 import {
 	useMapAutoDiscoverFeature,
@@ -100,9 +100,9 @@ function GoogleStationMap({
 		string | null
 	>(null);
 	const [selectedGoogleStation, setSelectedGoogleStation] =
-		useState<GoogleDiscoveredStation | null>(null);
+		useState<DiscoveredStation | null>(null);
 	const [discoveredStations, setDiscoveredStations] = useState<
-		GoogleDiscoveredStation[]
+		DiscoveredStation[]
 	>([]);
 	const [map, setMap] = useState<google.maps.Map | null>(null);
 	const [directionsRenderer, setDirectionsRenderer] =
@@ -504,7 +504,7 @@ function GoogleStationMap({
 	};
 
 	const handleSelectGoogleStation = useCallback(
-		(station: GoogleDiscoveredStation | null) => {
+		(station: DiscoveredStation | null) => {
 			if (onFocusedStationChange) {
 				onFocusedStationChange(null);
 			} else {
@@ -555,7 +555,7 @@ function GoogleStationMap({
 			const requestId = ++discoveryRequestIdRef.current;
 
 			try {
-				const results = await searchGoogleFuelStationsInBounds(bounds);
+				const results = await searchDiscoveredFuelStationsInBounds(bounds);
 
 				if (requestId !== discoveryRequestIdRef.current) {
 					return;
@@ -568,11 +568,13 @@ function GoogleStationMap({
 					return;
 				}
 
-				console.error(
-					"Failed to discover Google-only fuel stations",
-					error,
-				);
+				console.error("Failed to discover OpenStreetMap fuel stations", error);
 				setDiscoveredStations([]);
+				toast.error(
+					error instanceof Error
+						? error.message
+						: "OpenStreetMap discovery could not load stations right now.",
+				);
 			}
 		},
 		[],
@@ -769,7 +771,7 @@ function GoogleStationMap({
 		}
 
 		const stillVisible = filteredDiscoveredStations.some(
-			(station) => station.placeId === selectedGoogleStation.placeId,
+			(station) => station.externalId === selectedGoogleStation.externalId,
 		);
 
 		if (!stillVisible) {
@@ -867,7 +869,7 @@ function GoogleStationMap({
 				))}
 				{filteredDiscoveredStations.map((station) => (
 					<MarkerF
-						key={`google-discovered-${station.placeId}`}
+						key={`discovered-${station.externalId}`}
 						position={{ lat: station.lat, lng: station.lng }}
 						icon={
 							googleMaps
