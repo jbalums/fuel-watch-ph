@@ -7,6 +7,9 @@ export const MAP_GET_DIRECTIONS_FEATURE_DESCRIPTION =
 export const MAP_AUTO_DISCOVER_FEATURE_KEY = "map_auto_discover_enabled";
 export const MAP_AUTO_DISCOVER_FEATURE_DESCRIPTION =
 	"Controls automatic Google-based fuel station discovery on /map when the map view moves.";
+export const MAINTENANCE_MODE_FEATURE_KEY = "maintenance_mode_enabled";
+export const MAINTENANCE_MODE_FEATURE_DESCRIPTION =
+	"Shows the maintenance page on public routes while keeping admin and auth routes accessible.";
 
 export type SystemFeatureFlag = {
 	featureKey: string;
@@ -57,5 +60,13 @@ export function useMapAutoDiscoverFeature() {
 		MAP_AUTO_DISCOVER_FEATURE_KEY,
 		true,
 		MAP_AUTO_DISCOVER_FEATURE_DESCRIPTION,
+	);
+}
+
+export function useMaintenanceModeFeature() {
+	return useSystemFeatureFlag(
+		MAINTENANCE_MODE_FEATURE_KEY,
+		false,
+		MAINTENANCE_MODE_FEATURE_DESCRIPTION,
 	);
 }

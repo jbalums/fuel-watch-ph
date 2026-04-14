@@ -7,10 +7,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserAccess } from "@/hooks/useUserAccess";
 import {
+	MAINTENANCE_MODE_FEATURE_DESCRIPTION,
+	MAINTENANCE_MODE_FEATURE_KEY,
 	MAP_AUTO_DISCOVER_FEATURE_DESCRIPTION,
 	MAP_AUTO_DISCOVER_FEATURE_KEY,
 	MAP_GET_DIRECTIONS_FEATURE_DESCRIPTION,
 	MAP_GET_DIRECTIONS_FEATURE_KEY,
+	useMaintenanceModeFeature,
 	useMapAutoDiscoverFeature,
 	useMapDirectionsFeature,
 } from "@/hooks/useSystemFeatureFlags";
@@ -47,9 +50,14 @@ export default function AdminPlatformControlsPage() {
 		data: mapAutoDiscoverFeature,
 		isLoading: autoDiscoverLoading,
 	} = useMapAutoDiscoverFeature();
+	const {
+		data: maintenanceModeFeature,
+		isLoading: maintenanceLoading,
+	} = useMaintenanceModeFeature();
 
 	const isEnabled = mapDirectionsFeature?.isEnabled ?? false;
 	const isAutoDiscoverEnabled = mapAutoDiscoverFeature?.isEnabled ?? true;
+	const isMaintenanceModeEnabled = maintenanceModeFeature?.isEnabled ?? false;
 	const updatedAtText = useMemo(
 		() => formatUpdatedAt(mapDirectionsFeature?.updatedAt ?? null),
 		[mapDirectionsFeature?.updatedAt],
@@ -57,6 +65,10 @@ export default function AdminPlatformControlsPage() {
 	const autoDiscoverUpdatedAtText = useMemo(
 		() => formatUpdatedAt(mapAutoDiscoverFeature?.updatedAt ?? null),
 		[mapAutoDiscoverFeature?.updatedAt],
+	);
+	const maintenanceUpdatedAtText = useMemo(
+		() => formatUpdatedAt(maintenanceModeFeature?.updatedAt ?? null),
+		[maintenanceModeFeature?.updatedAt],
 	);
 
 	const toggleMapDirections = useMutation({
@@ -159,7 +171,62 @@ export default function AdminPlatformControlsPage() {
 		},
 	});
 
-	if (accessLoading || featureLoading || autoDiscoverLoading) {
+	const toggleMaintenanceMode = useMutation({
+		mutationFn: async (nextEnabled: boolean) => {
+			const { error } = await supabase
+				.from("system_feature_flags")
+				.upsert(
+					{
+						feature_key: MAINTENANCE_MODE_FEATURE_KEY,
+						is_enabled: nextEnabled,
+						description: MAINTENANCE_MODE_FEATURE_DESCRIPTION,
+					},
+					{ onConflict: "feature_key" },
+				);
+
+			if (error) {
+				throw error;
+			}
+
+			return nextEnabled;
+		},
+		onSuccess: (nextEnabled) => {
+			queryClient.setQueryData(
+				["system_feature_flag", MAINTENANCE_MODE_FEATURE_KEY],
+				(current: {
+					featureKey?: string;
+					description?: string;
+					updatedAt?: string | null;
+				} | null) => ({
+					featureKey: MAINTENANCE_MODE_FEATURE_KEY,
+					isEnabled: nextEnabled,
+					description:
+						current?.description ??
+						MAINTENANCE_MODE_FEATURE_DESCRIPTION,
+					updatedAt: new Date().toISOString(),
+				}),
+			);
+			void queryClient.invalidateQueries({
+				queryKey: ["system_feature_flag", MAINTENANCE_MODE_FEATURE_KEY],
+			});
+			toast.success(
+				nextEnabled
+					? "Maintenance mode is now enabled on public routes."
+					: "Maintenance mode is now disabled.",
+			);
+		},
+		onError: (error) => {
+			console.error("Failed to update maintenance mode feature", error);
+			toast.error("Could not update the maintenance mode setting.");
+		},
+	});
+
+	if (
+		accessLoading ||
+		featureLoading ||
+		autoDiscoverLoading ||
+		maintenanceLoading
+	) {
 		return (
 			<div className="flex items-center justify-center rounded-2xl bg-card p-10 shadow-sovereign">
 				<Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -270,6 +337,42 @@ export default function AdminPlatformControlsPage() {
 						When disabled, `/map` stops auto-searching Google-only
 						fuel stations as the map moves, which can help reduce
 						Places API usage.
+					</p>
+				</div>
+			</section>
+
+			<section className="rounded-2xl bg-card p-6 shadow-sovereign">
+				<div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+					<div className="max-w-2xl">
+						<p className="text-base font-semibold text-foreground">
+							Maintenance Mode
+						</p>
+						<p className="mt-1 text-sm text-muted-foreground">
+							{MAINTENANCE_MODE_FEATURE_DESCRIPTION}
+						</p>
+						<p className="mt-3 text-xs text-muted-foreground">
+							Last updated: {maintenanceUpdatedAtText}
+						</p>
+					</div>
+					<div className="flex items-center gap-3 rounded-full border border-border bg-secondary/40 px-4 py-3">
+						<span className="text-sm font-medium text-foreground">
+							{isMaintenanceModeEnabled ? "Enabled" : "Disabled"}
+						</span>
+						<Switch
+							checked={isMaintenanceModeEnabled}
+							disabled={toggleMaintenanceMode.isPending}
+							onCheckedChange={(checked) => {
+								toggleMaintenanceMode.mutate(checked);
+							}}
+							aria-label="Toggle maintenance mode"
+						/>
+					</div>
+				</div>
+				<div className="mt-4 rounded-xl border border-border bg-secondary/30 p-4 text-sm text-muted-foreground">
+					<p>
+						When enabled, public routes like `/`, `/map`, `/search`,
+						`/report`, and embeds show the maintenance page. Admin,
+						LGU, auth, and profile routes stay reachable.
 					</p>
 				</div>
 			</section>

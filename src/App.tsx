@@ -11,6 +11,7 @@ import { AdminLayout } from "@/components/admin/AdminLayout";
 import { LguLayout } from "@/components/lgu/LguLayout";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
+import { useMaintenanceModeFeature } from "@/hooks/useSystemFeatureFlags";
 import Index from "./pages/Index";
 import MapPage from "./pages/MapPage";
 import SearchPage from "./pages/SearchPage";
@@ -48,19 +49,37 @@ import Terms from "./pages/Terms";
 import MaintenancePage from "./pages/MaintenancePage";
 import NotFound from "./pages/NotFound";
 import { GoogleOAuthProvider } from "@react-oauth/google";
+import { Loader2 } from "lucide-react";
 
 const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 const clientSecret = import.meta.env.VITE_GOOGLE_CLIENT_SECRET;
 const queryClient = new QueryClient();
+const MAINTENANCE_BYPASS_PREFIXES = [
+	"/admin",
+	"/lgu",
+	"/auth",
+	"/profile",
+	"/manager",
+	"/admin-access-request",
+	"/admin-invite",
+];
+
+function isMaintenanceBypassed(pathname: string) {
+	return MAINTENANCE_BYPASS_PREFIXES.some(
+		(prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
+	);
+}
 
 function RouterContent() {
 	const location = useLocation();
+	const { data: maintenanceModeFeature, isLoading: maintenanceLoading } =
+		useMaintenanceModeFeature();
 	const isEmbedRoute = location.pathname.startsWith("/embed/");
 	const previousPathnameRef = useRef(location.pathname);
 	const [pageLoaderVisible, setPageLoaderVisible] = useState(false);
 
 	// Uncomment the line below to enable the global maintenance mode page.
-	return <MaintenancePage />;
+	// return <MaintenancePage />;
 
 	useEffect(() => {
 		if (previousPathnameRef.current === location.pathname) {
@@ -78,6 +97,21 @@ function RouterContent() {
 			window.clearTimeout(hideTimer);
 		};
 	}, [location.pathname]);
+
+	if (maintenanceLoading) {
+		return (
+			<div className="flex min-h-screen items-center justify-center bg-background">
+				<Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+			</div>
+		);
+	}
+
+	if (
+		maintenanceModeFeature?.isEnabled &&
+		!isMaintenanceBypassed(location.pathname)
+	) {
+		return <MaintenancePage />;
+	}
 
 	return (
 		<div className="flex min-h-screen flex-col">
