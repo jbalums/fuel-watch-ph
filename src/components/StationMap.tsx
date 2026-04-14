@@ -111,6 +111,7 @@ function GoogleStationMap({
 	const lastAutoFitKeyRef = useRef<string | null>(null);
 	const lastDiscoveryBoundsKeyRef = useRef<string | null>(null);
 	const discoverySearchTimeoutRef = useRef<number | null>(null);
+	const closeInfoWindowTimeoutRef = useRef<number | null>(null);
 	const discoveryRequestIdRef = useRef(0);
 	const hasInitializedCenterRef = useRef(false);
 	const { coordinates: currentLocation } = useCurrentLocation();
@@ -376,14 +377,14 @@ function GoogleStationMap({
 	);
 	const renderDirectionsToFocusedStation = useCallback(async () => {
 		if (!googleMaps || !map || !focusedStation) {
-			return;
+			return false;
 		}
 
 		if (!currentLocation) {
 			toast.info(
 				"Current location is required to show directions on the map.",
 			);
-			return;
+			return false;
 		}
 
 		const service = new googleMaps.DirectionsService();
@@ -429,9 +430,12 @@ function GoogleStationMap({
 			if (routeBounds) {
 				map.fitBounds(routeBounds, 80);
 			}
+
+			return true;
 		} catch (error) {
 			console.error("Failed to render map directions", error);
 			toast.error("Directions could not be loaded on the map right now.");
+			return false;
 		}
 	}, [currentLocation, directionsRenderer, focusedStation, googleMaps, map]);
 	const openSelectedGoogleStationInDiscovery = useCallback(() => {
@@ -680,6 +684,10 @@ function GoogleStationMap({
 				window.clearTimeout(discoverySearchTimeoutRef.current);
 			}
 
+			if (closeInfoWindowTimeoutRef.current !== null) {
+				window.clearTimeout(closeInfoWindowTimeoutRef.current);
+			}
+
 			directionsRenderer?.setMap(null);
 		};
 	}, [directionsRenderer]);
@@ -866,8 +874,25 @@ function GoogleStationMap({
 							showOpenInMapsAction
 							showReportAction
 							onOpenInMaps={openFocusedStationInGoogleMaps}
-							onGetDirections={() => {
-								void renderDirectionsToFocusedStation();
+							onGetDirections={async () => {
+								const didRenderRoute =
+									await renderDirectionsToFocusedStation();
+								if (!didRenderRoute) {
+									return;
+								}
+
+								if (closeInfoWindowTimeoutRef.current !== null) {
+									window.clearTimeout(
+										closeInfoWindowTimeoutRef.current,
+									);
+								}
+
+								closeInfoWindowTimeoutRef.current =
+									window.setTimeout(() => {
+										setSelectedStationId(null);
+										closeInfoWindowTimeoutRef.current =
+											null;
+									}, 500);
 							}}
 							onReportFuelPrices={reportFocusedStation}
 						/>
