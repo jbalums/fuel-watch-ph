@@ -21,9 +21,15 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/contexts/AuthContext";
+import { useGeoReferences } from "@/hooks/useGeoReferences";
 import { useProfile } from "@/hooks/useProfile";
+import { useCurrentUserScope } from "@/hooks/useCurrentUserScope";
 import { useUserAccess } from "@/hooks/useUserAccess";
 import { getDashboardPathForAccessLevel } from "@/lib/access-control";
+import {
+	CURRENT_PROVINCE_CHANGED_EVENT,
+	getStoredCurrentProvinceCode,
+} from "@/lib/current-province";
 import { LogIn, MapPin, Moon, Sun } from "lucide-react";
 import logo from "@/assets/images/fuelwatch-ph-icon.png";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -62,10 +68,21 @@ export function AppShellLayout() {
 	const { theme, toggleTheme } = useTheme();
 	const { user, signOut } = useAuth();
 	const { data: profile } = useProfile();
-	const { accessLevel, isLoading: accessLoading } = useUserAccess();
+	const {
+		accessLevel,
+		isLoading: accessLoading,
+		isLguOperator,
+	} = useUserAccess();
+	const { data: currentUserScope } = useCurrentUserScope(
+		!accessLoading && isLguOperator,
+	);
+	const { provinces } = useGeoReferences();
 	const navigate = useNavigate();
 	const location = useLocation();
 	const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
+	const [storedProvinceCode, setStoredProvinceCode] = useState(() =>
+		getStoredCurrentProvinceCode(),
+	);
 	const dashboardPath =
 		!accessLoading && accessLevel !== "user"
 			? getDashboardPathForAccessLevel(accessLevel)
@@ -95,6 +112,31 @@ export function AppShellLayout() {
 		window.scrollTo({ top: 0, behavior: "smooth" });
 	}, [location.pathname]);
 
+	useEffect(() => {
+		if (typeof window === "undefined") {
+			return;
+		}
+
+		const syncStoredProvinceCode = () => {
+			setStoredProvinceCode(getStoredCurrentProvinceCode());
+		};
+
+		syncStoredProvinceCode();
+		window.addEventListener(
+			CURRENT_PROVINCE_CHANGED_EVENT,
+			syncStoredProvinceCode as EventListener,
+		);
+		window.addEventListener("storage", syncStoredProvinceCode);
+
+		return () => {
+			window.removeEventListener(
+				CURRENT_PROVINCE_CHANGED_EVENT,
+				syncStoredProvinceCode as EventListener,
+			);
+			window.removeEventListener("storage", syncStoredProvinceCode);
+		};
+	}, []);
+
 	const handleLogoClick = () => {
 		navigate({
 			pathname: "/",
@@ -121,6 +163,18 @@ export function AppShellLayout() {
 			},
 		);
 	};
+
+	const publicProvinceName =
+		provinces.find((province) => province.code === storedProvinceCode)
+			?.name ?? "";
+	const headerProvinceName = isLguOperator
+		? currentUserScope?.provinceName ?? publicProvinceName
+		: publicProvinceName;
+	const headerProvinceLabel =
+		headerProvinceName.trim() || "Change Province";
+	const headerProvinceTitle = headerProvinceName.trim()
+		? `Current province: ${headerProvinceName}`
+		: "Change current province";
 
 	return (
 		<div className="min-h-screen bg-background pb-8">
@@ -149,12 +203,12 @@ export function AppShellLayout() {
 							type="button"
 							onClick={handleChangeCurrentProvince}
 							className="relative flex h-8 px-1 gap-1 items-center justify-center rounded-sm bg-background border border-dashed border-primary text-foreground sovereign-ease hover:bg-muted transition-colors"
-							aria-label="Change current province"
-							title="Change current province"
+							aria-label={headerProvinceTitle}
+							title={headerProvinceTitle}
 						>
 							<MapPin className="h-4 w-4" />
 							<span className="hidden md:block text-primary text-[10px]">
-								Change Province
+								{headerProvinceLabel}
 							</span>
 						</button>
 						<ThemeToggle />

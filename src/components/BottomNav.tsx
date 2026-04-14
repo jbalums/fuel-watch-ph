@@ -1,4 +1,12 @@
-import { Home, Map, PlusCircle, Search, Shield } from "lucide-react";
+import {
+	FilePlus2,
+	FilePlus2Icon,
+	Home,
+	Map,
+	PlusCircle,
+	Search,
+	Shield,
+} from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 
@@ -17,7 +25,7 @@ const baseTabs: {
 	{ id: "home", path: "/", icon: Home, label: "Home" },
 	{ id: "map", path: "/map", icon: Map, label: "Map" },
 	{ id: "search", path: "/search", icon: Search, label: "Search" },
-	{ id: "report", path: "/report", icon: PlusCircle, label: "Report" },
+	{ id: "report", path: "/report", icon: FilePlus2Icon, label: "Report" },
 ];
 
 export function BottomNav({
