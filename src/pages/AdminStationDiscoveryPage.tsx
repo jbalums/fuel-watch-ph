@@ -47,10 +47,12 @@ import {
 	buildAddressSearchText,
 	dedupeDiscoveredStations,
 	formatLatLng,
+	getResolvedDiscoveredStationAddress,
 	getDiscoveredStationAutoCreateBrand,
 	getDuplicateLabel,
 	getDuplicateMatch,
 	getDuplicateMessage,
+	resolveDiscoveredStationAddress,
 	searchDiscoveredFuelStationsInBounds,
 	type DuplicateMatch,
 	type DiscoveredStation,
@@ -597,6 +599,8 @@ function GoogleDiscoveryMap({
 		useState<StationFormState>(initialStationForm);
 	const [isSearching, setIsSearching] = useState(false);
 	const [isPrefilling, setIsPrefilling] = useState(false);
+	const [isResolvingSelectedResultAddress, setIsResolvingSelectedResultAddress] =
+		useState(false);
 	const [isAutoDetectingScopes, setIsAutoDetectingScopes] = useState(false);
 	const [searchError, setSearchError] = useState<string | null>(null);
 	const { provinces, cities, citiesByProvince } = useGeoReferences({
@@ -753,6 +757,7 @@ function GoogleDiscoveryMap({
 			await refreshAdminData(queryClient);
 			toast.success("Station created from discovery results");
 			setSelectedResultId(null);
+			setIsResolvingSelectedResultAddress(false);
 			setStationForm(initialStationForm);
 		},
 		onError: (error) => toast.error(error.message),
@@ -1019,6 +1024,49 @@ function GoogleDiscoveryMap({
 			} finally {
 				setIsPrefilling(false);
 			}
+
+			const cachedAddress = getResolvedDiscoveredStationAddress(
+				result.externalId,
+			);
+			if (cachedAddress && cachedAddress === result.address) {
+				setIsResolvingSelectedResultAddress(false);
+				return;
+			}
+
+			setIsResolvingSelectedResultAddress(true);
+			void resolveDiscoveredStationAddress(result)
+				.then((resolvedResult) => {
+					setResults((current) =>
+						current.map((entry) =>
+							entry.externalId === resolvedResult.externalId
+								? resolvedResult
+								: entry,
+						),
+					);
+
+					setStationForm((current) => {
+						if (
+							current.lat !== formatLatLng(resolvedResult.lat) ||
+							current.lng !== formatLatLng(resolvedResult.lng)
+						) {
+							return current;
+						}
+
+						return {
+							...current,
+							address: resolvedResult.address,
+						};
+					});
+				})
+				.catch((error) => {
+					console.error(
+						"Failed to reverse geocode selected discovered station",
+						error,
+					);
+				})
+				.finally(() => {
+					setIsResolvingSelectedResultAddress(false);
+				});
 		},
 		[map, resultAssessments],
 	);
@@ -1058,6 +1106,7 @@ function GoogleDiscoveryMap({
 
 	useEffect(() => {
 		if (!selectedResultId) {
+			setIsResolvingSelectedResultAddress(false);
 			return;
 		}
 
@@ -1193,6 +1242,11 @@ function GoogleDiscoveryMap({
 										<p className="mt-1 text-xs text-muted-foreground">
 											{selectedResult.address}
 										</p>
+										{isResolvingSelectedResultAddress ? (
+											<p className="mt-1 text-[11px] text-muted-foreground">
+												Resolving address...
+											</p>
+										) : null}
 										<div className="mt-3">
 											<Button
 												type="button"
@@ -1363,6 +1417,12 @@ function GoogleDiscoveryMap({
 												<p className="mt-1 text-sm text-muted-foreground">
 													{result.address}
 												</p>
+												{isSelected &&
+												isResolvingSelectedResultAddress ? (
+													<p className="mt-1 text-[11px] text-muted-foreground">
+														Resolving address...
+													</p>
+												) : null}
 												<p className="mt-2 text-xs text-muted-foreground">
 													{formatLatLng(result.lat)},{" "}
 													{formatLatLng(result.lng)}

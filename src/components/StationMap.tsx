@@ -32,7 +32,9 @@ import {
 } from "@/lib/station-brand-logos";
 import {
 	buildAddressSearchText,
+	getResolvedDiscoveredStationAddress,
 	getDuplicateMatch,
+	resolveDiscoveredStationAddress,
 	searchDiscoveredFuelStationsInBounds,
 	type DiscoveredStation,
 } from "@/lib/station-discovery";
@@ -104,6 +106,10 @@ function GoogleStationMap({
 	const [discoveredStations, setDiscoveredStations] = useState<
 		DiscoveredStation[]
 	>([]);
+	const [
+		isResolvingSelectedDiscoveryAddress,
+		setIsResolvingSelectedDiscoveryAddress,
+	] = useState(false);
 	const [isDiscovering, setIsDiscovering] = useState(false);
 	const [map, setMap] = useState<google.maps.Map | null>(null);
 	const [directionsRenderer, setDirectionsRenderer] =
@@ -511,10 +517,70 @@ function GoogleStationMap({
 				setInternalSelectedStationId(null);
 			}
 
+			setIsResolvingSelectedDiscoveryAddress(false);
 			setSelectedGoogleStation(station);
 		},
 		[onFocusedStationChange],
 	);
+
+	useEffect(() => {
+		if (!selectedGoogleStation) {
+			return;
+		}
+
+		const cachedAddress = getResolvedDiscoveredStationAddress(
+			selectedGoogleStation.externalId,
+		);
+
+		if (cachedAddress && cachedAddress === selectedGoogleStation.address) {
+			setIsResolvingSelectedDiscoveryAddress(false);
+			return;
+		}
+
+		let isActive = true;
+		setIsResolvingSelectedDiscoveryAddress(true);
+
+		void resolveDiscoveredStationAddress(selectedGoogleStation)
+			.then((resolvedStation) => {
+				if (!isActive) {
+					return;
+				}
+
+				setDiscoveredStations((current) =>
+					current.map((station) =>
+						station.externalId === resolvedStation.externalId
+							? resolvedStation
+							: station,
+					),
+				);
+				setSelectedGoogleStation((current) =>
+					current?.externalId === resolvedStation.externalId
+						? resolvedStation
+						: current,
+				);
+			})
+			.catch((error) => {
+				if (!isActive) {
+					return;
+				}
+
+				console.error(
+					"Failed to reverse geocode selected discovered station",
+					error,
+				);
+			})
+			.finally(() => {
+				if (!isActive) {
+					return;
+				}
+
+				setIsResolvingSelectedDiscoveryAddress(false);
+			});
+
+		return () => {
+			isActive = false;
+		};
+	}, [selectedGoogleStation]);
 
 	const updateVisibleBounds = useCallback(() => {
 		if (!map) {
@@ -575,11 +641,11 @@ function GoogleStationMap({
 					error,
 				);
 				setDiscoveredStations([]);
-				toast.error(
-					error instanceof Error
-						? error.message
-						: "OpenStreetMap discovery could not load stations right now.",
-				);
+				// toast.error(
+				// 	error instanceof Error
+				// 		? error.message
+				// 		: "OpenStreetMap discovery could not load stations right now.",
+				// );
 			} finally {
 				if (requestId === discoveryRequestIdRef.current) {
 					setIsDiscovering(false);
@@ -969,6 +1035,9 @@ function GoogleStationMap({
 						<DiscoveredStationInfoWindow
 							station={selectedGoogleStation}
 							brandAverage={selectedGoogleStationBrandAverage}
+							isResolvingAddress={
+								isResolvingSelectedDiscoveryAddress
+							}
 							showAdminAction={isAdmin}
 							onOpenInDiscovery={
 								openSelectedGoogleStationInDiscovery

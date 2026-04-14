@@ -7,6 +7,7 @@ import {
 	searchOverpassFuelStationsInBounds,
 	type OverpassFuelStationResult,
 } from "@/lib/overpass-fuel-discovery";
+import { reverseGeocodeCoordinatesWithNominatim } from "@/lib/nominatim";
 
 export type DiscoveredStation = OverpassFuelStationResult & {
 	googlePlaceId?: string | null;
@@ -25,6 +26,8 @@ export type DuplicateMatch = {
 
 export const NAME_AND_DISTANCE_DUPLICATE_THRESHOLD_METERS = 150;
 export const DISTANCE_ONLY_DUPLICATE_THRESHOLD_METERS = 30;
+const discoveredStationAddressCache = new Map<string, string>();
+const discoveredStationAddressRequests = new Map<string, Promise<string>>();
 
 function normalizeText(value: string) {
 	return value
@@ -101,6 +104,58 @@ export async function searchDiscoveredFuelStationsInBounds(
 	return dedupeDiscoveredStations(
 		await searchOverpassFuelStationsInBounds(bounds),
 	);
+}
+
+export function getResolvedDiscoveredStationAddress(externalId: string) {
+	return discoveredStationAddressCache.get(externalId) ?? null;
+}
+
+export async function resolveDiscoveredStationAddress(
+	result: DiscoveredStation,
+) {
+	const cachedAddress = getResolvedDiscoveredStationAddress(result.externalId);
+	if (cachedAddress) {
+		return {
+			...result,
+			address: cachedAddress,
+		};
+	}
+
+	const inFlightRequest = discoveredStationAddressRequests.get(
+		result.externalId,
+	);
+
+	if (inFlightRequest) {
+		const address = await inFlightRequest;
+		return {
+			...result,
+			address,
+		};
+	}
+
+	const nextRequest = reverseGeocodeCoordinatesWithNominatim({
+		lat: result.lat,
+		lng: result.lng,
+	})
+		.then(({ addressText }) => {
+			const normalizedAddress = addressText.trim() || result.address;
+			discoveredStationAddressCache.set(
+				result.externalId,
+				normalizedAddress,
+			);
+			return normalizedAddress;
+		})
+		.finally(() => {
+			discoveredStationAddressRequests.delete(result.externalId);
+		});
+
+	discoveredStationAddressRequests.set(result.externalId, nextRequest);
+
+	const address = await nextRequest;
+	return {
+		...result,
+		address,
+	};
 }
 
 export function getDuplicateMatch(
