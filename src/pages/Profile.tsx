@@ -36,11 +36,19 @@ export default function Profile() {
 	const [saving, setSaving] = useState(false);
 	const [uploading, setUploading] = useState(false);
 	const [sendingPasswordReset, setSendingPasswordReset] = useState(false);
+	const [newPassword, setNewPassword] = useState("");
+	const [confirmPassword, setConfirmPassword] = useState("");
+	const [settingPassword, setSettingPassword] = useState(false);
 
 	const isEmailPasswordUser =
 		user?.app_metadata?.provider === "email" ||
 		(user?.identities?.some((identity) => identity.provider === "email") ??
 			false);
+	const isGoogleUser =
+		user?.app_metadata?.provider === "google" ||
+		(user?.identities?.some((identity) => identity.provider === "google") ??
+			false);
+	const isGoogleOnlyUser = isGoogleUser && !isEmailPasswordUser;
 
 	useEffect(() => {
 		if (authLoading) return;
@@ -149,6 +157,41 @@ export default function Profile() {
 		}
 
 		setSendingPasswordReset(false);
+	};
+
+	const handleSetPassword = async () => {
+		if (!user?.email) {
+			toast.error("No email address found for this account");
+			return;
+		}
+
+		if (newPassword.length < 6) {
+			toast.error("Password must be at least 6 characters");
+			return;
+		}
+
+		if (newPassword !== confirmPassword) {
+			toast.error("Passwords do not match");
+			return;
+		}
+
+		setSettingPassword(true);
+
+		const { error } = await supabase.auth.updateUser({
+			password: newPassword,
+		});
+
+		if (error) {
+			toast.error("Failed to set password: " + error.message);
+		} else {
+			setNewPassword("");
+			setConfirmPassword("");
+			toast.success(
+				"Password set successfully. You can now sign in with your email and password too.",
+			);
+		}
+
+		setSettingPassword(false);
 	};
 
 	const initials = displayName
@@ -380,6 +423,86 @@ export default function Profile() {
 												{sendingPasswordReset
 													? "Sending reset link..."
 													: "Send Password Reset Email"}
+											</motion.button>
+										</div>
+									</div>
+								</div>
+							</section>
+						)}
+
+						{isGoogleOnlyUser && (
+							<section>
+								<h3 className="text-lg font-semibold text-primary dark:text-blue-500">
+									Security
+								</h3>
+								<div className="mt-4 rounded-2xl border border-border bg-secondary/40 p-5">
+									<div className="flex items-start gap-3">
+										<div className="mt-0.5 flex h-9 w-9 items-center justify-center rounded-xl bg-accent/10 text-accent">
+											<Lock className="h-4 w-4" />
+										</div>
+										<div className="flex-1">
+											<h2 className="text-sm font-semibold text-foreground">
+												Set Password
+											</h2>
+											<p className="mt-2 text-sm leading-6 text-muted-foreground">
+												You currently sign in with
+												Google. Set a password if you
+												also want to sign in with your
+												email address and password.
+											</p>
+											<div className="mt-4 space-y-3">
+												<div className="flex flex-col gap-1.5">
+													<label className="text-xs font-medium text-muted-foreground">
+														New Password
+													</label>
+													<input
+														type="password"
+														value={newPassword}
+														onChange={(event) =>
+															setNewPassword(
+																event.target
+																	.value,
+															)
+														}
+														placeholder="Enter a new password"
+														className="w-full rounded-xl bg-surface-alt px-4 py-3 text-sm text-foreground outline-none transition-all focus:ring-2 focus:ring-primary/20"
+													/>
+												</div>
+												<div className="flex flex-col gap-1.5">
+													<label className="text-xs font-medium text-muted-foreground">
+														Confirm Password
+													</label>
+													<input
+														type="password"
+														value={confirmPassword}
+														onChange={(event) =>
+															setConfirmPassword(
+																event.target
+																	.value,
+															)
+														}
+														placeholder="Confirm your new password"
+														className="w-full rounded-xl bg-surface-alt px-4 py-3 text-sm text-foreground outline-none transition-all focus:ring-2 focus:ring-primary/20"
+													/>
+												</div>
+												<p className="text-xs text-muted-foreground">
+													Use at least 6 characters.
+												</p>
+											</div>
+											<motion.button
+												whileTap={{ scale: 0.97 }}
+												onClick={handleSetPassword}
+												disabled={settingPassword}
+												className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-3.5 font-semibold text-primary-foreground transition-colors hover:bg-primary-hover disabled:opacity-50"
+											>
+												{settingPassword ? (
+													<Loader2 className="h-4 w-4 animate-spin" />
+												) : (
+													<Lock className="h-4 w-4" />
+												)}
+												{settingPassword
+													? "Setting password..."
+													: "Set Password"}
 											</motion.button>
 										</div>
 									</div>

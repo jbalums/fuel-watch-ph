@@ -36,7 +36,10 @@ import {
 	searchGoogleFuelStationsInBounds,
 	type GoogleDiscoveredStation,
 } from "@/lib/station-discovery";
-import { useMapDirectionsFeature } from "@/hooks/useSystemFeatureFlags";
+import {
+	useMapAutoDiscoverFeature,
+	useMapDirectionsFeature,
+} from "@/hooks/useSystemFeatureFlags";
 import { DiscoveredStationInfoWindow } from "./DiscoveredStationInfoWindow";
 import { StationMarkerInfoWindow } from "./StationMarkerInfoWindow";
 const DEFAULT_HIGHLIGHT_ZOOM = 15;
@@ -88,6 +91,7 @@ function GoogleStationMap({
 	const navigate = useNavigate();
 	const { isAdmin } = useUserAccess();
 	const { data: mapDirectionsFeature } = useMapDirectionsFeature();
+	const { data: mapAutoDiscoverFeature } = useMapAutoDiscoverFeature();
 	const { data: stationBrandLogos = [] } = useStationBrandLogos();
 	const { provinces, cities } = useGeoReferences({
 		includeAllCities: true,
@@ -118,6 +122,8 @@ function GoogleStationMap({
 	const googleMaps =
 		typeof window !== "undefined" ? window.google?.maps : undefined;
 	const isInlineDirectionsEnabled = mapDirectionsFeature?.isEnabled ?? false;
+	const isMapAutoDiscoverEnabled =
+		mapAutoDiscoverFeature?.isEnabled ?? true;
 	const selectedStationId =
 		focusedStationId !== undefined
 			? focusedStationId
@@ -573,6 +579,10 @@ function GoogleStationMap({
 	);
 
 	const scheduleDiscoverySearch = useCallback(() => {
+		if (!isMapAutoDiscoverEnabled) {
+			return;
+		}
+
 		if (!map) {
 			return;
 		}
@@ -602,7 +612,7 @@ function GoogleStationMap({
 		discoverySearchTimeoutRef.current = window.setTimeout(() => {
 			searchDiscoveredStations(bounds, boundsKey);
 		}, 500);
-	}, [map, searchDiscoveredStations]);
+	}, [isMapAutoDiscoverEnabled, map, searchDiscoveredStations]);
 
 	useEffect(() => {
 		if (!map) {
@@ -677,6 +687,21 @@ function GoogleStationMap({
 	useEffect(() => {
 		updateVisibleBounds();
 	}, [updateVisibleBounds, stations, highlightLocation]);
+
+	useEffect(() => {
+		if (isMapAutoDiscoverEnabled) {
+			return;
+		}
+
+		if (discoverySearchTimeoutRef.current !== null) {
+			window.clearTimeout(discoverySearchTimeoutRef.current);
+			discoverySearchTimeoutRef.current = null;
+		}
+
+		setDiscoveredStations([]);
+		setSelectedGoogleStation(null);
+		lastDiscoveryBoundsKeyRef.current = null;
+	}, [isMapAutoDiscoverEnabled]);
 
 	useEffect(() => {
 		return () => {

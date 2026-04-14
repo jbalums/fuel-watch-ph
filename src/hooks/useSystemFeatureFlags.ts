@@ -4,6 +4,9 @@ import { supabase } from "@/integrations/supabase/client";
 export const MAP_GET_DIRECTIONS_FEATURE_KEY = "map_get_directions_enabled";
 export const MAP_GET_DIRECTIONS_FEATURE_DESCRIPTION =
 	"Controls the inline Get Directions route renderer on /map. Open in Maps stays available.";
+export const MAP_AUTO_DISCOVER_FEATURE_KEY = "map_auto_discover_enabled";
+export const MAP_AUTO_DISCOVER_FEATURE_DESCRIPTION =
+	"Controls automatic Google-based fuel station discovery on /map when the map view moves.";
 
 export type SystemFeatureFlag = {
 	featureKey: string;
@@ -46,5 +49,13 @@ export function useMapDirectionsFeature() {
 		MAP_GET_DIRECTIONS_FEATURE_KEY,
 		false,
 		MAP_GET_DIRECTIONS_FEATURE_DESCRIPTION,
+	);
+}
+
+export function useMapAutoDiscoverFeature() {
+	return useSystemFeatureFlag(
+		MAP_AUTO_DISCOVER_FEATURE_KEY,
+		true,
+		MAP_AUTO_DISCOVER_FEATURE_DESCRIPTION,
 	);
 }
