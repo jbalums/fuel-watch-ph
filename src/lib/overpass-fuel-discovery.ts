@@ -25,12 +25,15 @@ export type OverpassFuelStationResult = {
 	tags: Record<string, string>;
 };
 
+const OVERPASS_STATUS_URL = "https://overpass-api.de/api/status";
+const OVERPASS_INTERPRETER_URL = "https://overpass-api.de/api/interpreter";
+
 function buildOverpassBoundsQuery(bounds: google.maps.LatLngBounds) {
 	const northEast = bounds.getNorthEast();
 	const southWest = bounds.getSouthWest();
 
 	return `
-		[out:json][timeout:25];
+		[out:json][timeout:60];
 		(
 		  node["amenity"="fuel"](${southWest.lat()},${southWest.lng()},${northEast.lat()},${northEast.lng()});
 		  way["amenity"="fuel"](${southWest.lat()},${southWest.lng()},${northEast.lat()},${northEast.lng()});
@@ -133,11 +136,46 @@ function mapOverpassFuelStation(
 	};
 }
 
+function parseAvailableSlots(statusText: string) {
+	const normalizedText = statusText.trim();
+
+	const explicitAvailableSlotsMatch = normalizedText.match(
+		/(\d+)\s+slots?\s+available\s+now/i,
+	);
+	if (explicitAvailableSlotsMatch) {
+		return Number.parseInt(explicitAvailableSlotsMatch[1] ?? "0", 10);
+	}
+
+	if (/slot available after:/i.test(normalizedText)) {
+		return 0;
+	}
+
+	return null;
+}
+
+async function ensureOverpassSlotAvailability() {
+	const statusResponse = await fetch(OVERPASS_STATUS_URL);
+	if (!statusResponse.ok) {
+		return;
+	}
+
+	const statusText = await statusResponse.text();
+	const availableSlots = parseAvailableSlots(statusText);
+
+	if (availableSlots === 0) {
+		throw new Error(
+			"OpenStreetMap discovery is busy right now. Please try again in a moment.",
+		);
+	}
+}
+
 export async function searchOverpassFuelStationsInBounds(
 	bounds: google.maps.LatLngBounds,
 ) {
+	await ensureOverpassSlotAvailability();
+
 	const query = buildOverpassBoundsQuery(bounds);
-	const response = await fetch("https://overpass-api.de/api/interpreter", {
+	const response = await fetch(OVERPASS_INTERPRETER_URL, {
 		method: "POST",
 		body: query,
 	});
@@ -152,7 +190,7 @@ export async function searchOverpassFuelStationsInBounds(
 
 	return (data.elements ?? [])
 		.map(mapOverpassFuelStation)
-		.filter(
-			(result): result is OverpassFuelStationResult => Boolean(result),
+		.filter((result): result is OverpassFuelStationResult =>
+			Boolean(result),
 		);
 }

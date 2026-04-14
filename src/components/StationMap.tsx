@@ -104,6 +104,7 @@ function GoogleStationMap({
 	const [discoveredStations, setDiscoveredStations] = useState<
 		DiscoveredStation[]
 	>([]);
+	const [isDiscovering, setIsDiscovering] = useState(false);
 	const [map, setMap] = useState<google.maps.Map | null>(null);
 	const [directionsRenderer, setDirectionsRenderer] =
 		useState<google.maps.DirectionsRenderer | null>(null);
@@ -122,8 +123,7 @@ function GoogleStationMap({
 	const googleMaps =
 		typeof window !== "undefined" ? window.google?.maps : undefined;
 	const isInlineDirectionsEnabled = mapDirectionsFeature?.isEnabled ?? false;
-	const isMapAutoDiscoverEnabled =
-		mapAutoDiscoverFeature?.isEnabled ?? true;
+	const isMapAutoDiscoverEnabled = mapAutoDiscoverFeature?.isEnabled ?? true;
 	const selectedStationId =
 		focusedStationId !== undefined
 			? focusedStationId
@@ -552,10 +552,12 @@ function GoogleStationMap({
 
 	const searchDiscoveredStations = useCallback(
 		async (bounds: google.maps.LatLngBounds, boundsKey: string) => {
+			setIsDiscovering(true);
 			const requestId = ++discoveryRequestIdRef.current;
 
 			try {
-				const results = await searchDiscoveredFuelStationsInBounds(bounds);
+				const results =
+					await searchDiscoveredFuelStationsInBounds(bounds);
 
 				if (requestId !== discoveryRequestIdRef.current) {
 					return;
@@ -568,13 +570,20 @@ function GoogleStationMap({
 					return;
 				}
 
-				console.error("Failed to discover OpenStreetMap fuel stations", error);
+				console.error(
+					"Failed to discover OpenStreetMap fuel stations",
+					error,
+				);
 				setDiscoveredStations([]);
 				toast.error(
 					error instanceof Error
 						? error.message
 						: "OpenStreetMap discovery could not load stations right now.",
 				);
+			} finally {
+				if (requestId === discoveryRequestIdRef.current) {
+					setIsDiscovering(false);
+				}
 			}
 		},
 		[],
@@ -582,6 +591,10 @@ function GoogleStationMap({
 
 	const scheduleDiscoverySearch = useCallback(() => {
 		if (!isMapAutoDiscoverEnabled) {
+			return;
+		}
+
+		if (isDiscovering) {
 			return;
 		}
 
@@ -613,8 +626,13 @@ function GoogleStationMap({
 
 		discoverySearchTimeoutRef.current = window.setTimeout(() => {
 			searchDiscoveredStations(bounds, boundsKey);
-		}, 500);
-	}, [isMapAutoDiscoverEnabled, map, searchDiscoveredStations]);
+		}, 1500);
+	}, [
+		isDiscovering,
+		isMapAutoDiscoverEnabled,
+		map,
+		searchDiscoveredStations,
+	]);
 
 	useEffect(() => {
 		if (!map) {
@@ -645,8 +663,8 @@ function GoogleStationMap({
 		}
 
 		if (stations.length === 1) {
-			map.panTo({ lat: stations[0].lat, lng: stations[0].lng });
-			map.setZoom(DEFAULT_SINGLE_STATION_ZOOM);
+			// map.panTo({ lat: stations[0].lat, lng: stations[0].lng });
+			// map.setZoom(DEFAULT_SINGLE_STATION_ZOOM);
 			return;
 		}
 
@@ -679,11 +697,11 @@ function GoogleStationMap({
 			return;
 		}
 
-		map.panTo({
-			lat: focusedStation.lat,
-			lng: focusedStation.lng,
-		});
-		map.setZoom(FOCUSED_STATION_ZOOM);
+		// map.panTo({
+		// 	lat: focusedStation.lat,
+		// 	lng: focusedStation.lng,
+		// });
+		// map.setZoom(FOCUSED_STATION_ZOOM);
 	}, [focusedStation, map]);
 
 	useEffect(() => {
@@ -702,8 +720,15 @@ function GoogleStationMap({
 
 		setDiscoveredStations([]);
 		setSelectedGoogleStation(null);
+		setIsDiscovering(false);
 		lastDiscoveryBoundsKeyRef.current = null;
 	}, [isMapAutoDiscoverEnabled]);
+
+	useEffect(() => {
+		if (!isDiscovering) {
+			scheduleDiscoverySearch();
+		}
+	}, [isDiscovering, scheduleDiscoverySearch, visibleBounds]);
 
 	useEffect(() => {
 		return () => {
@@ -771,7 +796,8 @@ function GoogleStationMap({
 		}
 
 		const stillVisible = filteredDiscoveredStations.some(
-			(station) => station.externalId === selectedGoogleStation.externalId,
+			(station) =>
+				station.externalId === selectedGoogleStation.externalId,
 		);
 
 		if (!stillVisible) {
@@ -794,6 +820,14 @@ function GoogleStationMap({
 	];
 	return (
 		<div className="relative">
+			{isDiscovering ? (
+				<div className="pointer-events-none absolute right-3 top-3 z-20">
+					<div className="inline-flex items-center gap-2 rounded-full border border-border bg-card/95 px-3 py-1.5 text-xs font-medium text-foreground shadow-lg backdrop-blur">
+						<Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
+						Discovering stations...
+					</div>
+				</div>
+			) : null}
 			<GoogleMap
 				mapContainerStyle={{
 					// ...showOnlyRoadsStyle,
