@@ -168,10 +168,9 @@ export function AppShellLayout() {
 		provinces.find((province) => province.code === storedProvinceCode)
 			?.name ?? "";
 	const headerProvinceName = isLguOperator
-		? currentUserScope?.provinceName ?? publicProvinceName
+		? (currentUserScope?.provinceName ?? publicProvinceName)
 		: publicProvinceName;
-	const headerProvinceLabel =
-		headerProvinceName.trim() || "Change Province";
+	const headerProvinceLabel = headerProvinceName.trim() || "Change Province";
 	const headerProvinceTitle = headerProvinceName.trim()
 		? `Current province: ${headerProvinceName}`
 		: "Change current province";
@@ -202,12 +201,12 @@ export function AppShellLayout() {
 						<button
 							type="button"
 							onClick={handleChangeCurrentProvince}
-							className="relative flex h-8 px-1 gap-1 items-center justify-center rounded-sm bg-background border border-dashed border-primary text-foreground sovereign-ease hover:bg-muted transition-colors"
+							className="relative flex h-8 px-1 lg:px-2 gap-1 items-center justify-center rounded-sm bg-background/60 dark:bg-background/10 border border-dashed border-primary text-foreground sovereign-ease hover:bg-muted transition-colors"
 							aria-label={headerProvinceTitle}
 							title={headerProvinceTitle}
 						>
-							<MapPin className="h-4 w-4" />
-							<span className="hidden md:block text-primary text-[10px]">
+							<MapPin className="h-3 w-3" />
+							<span className="hidden md:block text-[10px]">
 								{headerProvinceLabel}
 							</span>
 						</button>

@@ -59,7 +59,7 @@ export function BottomNav({
 
 	return (
 		<div className="sticky bottom-4 flex items-center justify-center pt-4">
-			<nav className="bottom-4 z-50 flex gap-1 rounded-2xl p-1.5 surface-glass shadow-sovereign-lg">
+			<nav className="bottom-4 z-50 flex gap-1 rounded-2xl p-1.5 dark:bg-black/20 surface-glass shadow-sovereign-lg">
 				{tabs.map(({ id, path, icon: Icon, label }) => (
 					<button
 						key={id}

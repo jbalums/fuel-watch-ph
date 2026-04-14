@@ -397,7 +397,7 @@ function GoogleStationMap({
 				polylineOptions: {
 					strokeColor: "#2563eb",
 					strokeOpacity: 0.9,
-					strokeWeight: 6,
+					strokeWeight: 10,
 				},
 			});
 
@@ -881,7 +881,9 @@ function GoogleStationMap({
 									return;
 								}
 
-								if (closeInfoWindowTimeoutRef.current !== null) {
+								if (
+									closeInfoWindowTimeoutRef.current !== null
+								) {
 									window.clearTimeout(
 										closeInfoWindowTimeoutRef.current,
 									);
