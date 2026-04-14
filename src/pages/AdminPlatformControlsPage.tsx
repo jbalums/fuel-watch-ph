@@ -42,18 +42,12 @@ export default function AdminPlatformControlsPage() {
 	const queryClient = useQueryClient();
 	const { user } = useAuth();
 	const { isSuperAdmin, isLoading: accessLoading } = useUserAccess();
-	const {
-		data: mapDirectionsFeature,
-		isLoading: featureLoading,
-	} = useMapDirectionsFeature();
-	const {
-		data: mapAutoDiscoverFeature,
-		isLoading: autoDiscoverLoading,
-	} = useMapAutoDiscoverFeature();
-	const {
-		data: maintenanceModeFeature,
-		isLoading: maintenanceLoading,
-	} = useMaintenanceModeFeature();
+	const { data: mapDirectionsFeature, isLoading: featureLoading } =
+		useMapDirectionsFeature();
+	const { data: mapAutoDiscoverFeature, isLoading: autoDiscoverLoading } =
+		useMapAutoDiscoverFeature();
+	const { data: maintenanceModeFeature, isLoading: maintenanceLoading } =
+		useMaintenanceModeFeature();
 
 	const isEnabled = mapDirectionsFeature?.isEnabled ?? false;
 	const isAutoDiscoverEnabled = mapAutoDiscoverFeature?.isEnabled ?? true;
@@ -93,11 +87,13 @@ export default function AdminPlatformControlsPage() {
 		onSuccess: (nextEnabled) => {
 			queryClient.setQueryData(
 				["system_feature_flag", MAP_GET_DIRECTIONS_FEATURE_KEY],
-				(current: {
-					featureKey?: string;
-					description?: string;
-					updatedAt?: string | null;
-				} | null) => ({
+				(
+					current: {
+						featureKey?: string;
+						description?: string;
+						updatedAt?: string | null;
+					} | null,
+				) => ({
 					featureKey: MAP_GET_DIRECTIONS_FEATURE_KEY,
 					isEnabled: nextEnabled,
 					description:
@@ -107,7 +103,10 @@ export default function AdminPlatformControlsPage() {
 				}),
 			);
 			void queryClient.invalidateQueries({
-				queryKey: ["system_feature_flag", MAP_GET_DIRECTIONS_FEATURE_KEY],
+				queryKey: [
+					"system_feature_flag",
+					MAP_GET_DIRECTIONS_FEATURE_KEY,
+				],
 			});
 			toast.success(
 				nextEnabled
@@ -143,11 +142,13 @@ export default function AdminPlatformControlsPage() {
 		onSuccess: (nextEnabled) => {
 			queryClient.setQueryData(
 				["system_feature_flag", MAP_AUTO_DISCOVER_FEATURE_KEY],
-				(current: {
-					featureKey?: string;
-					description?: string;
-					updatedAt?: string | null;
-				} | null) => ({
+				(
+					current: {
+						featureKey?: string;
+						description?: string;
+						updatedAt?: string | null;
+					} | null,
+				) => ({
 					featureKey: MAP_AUTO_DISCOVER_FEATURE_KEY,
 					isEnabled: nextEnabled,
 					description:
@@ -157,7 +158,10 @@ export default function AdminPlatformControlsPage() {
 				}),
 			);
 			void queryClient.invalidateQueries({
-				queryKey: ["system_feature_flag", MAP_AUTO_DISCOVER_FEATURE_KEY],
+				queryKey: [
+					"system_feature_flag",
+					MAP_AUTO_DISCOVER_FEATURE_KEY,
+				],
 			});
 			toast.success(
 				nextEnabled
@@ -193,11 +197,13 @@ export default function AdminPlatformControlsPage() {
 		onSuccess: (nextEnabled) => {
 			queryClient.setQueryData(
 				["system_feature_flag", MAINTENANCE_MODE_FEATURE_KEY],
-				(current: {
-					featureKey?: string;
-					description?: string;
-					updatedAt?: string | null;
-				} | null) => ({
+				(
+					current: {
+						featureKey?: string;
+						description?: string;
+						updatedAt?: string | null;
+					} | null,
+				) => ({
 					featureKey: MAINTENANCE_MODE_FEATURE_KEY,
 					isEnabled: nextEnabled,
 					description:
@@ -270,112 +276,118 @@ export default function AdminPlatformControlsPage() {
 				</div>
 			</div>
 
-			<section className="rounded-2xl bg-card p-6 shadow-sovereign">
-				<div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-					<div className="max-w-2xl">
-						<p className="text-base font-semibold text-foreground">
-							Inline Get Directions on `/map`
-						</p>
-						<p className="mt-1 text-sm text-muted-foreground">
-							{MAP_GET_DIRECTIONS_FEATURE_DESCRIPTION}
-						</p>
-						<p className="mt-3 text-xs text-muted-foreground">
-							Last updated: {updatedAtText}
+			<div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+				<section className="rounded-2xl bg-card p-6 shadow-sovereign">
+					<div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+						<div className="max-w-2xl">
+							<p className="text-base font-semibold text-foreground">
+								Inline Get Directions on `/map`
+							</p>
+							<p className="mt-1 text-sm text-muted-foreground">
+								{MAP_GET_DIRECTIONS_FEATURE_DESCRIPTION}
+							</p>
+							<p className="mt-3 text-xs text-muted-foreground">
+								Last updated: {updatedAtText}
+							</p>
+						</div>
+						<div className="flex items-center gap-3 rounded-full border border-border bg-secondary/40 px-4 py-3">
+							<span className="text-sm font-medium text-foreground">
+								{isEnabled ? "Enabled" : "Disabled"}
+							</span>
+							<Switch
+								checked={isEnabled}
+								disabled={toggleMapDirections.isPending}
+								onCheckedChange={(checked) => {
+									toggleMapDirections.mutate(checked);
+								}}
+								aria-label="Toggle inline map directions"
+							/>
+						</div>
+					</div>
+					<div className="mt-4 rounded-xl border border-border bg-secondary/30 p-4 text-sm text-muted-foreground">
+						<p>
+							When disabled, the `Get Directions` button is
+							removed on `/map`, and only `Open in Maps` remains
+							available.
 						</p>
 					</div>
-					<div className="flex items-center gap-3 rounded-full border border-border bg-secondary/40 px-4 py-3">
-						<span className="text-sm font-medium text-foreground">
-							{isEnabled ? "Enabled" : "Disabled"}
-						</span>
-						<Switch
-							checked={isEnabled}
-							disabled={toggleMapDirections.isPending}
-							onCheckedChange={(checked) => {
-								toggleMapDirections.mutate(checked);
-							}}
-							aria-label="Toggle inline map directions"
-						/>
-					</div>
-				</div>
-				<div className="mt-4 rounded-xl border border-border bg-secondary/30 p-4 text-sm text-muted-foreground">
-					<p>
-						When disabled, the `Get Directions` button is removed on
-						`/map`, and only `Open in Maps` remains available.
-					</p>
-				</div>
-			</section>
+				</section>
 
-			<section className="rounded-2xl bg-card p-6 shadow-sovereign">
-				<div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-					<div className="max-w-2xl">
-						<p className="text-base font-semibold text-foreground">
-							Auto Discover on `/map`
-						</p>
-						<p className="mt-1 text-sm text-muted-foreground">
-							{MAP_AUTO_DISCOVER_FEATURE_DESCRIPTION}
-						</p>
-						<p className="mt-3 text-xs text-muted-foreground">
-							Last updated: {autoDiscoverUpdatedAtText}
+				<section className="rounded-2xl bg-card p-6 shadow-sovereign">
+					<div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+						<div className="max-w-2xl">
+							<p className="text-base font-semibold text-foreground">
+								Auto Discover on `/map`
+							</p>
+							<p className="mt-1 text-sm text-muted-foreground">
+								{MAP_AUTO_DISCOVER_FEATURE_DESCRIPTION}
+							</p>
+							<p className="mt-3 text-xs text-muted-foreground">
+								Last updated: {autoDiscoverUpdatedAtText}
+							</p>
+						</div>
+						<div className="flex items-center gap-3 rounded-full border border-border bg-secondary/40 px-4 py-3">
+							<span className="text-sm font-medium text-foreground">
+								{isAutoDiscoverEnabled ? "Enabled" : "Disabled"}
+							</span>
+							<Switch
+								checked={isAutoDiscoverEnabled}
+								disabled={toggleMapAutoDiscover.isPending}
+								onCheckedChange={(checked) => {
+									toggleMapAutoDiscover.mutate(checked);
+								}}
+								aria-label="Toggle map auto discovery"
+							/>
+						</div>
+					</div>
+					<div className="mt-4 rounded-xl border border-border bg-secondary/30 p-4 text-sm text-muted-foreground">
+						<p>
+							When disabled, `/map` stops auto-searching
+							Google-only fuel stations as the map moves, which
+							can help reduce Places API usage.
 						</p>
 					</div>
-					<div className="flex items-center gap-3 rounded-full border border-border bg-secondary/40 px-4 py-3">
-						<span className="text-sm font-medium text-foreground">
-							{isAutoDiscoverEnabled ? "Enabled" : "Disabled"}
-						</span>
-						<Switch
-							checked={isAutoDiscoverEnabled}
-							disabled={toggleMapAutoDiscover.isPending}
-							onCheckedChange={(checked) => {
-								toggleMapAutoDiscover.mutate(checked);
-							}}
-							aria-label="Toggle map auto discovery"
-						/>
-					</div>
-				</div>
-				<div className="mt-4 rounded-xl border border-border bg-secondary/30 p-4 text-sm text-muted-foreground">
-					<p>
-						When disabled, `/map` stops auto-searching Google-only
-						fuel stations as the map moves, which can help reduce
-						Places API usage.
-					</p>
-				</div>
-			</section>
+				</section>
 
-			<section className="rounded-2xl bg-card p-6 shadow-sovereign">
-				<div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-					<div className="max-w-2xl">
-						<p className="text-base font-semibold text-foreground">
-							Maintenance Mode
-						</p>
-						<p className="mt-1 text-sm text-muted-foreground">
-							{MAINTENANCE_MODE_FEATURE_DESCRIPTION}
-						</p>
-						<p className="mt-3 text-xs text-muted-foreground">
-							Last updated: {maintenanceUpdatedAtText}
+				<section className="rounded-2xl bg-card border border-red-500 p-6 shadow-sovereign">
+					<div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+						<div className="max-w-2xl">
+							<p className="text-base font-semibold text-red-600">
+								Maintenance Mode
+							</p>
+							<p className="mt-1 text-sm text-muted-foreground">
+								{MAINTENANCE_MODE_FEATURE_DESCRIPTION}
+							</p>
+							<p className="mt-3 text-xs text-muted-foreground">
+								Last updated: {maintenanceUpdatedAtText}
+							</p>
+						</div>
+						<div className="flex items-center gap-3 rounded-full border border-border bg-secondary/40 px-4 py-3">
+							<span className="text-sm font-medium text-foreground">
+								{isMaintenanceModeEnabled
+									? "Enabled"
+									: "Disabled"}
+							</span>
+							<Switch
+								checked={isMaintenanceModeEnabled}
+								disabled={toggleMaintenanceMode.isPending}
+								onCheckedChange={(checked) => {
+									toggleMaintenanceMode.mutate(checked);
+								}}
+								aria-label="Toggle maintenance mode"
+							/>
+						</div>
+					</div>
+					<div className="mt-4 rounded-xl border border-border bg-secondary/30 p-4 text-sm text-muted-foreground">
+						<p>
+							When enabled, public routes like `/`, `/map`,
+							`/search`, `/report`, and embeds show the
+							maintenance page. Admin, LGU, auth, and profile
+							routes stay reachable.
 						</p>
 					</div>
-					<div className="flex items-center gap-3 rounded-full border border-border bg-secondary/40 px-4 py-3">
-						<span className="text-sm font-medium text-foreground">
-							{isMaintenanceModeEnabled ? "Enabled" : "Disabled"}
-						</span>
-						<Switch
-							checked={isMaintenanceModeEnabled}
-							disabled={toggleMaintenanceMode.isPending}
-							onCheckedChange={(checked) => {
-								toggleMaintenanceMode.mutate(checked);
-							}}
-							aria-label="Toggle maintenance mode"
-						/>
-					</div>
-				</div>
-				<div className="mt-4 rounded-xl border border-border bg-secondary/30 p-4 text-sm text-muted-foreground">
-					<p>
-						When enabled, public routes like `/`, `/map`, `/search`,
-						`/report`, and embeds show the maintenance page. Admin,
-						LGU, auth, and profile routes stay reachable.
-					</p>
-				</div>
-			</section>
+				</section>
+			</div>
 		</div>
 	);
 }
