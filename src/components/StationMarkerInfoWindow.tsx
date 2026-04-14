@@ -234,7 +234,9 @@ export const StationMarkerInfoWindow = memo(function StationMarkerInfoWindow({
 									disabled={!directionsUrl}
 								>
 									<Navigation className="h-4 w-4" />
-									Open in Maps
+									{showDirectionsAction
+										? "Open in Maps"
+										: "Get Directions"}
 								</Button>
 							) : null}
 							{showDirectionsAction ? (
