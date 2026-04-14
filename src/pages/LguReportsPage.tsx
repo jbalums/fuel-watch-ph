@@ -47,6 +47,8 @@ export default function LguReportsPage() {
 	const { data: stations = [] } = useScopedAdminStations();
 	const { data: reports = [], isLoading: reportsLoading } =
 		useScopedAdminReports();
+	const [easyApprovalForm, setEasyApprovalForm] =
+		useState<EasyReportApprovalFormState | null>(null);
 	const { provinces, cities = [] } = useGeoReferences({
 		provinceCode: easyApprovalForm?.provinceCode,
 	});
@@ -60,8 +62,6 @@ export default function LguReportsPage() {
 	const [reportToApprove, setReportToApprove] = useState<
 		(typeof reports)[number] | null
 	>(null);
-	const [easyApprovalForm, setEasyApprovalForm] =
-		useState<EasyReportApprovalFormState | null>(null);
 	const [easyApprovalError, setEasyApprovalError] = useState<string | null>(
 		null,
 	);
@@ -81,7 +81,7 @@ export default function LguReportsPage() {
 			const matchesFilter =
 				reportFilter === "all" || report.reviewStatus === reportFilter;
 			const linkedStationName = report.stationId
-				? stationLookup.get(report.stationId)?.name ?? ""
+				? (stationLookup.get(report.stationId)?.name ?? "")
 				: "";
 			const reportedAddress = report.reportedAddress ?? "";
 			const reportName = getFuelReportDisplayName(report);
@@ -114,7 +114,9 @@ export default function LguReportsPage() {
 		},
 		onSuccess: async (stationId) => {
 			await refreshAdminData(queryClient);
-			const matchedStation = stationId ? stationLookup.get(stationId) : null;
+			const matchedStation = stationId
+				? stationLookup.get(stationId)
+				: null;
 			toast.success(
 				matchedStation
 					? `Report approved and applied to ${matchedStation.name}`
@@ -148,7 +150,8 @@ export default function LguReportsPage() {
 			}
 
 			const fallbackStationName = form.stationId
-				? stationLookup.get(form.stationId)?.name ?? "Selected station"
+				? (stationLookup.get(form.stationId)?.name ??
+					"Selected station")
 				: form.stationName.trim();
 			const stationName = fallbackStationName.trim();
 
@@ -168,11 +171,9 @@ export default function LguReportsPage() {
 					_report_id: reportId,
 					_station_name: stationName,
 					_station_id: form.stationId || null,
-					_reported_address:
-						form.reportedAddress.trim() || null,
+					_reported_address: form.reportedAddress.trim() || null,
 					_province_code: form.provinceCode.trim(),
-					_city_municipality_code:
-						form.cityMunicipalityCode.trim(),
+					_city_municipality_code: form.cityMunicipalityCode.trim(),
 					_prices: normalizedPrices,
 					_fuel_availability: normalizedAvailability,
 				},
@@ -183,7 +184,9 @@ export default function LguReportsPage() {
 		},
 		onSuccess: async (stationId) => {
 			await refreshAdminData(queryClient);
-			const matchedStation = stationId ? stationLookup.get(stationId) : null;
+			const matchedStation = stationId
+				? stationLookup.get(stationId)
+				: null;
 			toast.success(
 				matchedStation
 					? `Easy report approved and applied to ${matchedStation.name}`
@@ -299,7 +302,8 @@ export default function LguReportsPage() {
 						Scoped Report Review
 					</h3>
 					<p className="text-sm text-muted-foreground">
-						Approve or reject community-submitted updates inside your assigned scope.
+						Approve or reject community-submitted updates inside
+						your assigned scope.
 					</p>
 				</div>
 				<div className="relative">
@@ -308,7 +312,9 @@ export default function LguReportsPage() {
 						type="text"
 						placeholder="Search reports"
 						value={reportSearch}
-						onChange={(event) => setReportSearch(event.target.value)}
+						onChange={(event) =>
+							setReportSearch(event.target.value)
+						}
 						className="w-full rounded-xl bg-surface-alt py-2.5 pl-9 pr-3 text-sm text-foreground outline-none focus:ring-2 focus:ring-primary/20 md:w-64"
 					/>
 				</div>
@@ -355,7 +361,9 @@ export default function LguReportsPage() {
 									<div className="min-w-0 flex-1">
 										<div className="flex flex-wrap items-center gap-2">
 											<p className="font-semibold text-foreground">
-												{getFuelReportDisplayName(report)}
+												{getFuelReportDisplayName(
+													report,
+												)}
 											</p>
 											{report.isLguVerified && (
 												<LguVerifiedBadge className="py-0.5" />
@@ -368,7 +376,8 @@ export default function LguReportsPage() {
 													status={report.status}
 												/>
 											) : null}
-											{report.submissionMode === "easy" ? (
+											{report.submissionMode ===
+											"easy" ? (
 												<span className="inline-flex rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
 													{getFuelReportModeLabel(
 														report.submissionMode,
@@ -381,10 +390,14 @@ export default function LguReportsPage() {
 												report.prices,
 												report.fuelAvailability,
 											) ||
-												(report.submissionMode === "easy"
+												(report.submissionMode ===
+												"easy"
 													? "Awaiting manual price entry"
 													: "No valid prices")}{" "}
-											• {new Date(report.reportedAt).toLocaleString()}
+											•{" "}
+											{new Date(
+												report.reportedAt,
+											).toLocaleString()}
 										</p>
 										<p className="mt-2 text-xs font-medium text-foreground">
 											{report.stationId
@@ -397,7 +410,8 @@ export default function LguReportsPage() {
 										</p>
 										{report.reportedAddress && (
 											<p className="text-xs text-muted-foreground">
-												Address: {report.reportedAddress}
+												Address:{" "}
+												{report.reportedAddress}
 											</p>
 										)}
 										{report.lat !== null &&
@@ -408,17 +422,19 @@ export default function LguReportsPage() {
 														onClick={() =>
 															navigate("/map", {
 																state: {
-																	reportLocation: {
-																		lat: report.lat!,
-																		lng: report.lng!,
-																		label: "Reported location",
-																	},
+																	reportLocation:
+																		{
+																			lat: report.lat!,
+																			lng: report.lng!,
+																			label: "Reported location",
+																		},
 																},
 															})
 														}
 														className="text-muted-foreground underline-offset-2 transition-colors hover:text-accent hover:underline"
 													>
-														GPS: {report.lat.toFixed(5)},{" "}
+														GPS:{" "}
+														{report.lat.toFixed(5)},{" "}
 														{report.lng.toFixed(5)}
 													</button>
 												</p>
@@ -432,8 +448,7 @@ export default function LguReportsPage() {
 															path: report.photoPath!,
 															filename:
 																report.photoFilename,
-															mode:
-																report.submissionMode,
+															mode: report.submissionMode,
 														})
 													}
 													className="font-medium text-accent hover:underline"
@@ -464,7 +479,9 @@ export default function LguReportsPage() {
 											<>
 												<button
 													onClick={() =>
-														setReportToApprove(report)
+														setReportToApprove(
+															report,
+														)
 													}
 													disabled={
 														approveReport.isPending ||
@@ -478,7 +495,9 @@ export default function LguReportsPage() {
 												</button>
 												<button
 													onClick={() =>
-														setReportToReject(report)
+														setReportToReject(
+															report,
+														)
 													}
 													disabled={
 														approveReport.isPending ||
@@ -523,10 +542,13 @@ export default function LguReportsPage() {
 			>
 				<AlertDialogContent>
 					<AlertDialogHeader>
-						<AlertDialogTitle>Approve fuel report?</AlertDialogTitle>
+						<AlertDialogTitle>
+							Approve fuel report?
+						</AlertDialogTitle>
 						<AlertDialogDescription>
 							This will approve the selected report and apply its
-							data to the matching station record inside your scope.
+							data to the matching station record inside your
+							scope.
 						</AlertDialogDescription>
 					</AlertDialogHeader>
 					{reportToApprove && (
@@ -538,8 +560,7 @@ export default function LguReportsPage() {
 								{formatReportedPrices(
 									reportToApprove.prices,
 									reportToApprove.fuelAvailability,
-								) ||
-									"No valid prices"}
+								) || "No valid prices"}
 							</p>
 							<p className="mt-1 text-muted-foreground">
 								{reportToApprove.reportedAddress ??
@@ -638,8 +659,7 @@ export default function LguReportsPage() {
 								{formatReportedPrices(
 									reportToReject.prices,
 									reportToReject.fuelAvailability,
-								) ||
-									"No valid prices"}
+								) || "No valid prices"}
 							</p>
 							<p className="mt-1 text-muted-foreground">
 								{reportToReject.reportedAddress ??
