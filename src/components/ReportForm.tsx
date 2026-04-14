@@ -32,6 +32,7 @@ import {
 	validateFuelReportPhoto,
 } from "@/lib/fuel-report-photo-upload";
 import { detectGeoScopeFromAddress } from "@/lib/geo-detection";
+import { reverseGeocodeCoordinatesWithNominatim } from "@/lib/nominatim";
 import { ReportLocationPicker } from "@/components/ReportLocationPicker";
 import {
 	createEmptyFuelAvailabilityFormMap,
@@ -283,6 +284,9 @@ export function ReportForm() {
 	const [autoDetectScopeMessage, setAutoDetectScopeMessage] = useState<
 		string | null
 	>(null);
+	const [standardAutoDetectScopeMessage, setStandardAutoDetectScopeMessage] =
+		useState<string | null>(null);
+	const hasManualScopeOverrideRef = useRef(false);
 	const [stationSearchProvinceCode, setStationSearchProvinceCode] =
 		useState("");
 	const [
@@ -333,6 +337,8 @@ export function ReportForm() {
 				: null;
 		},
 	);
+	const previousSubmissionModeRef =
+		useRef<FuelReportSubmissionMode>(submissionMode);
 
 	useEffect(() => {
 		if (!photoFile) {
@@ -361,6 +367,7 @@ export function ReportForm() {
 	};
 
 	const clearReportForm = () => {
+		hasManualScopeOverrideRef.current = false;
 		setStationName("");
 		setPrices(createEmptyFuelPriceFormMap());
 		setFuelAvailability(createEmptyFuelAvailabilityFormMap());
@@ -487,13 +494,19 @@ export function ReportForm() {
 	]);
 
 	useEffect(() => {
-		if (!isEasyReport) {
+		const previousSubmissionMode = previousSubmissionModeRef.current;
+		previousSubmissionModeRef.current = submissionMode;
+
+		if (
+			submissionMode !== "easy" ||
+			previousSubmissionMode === "easy"
+		) {
 			return;
 		}
 
 		setSelectedStationId(null);
 		setStationName("");
-	}, [isEasyReport]);
+	}, [submissionMode]);
 
 	const uploadSelectedPhoto = async (file: File) => {
 		if (!user) {
@@ -617,6 +630,99 @@ export function ReportForm() {
 		provinceCode,
 		provinces,
 		reportedAddress,
+	]);
+
+	useEffect(() => {
+		if (
+			isEasyReport ||
+			selectedStationId ||
+			hasManualScopeOverrideRef.current ||
+			!currentLocation ||
+			provinces.length === 0 ||
+			cities.length === 0 ||
+			(provinceCode.trim() && cityMunicipalityCode.trim())
+		) {
+			if (isEasyReport || selectedStationId) {
+				setStandardAutoDetectScopeMessage(null);
+			}
+			return;
+		}
+
+		let isCancelled = false;
+
+		const autoDetectStandardScope = async () => {
+			setStandardAutoDetectScopeMessage(
+				"Detecting province and city from your current location...",
+			);
+
+			try {
+				const result =
+					await reverseGeocodeCoordinatesWithNominatim(
+						currentLocation,
+					);
+
+				if (isCancelled) {
+					return;
+				}
+
+				const detectedScope = detectGeoScopeFromAddress({
+					address: result.addressText,
+					provinces,
+					cities,
+				});
+
+				if (!detectedScope?.provinceCode) {
+					setStandardAutoDetectScopeMessage(
+						"We couldn't auto-detect your report scope yet. Please choose the province and city manually.",
+					);
+					return;
+				}
+
+				const nextProvinceCode = detectedScope.provinceCode ?? "";
+				const nextCityMunicipalityCode =
+					detectedScope.cityMunicipalityCode ?? "";
+
+				if (provinceCode !== nextProvinceCode) {
+					setProvinceCode(nextProvinceCode);
+				}
+
+				if (cityMunicipalityCode !== nextCityMunicipalityCode) {
+					setCityMunicipalityCode(nextCityMunicipalityCode);
+				}
+
+				setStandardAutoDetectScopeMessage(
+					nextCityMunicipalityCode
+						? "Province and city were auto-detected from your current location."
+						: "Province was auto-detected from your current location. Please choose the city or municipality if needed.",
+				);
+			} catch (error) {
+				if (isCancelled) {
+					return;
+				}
+
+				console.error(
+					"Failed to auto-detect Standard Report scope",
+					error,
+				);
+				setStandardAutoDetectScopeMessage(
+					"Auto-detect is unavailable right now. Please choose the province and city manually.",
+				);
+			}
+		};
+
+		void autoDetectStandardScope();
+
+		return () => {
+			isCancelled = true;
+		};
+	}, [
+		cities,
+		cityMunicipalityCode,
+		currentLocation,
+		isEasyReport,
+		provinceCode,
+		provinces,
+		selectedStationId,
 	]);
 
 	const handleSubmit = async (e: React.FormEvent) => {
@@ -856,6 +962,7 @@ export function ReportForm() {
 						}
 					}}
 					onSelectStation={(station) => {
+						hasManualScopeOverrideRef.current = false;
 						setSelectedStationId(station.id);
 						setStationName(station.name);
 						setReportedAddress(station.address);
@@ -1063,6 +1170,7 @@ export function ReportForm() {
 					}
 					allowExistingStationSelection
 					onSelectExistingStation={(station) => {
+						hasManualScopeOverrideRef.current = false;
 						if (isEasyReport) {
 							setPrefilledGoogleStation(null);
 						}
@@ -1079,6 +1187,7 @@ export function ReportForm() {
 						});
 					}}
 					onSelectNewLocation={(selection) => {
+						hasManualScopeOverrideRef.current = false;
 						setCoords({
 							lat: selection.lat,
 							lng: selection.lng,
@@ -1096,6 +1205,7 @@ export function ReportForm() {
 						}
 					}}
 					onClearSelection={() => {
+						hasManualScopeOverrideRef.current = false;
 						setCoords(null);
 						setReportedAddress(null);
 						setProvinceCode("");
@@ -1127,10 +1237,14 @@ export function ReportForm() {
 					provinceDisabled={selectedStationHasScope}
 					cityDisabled={selectedStationHasScope}
 					onProvinceChange={(nextProvinceCode) => {
+						hasManualScopeOverrideRef.current = true;
 						setProvinceCode(nextProvinceCode);
 						setCityMunicipalityCode("");
 					}}
-					onCityChange={setCityMunicipalityCode}
+					onCityChange={(nextCityMunicipalityCode) => {
+						hasManualScopeOverrideRef.current = true;
+						setCityMunicipalityCode(nextCityMunicipalityCode);
+					}}
 				/>
 				<p className="text-xs text-muted-foreground">
 					{isEasyReport
@@ -1140,7 +1254,8 @@ export function ReportForm() {
 							? "This scope is inherited from the selected station."
 							: selectedStationId
 								? "This station still needs a province and city assignment for approval."
-								: "Pick the province and city or municipality for this report."}
+								: (standardAutoDetectScopeMessage ??
+									"Pick the province and city or municipality for this report.")}
 				</p>
 			</div>
 

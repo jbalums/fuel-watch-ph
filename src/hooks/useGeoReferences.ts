@@ -11,8 +11,7 @@ export function useGeoReferences(options?: {
 	includeAllCities?: boolean;
 }) {
 	const provinceCode = options?.provinceCode?.trim() ?? "";
-	const includeAllCities = false;
-	//options?.includeAllCities ?? false;
+	const includeAllCities = options?.includeAllCities ?? false;
 
 	const provincesQuery = useQuery({
 		queryKey: ["geo", "provinces"],
