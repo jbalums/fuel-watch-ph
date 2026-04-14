@@ -45,6 +45,7 @@ import Profile from "./pages/Profile";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import StationManagerDashboard from "./pages/StationManagerDashboard";
 import Terms from "./pages/Terms";
+import MaintenancePage from "./pages/MaintenancePage";
 import NotFound from "./pages/NotFound";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 
@@ -57,6 +58,9 @@ function RouterContent() {
 	const isEmbedRoute = location.pathname.startsWith("/embed/");
 	const previousPathnameRef = useRef(location.pathname);
 	const [pageLoaderVisible, setPageLoaderVisible] = useState(false);
+
+	// Uncomment the line below to enable the global maintenance mode page.
+	return <MaintenancePage />;
 
 	useEffect(() => {
 		if (previousPathnameRef.current === location.pathname) {
