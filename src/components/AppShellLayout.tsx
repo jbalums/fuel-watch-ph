@@ -201,7 +201,7 @@ export function AppShellLayout() {
 						<button
 							type="button"
 							onClick={handleChangeCurrentProvince}
-							className="relative flex h-8 px-1 lg:px-2 gap-1 items-center justify-center rounded-sm bg-background/60 dark:bg-background/10 border border-dashed border-primary text-foreground sovereign-ease hover:bg-muted transition-colors"
+							className="relative flex h-7 px-2 lg:px-2 gap-1 items-center justify-center rounded-sm bg-background/60 dark:bg-background/10 border border-dashed border-primary text-foreground sovereign-ease hover:bg-muted transition-colors"
 							aria-label={headerProvinceTitle}
 							title={headerProvinceTitle}
 						>
