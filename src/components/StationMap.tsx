@@ -531,10 +531,20 @@ function GoogleStationMap({
 			minZoom: 14,
 			fullscreenControl: true,
 			mapTypeControl: true,
+			mapTypeControlOptions: googleMaps
+				? {
+						position: googleMaps.ControlPosition.LEFT_BOTTOM,
+					}
+				: undefined,
 			streetViewControl: true,
+			streetViewControlOptions: googleMaps
+				? {
+						position: googleMaps.ControlPosition.RIGHT_BOTTOM,
+					}
+				: undefined,
 			gestureHandling: "greedy" as const,
 		}),
-		[],
+		[googleMaps],
 	);
 	const routeOptions = useMemo(() => {
 		if (!renderedRoute) {
@@ -1113,7 +1123,7 @@ function GoogleStationMap({
 	];
 	return (
 		<div className="relative">
-			<div className="absolute left-3 top-14 z-20 max-w-[calc(100%-1.5rem)] rounded-2xl border border-border bg-card/95 p-1.5 shadow-lg backdrop-blur">
+			<div className="absolute left-3 top-3 z-20 max-w-[calc(100%-1.5rem)] rounded-2xl border border-border bg-card/75 p-1.5 shadow-lg backdrop-blur">
 				<div className="flex max-w-full gap-1 overflow-x-auto">
 					{fuelTypes.map((fuelType) => (
 						<button
@@ -1122,7 +1132,7 @@ function GoogleStationMap({
 							onClick={() => setSelectedMapFuelType(fuelType)}
 							className={`shrink-0 rounded-xl px-3 py-1.5 text-[11px] font-semibold sovereign-ease transition-colors ${
 								selectedMapFuelType === fuelType
-									? "bg-primary text-primary-foreground shadow-sm"
+									? `bg-black ${fuelTypeTextColorClassNames[fuelType]} border ${fuelTypeBorderColorClassNames[fuelType]} shadow-sm`
 									: `bg-background/80 ${fuelTypeTextColorClassNames[fuelType]} hover:bg-secondary`
 							}`}
 							aria-pressed={selectedMapFuelType === fuelType}
@@ -1222,7 +1232,7 @@ function GoogleStationMap({
 					>
 						<div className="pointer-events-none -translate-x-1/2 -translate-y-full pb-9">
 							<div
-								className={`relative whitespace-nowrap border-[1px_solid] rounded-full shadow-sovereign dark:bg-black bg-white px-1.5 py-1 text-[11px] font-bold shadow-lg backdrop-blur ${fuelTypeTextColorClassNames[selectedMapFuelType]} ${fuelTypeBorderColorClassNames[selectedMapFuelType]}`}
+								className={`relative whitespace-nowrap border rounded-full shadow-sovereign dark:bg-black bg-white px-1.5 py-1 text-[11px] font-bold shadow-lg text-shadow backdrop-blur ${fuelTypeTextColorClassNames[selectedMapFuelType]} ${fuelTypeBorderColorClassNames[selectedMapFuelType]}`}
 							>
 								<span className="text-[6px] absolute top-1.5">
 									₱
@@ -1430,7 +1440,7 @@ export function StationMap({
 	}
 
 	return (
-		<div className="overflow-hidden rounded-b-2xl border border-t-0 border-border shadow-sovereign">
+		<div className="overflow-hidden rounded-2xl border border-t-0 border-border shadow-sovereign">
 			<LoadScriptNext
 				id={GOOGLE_MAPS_SCRIPT_ID}
 				googleMapsApiKey={GOOGLE_MAPS_API_KEY}
