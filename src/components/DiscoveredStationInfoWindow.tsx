@@ -42,11 +42,11 @@ export function DiscoveredStationInfoWindow({
 				<span className="font-semibold dark:text-white text-black pr-2">
 					{station.name}
 				</span>
-				<span className="rounded-full bg-accent/10 px-2 py-0 text-[8px] font-medium text-accent">
+				<span className="rounded-full bg-accent/10 px-2 py-0 -mt-0.5 text-[8px] font-medium text-accent">
 					OpenStreetMap
 				</span>
 			</div>
-			<span className="line-clamp-2 whitespace-normal pr-4 text-[8px] leading-3 text-gray-500">
+			<span className="line-clamp-1 whitespace-normal pr-4 text-[8px] leading-3 text-gray-500">
 				{station.address}
 			</span>
 			{isResolvingAddress ? (
@@ -54,25 +54,20 @@ export function DiscoveredStationInfoWindow({
 					Resolving address...
 				</span>
 			) : null}
-			<div className="rounded-lg border border-border bg-slate-100 px-3 py-2 text-xs text-muted-foreground dark:border-slate-700 dark:bg-slate-950">
-				<div className="flex items-center gap-2 font-medium text-amber-600">
-					<MapPinned className="h-3.5 w-3.5" />
-					Not yet added to FuelWatch PH
-				</div>
-				<p className="mt-1 text-[10px]">
-					Lat {station.lat.toFixed(6)}, Lng {station.lng.toFixed(6)}
-				</p>
+			<div className="flex items-center gap-2 text-center justify-center font-medium text-red-600 pr-1 text-xs">
+				<MapPinned className="h-3.5 w-3.5" />
+				Not yet added to FuelWatch PH
 			</div>
 			{brandAverage ? (
 				<div className="rounded-sm border border-border bg-slate-100 py-2 text-xs text-muted-foreground dark:border-slate-600 dark:bg-slate-900">
-					<div className="text-center font-medium text-indigo-700 dark:text-sky-400">
+					<div className="text-center font-medium text-indigo-700 dark:text-sky-400 relative pb-1">
 						Average from other <u>{brandAverage.brandName}</u>{" "}
 						stations
+						<p className="-mt-1 text-center text-[8px] text-muted-foreground absolute w-full">
+							Based on {brandAverage.sampleCount} station
+							{brandAverage.sampleCount === 1 ? "" : "s"}
+						</p>
 					</div>
-					<p className="mt-0.5 text-center text-[10px] text-muted-foreground">
-						Based on {brandAverage.sampleCount} station
-						{brandAverage.sampleCount === 1 ? "" : "s"}
-					</p>
 					{fuelTypes.some(
 						(fuelType) =>
 							typeof brandAverage.averagePrices[fuelType] ===
@@ -108,7 +103,7 @@ export function DiscoveredStationInfoWindow({
 									);
 								})}
 							</div>
-							<span className="flex items-center gap-1 text-[9px] leading-none text-amber-600 w-full text-center justify-center">
+							<span className="flex items-center gap-1 text-[9px] leading-none text-amber-600 w-full text-center justify-center font-medium">
 								<Info className="text-amber-600 h-3 w-3" />{" "}
 								Prices may not reflect current market prices.
 							</span>
@@ -121,7 +116,7 @@ export function DiscoveredStationInfoWindow({
 				</div>
 			) : null}
 			{hasActions ? (
-				<div className="grid grid-cols-2 gap-2 px-[2px] pb-1 pt-2">
+				<div className="grid grid-cols-2 gap-2 px-[2px] pb-1 pt-0">
 					{showReportAction && onReportGasStation ? (
 						<div className="col-span-2 flex flex-col">
 							<Button

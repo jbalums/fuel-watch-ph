@@ -237,8 +237,8 @@
 }
 .gm-style-iw-chr button {
 	position: absolute !important;
-	right: 8px;
-	top: 8px;
+	right: 2px;
+	top: 0px;
 	@apply !outline-none !border-red-600 !h-6 !w-6 !p-0 rounded-full flex items-center justify-center;
 }
 

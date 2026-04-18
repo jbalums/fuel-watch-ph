@@ -117,7 +117,7 @@ function getRoundedGridValue(value: number) {
 	).toFixed(2);
 }
 
-function buildDiscoveredStationBoundsCacheKey(
+export function buildDiscoveredStationBoundsCacheKey(
 	bounds: google.maps.LatLngBounds,
 ) {
 	const northEast = bounds.getNorthEast();

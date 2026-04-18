@@ -45,6 +45,8 @@ import {
 } from "@/lib/station-experience";
 import {
 	buildAddressSearchText,
+	buildDiscoveredStationBoundsCacheKey,
+	dedupeDiscoveredStations,
 	getResolvedDiscoveredStationAddress,
 	getDuplicateMatch,
 	resolveDiscoveredStationAddress,
@@ -142,6 +144,7 @@ function GoogleStationMap({
 		useState<CoordinatePair>(MANILA_CENTER);
 	const lastAutoFitKeyRef = useRef<string | null>(null);
 	const lastDiscoveryBoundsKeyRef = useRef<string | null>(null);
+	const discoveredAreaKeysRef = useRef(new Set<string>());
 	const discoverySearchTimeoutRef = useRef<number | null>(null);
 	const closeInfoWindowTimeoutRef = useRef<number | null>(null);
 	const discoveryRequestIdRef = useRef(0);
@@ -876,7 +879,10 @@ function GoogleStationMap({
 					return;
 				}
 
-				setDiscoveredStations(results);
+				setDiscoveredStations((current) =>
+					dedupeDiscoveredStations([...current, ...results]),
+				);
+				discoveredAreaKeysRef.current.add(boundsKey);
 				lastDiscoveryBoundsKeyRef.current = boundsKey;
 			} catch (error) {
 				if (requestId !== discoveryRequestIdRef.current) {
@@ -887,7 +893,6 @@ function GoogleStationMap({
 					"Failed to discover OpenStreetMap fuel stations",
 					error,
 				);
-				setDiscoveredStations([]);
 				// toast.error(
 				// 	error instanceof Error
 				// 		? error.message
@@ -920,16 +925,12 @@ function GoogleStationMap({
 			return;
 		}
 
-		const northEast = bounds.getNorthEast();
-		const southWest = bounds.getSouthWest();
-		const boundsKey = [
-			northEast.lat().toFixed(4),
-			northEast.lng().toFixed(4),
-			southWest.lat().toFixed(4),
-			southWest.lng().toFixed(4),
-		].join("|");
+		const boundsKey = buildDiscoveredStationBoundsCacheKey(bounds);
 
-		if (lastDiscoveryBoundsKeyRef.current === boundsKey) {
+		if (
+			lastDiscoveryBoundsKeyRef.current === boundsKey ||
+			discoveredAreaKeysRef.current.has(boundsKey)
+		) {
 			return;
 		}
 
@@ -1035,6 +1036,7 @@ function GoogleStationMap({
 		setSelectedGoogleStation(null);
 		setIsDiscovering(false);
 		lastDiscoveryBoundsKeyRef.current = null;
+		discoveredAreaKeysRef.current.clear();
 	}, [isMapAutoDiscoverEnabled]);
 
 	useEffect(() => {
