@@ -92,13 +92,15 @@ export const StationMarkerInfoWindow = memo(function StationMarkerInfoWindow({
 							const priceStatus =
 								station.fuelAvailability[fuelType] ??
 								(hasPrice ? station.status : null);
-							const shouldShowRow =
-								priceStatus !== null || hasPrice;
+
+							if (!hasPrice) {
+								return null;
+							}
 
 							return (
 								<div
 									key={`station-info-${station.id}-${fuelType}`}
-									className={` flex flex-col ${shouldShowRow ? "" : "hidden"}`}
+									className="flex flex-col"
 								>
 									<span
 										className={`w-full text-xs font-semibold ${fuelTypeTextColorClassNames[fuelType]}`}
@@ -219,26 +221,33 @@ export const StationMarkerInfoWindow = memo(function StationMarkerInfoWindow({
 					)}
 				</div>
 			) : null}
-			{onOpenExperiences ? (
-				<StationExperiencePreview
-					identity={experienceIdentity}
-					onOpen={onOpenExperiences}
-				/>
-			) : null}
+
 			{showReportAction ||
 			showDirectionsAction ||
 			showOpenInMapsAction ? (
-				<div className="-mt-4 flex flex-col gap-2 px-1">
+				<div className="flex flex-wrap gap-2 px-[2px]">
+					{onOpenExperiences ? (
+						<Button
+							type="button"
+							variant="outline-secondary"
+							size="sm"
+							className="h-8 justify-center text-[10px]"
+							onClick={onOpenExperiences}
+						>
+							<FileEdit className="h-4 w-4" />
+							Share experience!
+						</Button>
+					) : null}
 					{showReportAction && onReportFuelPrices ? (
 						<Button
 							type="button"
 							variant="destructive"
 							size="sm"
-							className="mt-5 mb-0 h-8 w-full justify-center text-xs"
+							className="mb-0 h-8 justify-center text-[10px]"
 							onClick={onReportFuelPrices}
 						>
 							<FilePlus2Icon className="h-4 w-4" />
-							Report Fuel Prices!
+							Fuel Prices!
 						</Button>
 					) : null}
 					{showOpenInMapsAction || showDirectionsAction ? (
@@ -254,7 +263,7 @@ export const StationMarkerInfoWindow = memo(function StationMarkerInfoWindow({
 									type="button"
 									variant="outline-primary"
 									size="sm"
-									className="h-8 w-full justify-center text-xs"
+									className="h-8 w-full justify-center text-[10px]"
 									onClick={() => {
 										if (onOpenInMaps) {
 											onOpenInMaps();
@@ -289,7 +298,7 @@ export const StationMarkerInfoWindow = memo(function StationMarkerInfoWindow({
 									type="button"
 									variant="outlineprimary"
 									size="sm"
-									className="h-8 w-full transition-all duration-200 justify-center text-xs"
+									className="h-8 w-full transition-all duration-200 justify-center text-[10px]"
 									onClick={() => {
 										if (onGetDirections) {
 											onGetDirections();

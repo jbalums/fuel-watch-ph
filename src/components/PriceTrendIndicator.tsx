@@ -26,9 +26,7 @@ export function PriceTrendIndicator({
 		<span
 			className={cn(
 				"-mt-2 inline-flex items-center gap-1 text-[11px] font-medium tabular-nums leading-none h-3",
-				isIncrease
-					? "text-rose-600 dark:text-rose-400"
-					: "text-emerald-600 dark:text-emerald-400",
+				isIncrease ? "text-rose-600" : "text-emerald-600",
 				className,
 			)}
 		>

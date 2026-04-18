@@ -8,16 +8,22 @@ import type { StationExperienceIdentity } from "@/types/station";
 
 interface StationExperiencePreviewProps {
 	identity: StationExperienceIdentity | null;
-	onOpen: () => void;
+	onOpen?: () => void;
+	showAction?: boolean;
 }
 
 export function StationExperiencePreview({
 	identity,
 	onOpen,
+	showAction = true,
 }: StationExperiencePreviewProps) {
 	const { items, count, isLoading } = useStationExperienceSummary(identity);
 
 	if (!identity) {
+		return null;
+	}
+
+	if (!isLoading && count === 0) {
 		return null;
 	}
 
@@ -29,15 +35,17 @@ export function StationExperiencePreview({
 						Fuel Station Experience
 					</p>
 				</div>
-				<Button
-					type="button"
-					size="sm"
-					variant="outline-primary"
-					className="h-6 px-2.5 text-[11px]"
-					onClick={onOpen}
-				>
-					Share your experience!
-				</Button>
+				{showAction && onOpen ? (
+					<Button
+						type="button"
+						size="sm"
+						variant="outline-primary"
+						className="h-6 px-2.5 text-[11px]"
+						onClick={onOpen}
+					>
+						View experiences
+					</Button>
+				) : null}
 			</div>
 			{isLoading ? (
 				<p className="mt-2 text-[11px]">
@@ -70,11 +78,7 @@ export function StationExperiencePreview({
 						</div>
 					))}
 				</div>
-			) : (
-				<p className="mt-2 text-[11px] text-center">
-					Be the first to share station experience.
-				</p>
-			)}
+			) : null}
 		</div>
 	);
 }

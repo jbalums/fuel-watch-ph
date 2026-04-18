@@ -1235,7 +1235,7 @@ function GoogleStationMap({
 						mapPaneName="overlayMouseTarget"
 						zIndex={4_200}
 					>
-						<div className="pointer-events-none -translate-x-1/2 -translate-y-full pb-9">
+						<div className="pointer-events-none -translate-x-1/2 -translate-y-full pb-9 cursor-none">
 							<div
 								className={`relative whitespace-nowrap border rounded-full shadow-sovereign dark:bg-black bg-white px-1.5 py-1 text-[11px] font-bold shadow-lg text-shadow backdrop-blur ${fuelTypeTextColorClassNames[selectedMapFuelType]} ${fuelTypeBorderColorClassNames[selectedMapFuelType]}`}
 							>
