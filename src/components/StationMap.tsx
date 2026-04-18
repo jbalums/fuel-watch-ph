@@ -530,6 +530,11 @@ function GoogleStationMap({
 		() => ({
 			minZoom: 14,
 			fullscreenControl: true,
+			fullscreenControlOptions: googleMaps
+				? {
+						position: googleMaps.ControlPosition.RIGHT_BOTTOM,
+					}
+				: undefined,
 			mapTypeControl: true,
 			mapTypeControlOptions: googleMaps
 				? {

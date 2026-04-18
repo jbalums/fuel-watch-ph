@@ -74,8 +74,10 @@ export const StationMarkerInfoWindow = memo(function StationMarkerInfoWindow({
 			)}
 
 			<div className="rounded-lg border border-border dark:border-slate-300 bg-slate-100 px-3 py-2 text-xs text-muted-foreground">
-				<div className="font-medium text-indigo-700">Fuel Prices</div>
-				<div className="grid grid-cols-2 gap-2">
+				<div className="font-medium text-indigo-700">
+					Selected Station Prices:
+				</div>
+				<div className="grid grid-cols-2 gap-x-2 pt-2">
 					{fuelTypes.map((fuelType) => {
 						const price = station.prices[fuelType];
 						const hasPrice =
@@ -90,7 +92,7 @@ export const StationMarkerInfoWindow = memo(function StationMarkerInfoWindow({
 						return (
 							<div
 								key={`station-info-${station.id}-${fuelType}`}
-								className={`py-1 flex flex-col ${shouldShowRow ? "" : "hidden"}`}
+								className={` flex flex-col ${shouldShowRow ? "" : "hidden"}`}
 							>
 								<span
 									className={`w-full text-xs font-semibold ${fuelTypeTextColorClassNames[fuelType]}`}
@@ -118,19 +120,26 @@ export const StationMarkerInfoWindow = memo(function StationMarkerInfoWindow({
 													: "--.--"}
 										</span>
 									</div>
-									<div className="-mt-1.5">
-										<PriceTrendIndicator
-											delta={
-												!isFuelSellable(priceStatus) ||
-												!hasPrice
-													? null
-													: station.priceTrends[
-															fuelType
-														]
-											}
-											className="-mt-2 text-[8px]"
-										/>
-									</div>
+
+									{!isFuelSellable(priceStatus) ||
+									!hasPrice ? (
+										<div className="h-3"></div>
+									) : (
+										<div className="-mt-1.5 h-4">
+											<PriceTrendIndicator
+												delta={
+													!isFuelSellable(
+														priceStatus,
+													) || !hasPrice
+														? null
+														: station.priceTrends[
+																fuelType
+															]
+												}
+												className="-mt-2 text-[8px]"
+											/>
+										</div>
+									)}
 								</div>
 								{/* {priceStatus ? (
 							<span

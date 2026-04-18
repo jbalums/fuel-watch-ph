@@ -236,8 +236,8 @@ export function StationCard({
 					</div>
 				</div>
 
-				<div className="flex flex-col mt-1 mb-2">
-					<div className="grid grid-cols-3 xl:grid-cols-5 gap-x-3 gap-y-1">
+				<div className="flex flex-col mt-1">
+					<div className="grid grid-cols-3 xl:grid-cols-5 gap-x-3 gap-y-4">
 						{fuelTypes.map((fuelType) => {
 							const price = station.prices?.[fuelType];
 							const hasPrice =
@@ -259,7 +259,7 @@ export function StationCard({
 							return (
 								<div
 									key={`${station.id}-${fuelType}`}
-									className={`min-w-0 ${shouldShowRow ? "" : "hidden"}`}
+									className={`min-w-0 flex flex-col ${shouldShowRow ? "" : "hidden"}`}
 								>
 									<span
 										className={cn(
@@ -271,7 +271,7 @@ export function StationCard({
 									>
 										{fuelType == "Premium Diesel" ? (
 											<span>
-												<span className="absolute -top-[10px] text-[10px]">
+												<span className="absolute -top-[8px] text-[10px]">
 													Premium
 												</span>
 												<span>Diesel</span>
@@ -279,15 +279,8 @@ export function StationCard({
 										) : (
 											fuelType
 										)}
-										{/* {availability ? (
-											<StatusBadge
-												status={availability}
-												compact
-												className="ml-1 px-1 !rounded-sm !py-1 text-[8px]"
-											/>
-										) : null} */}
 									</span>
-									<p className="mt-0 text-base font-bold tabular-nums text-foreground md:text-lg">
+									<p className="-mt-0 mb-1.5 text-base font-bold tabular-nums text-foreground md:text-lg">
 										{availability === "Out" ? (
 											<span className="opacity-10">
 												—
@@ -309,8 +302,8 @@ export function StationCard({
 											</span>
 										)}
 									</p>
-
-									<div className="h-4 flex items-center justify-start">
+									{!isFuelSellable(availability) ||
+									!hasPrice ? null : (
 										<PriceTrendIndicator
 											delta={
 												!isFuelSellable(availability) ||
@@ -321,7 +314,7 @@ export function StationCard({
 														]
 											}
 										/>
-									</div>
+									)}
 								</div>
 							);
 						})}
@@ -340,7 +333,7 @@ export function StationCard({
 							type="button"
 							variant="outlineprimary"
 							size="xs"
-							className="py-0 px-2 !text-[11px] sm:text-sm"
+							className="py-0 px-2 text-[11px]"
 							onClick={handleGetDirections}
 							onKeyDown={(event) => {
 								if (
