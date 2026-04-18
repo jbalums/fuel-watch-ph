@@ -237,7 +237,7 @@ export function StationCard({
 				</div>
 
 				<div className="flex flex-col mt-1 mb-2">
-					<div className="grid grid-cols-3 xl:grid-cols-5 gap-x-3 gap-y-3">
+					<div className="grid grid-cols-3 xl:grid-cols-5 gap-x-3 gap-y-1">
 						{fuelTypes.map((fuelType) => {
 							const price = station.prices?.[fuelType];
 							const hasPrice =

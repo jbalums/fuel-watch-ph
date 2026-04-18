@@ -1123,16 +1123,16 @@ function GoogleStationMap({
 	];
 	return (
 		<div className="relative">
-			<div className="absolute left-3 top-3 z-20 max-w-[calc(100%-1.5rem)] rounded-2xl border border-border bg-card/75 p-1.5 shadow-lg backdrop-blur">
+			<div className="absolute left-2 top-2 z-20 max-w-[calc(100%-1.5rem)] rounded-2xl border border-border bg-card/20 p-1.5 shadow-lg backdrop-blur">
 				<div className="flex max-w-full gap-1 overflow-x-auto">
 					{fuelTypes.map((fuelType) => (
 						<button
 							key={`map-fuel-selector-${fuelType}`}
 							type="button"
 							onClick={() => setSelectedMapFuelType(fuelType)}
-							className={`shrink-0 rounded-xl px-3 py-1.5 text-[11px] font-semibold sovereign-ease transition-colors ${
+							className={`shrink-0 rounded-xl px-3 py-1.5 text-[11px] font-semibold sovereign-ease border transition-colors ${
 								selectedMapFuelType === fuelType
-									? `bg-black ${fuelTypeTextColorClassNames[fuelType]} border ${fuelTypeBorderColorClassNames[fuelType]} shadow-sm`
+									? `bg-secondary dark:bg-black ${fuelTypeTextColorClassNames[fuelType]} border ${fuelTypeBorderColorClassNames[fuelType]} shadow-sm`
 									: `bg-background/80 ${fuelTypeTextColorClassNames[fuelType]} hover:bg-secondary`
 							}`}
 							aria-pressed={selectedMapFuelType === fuelType}

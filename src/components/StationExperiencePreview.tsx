@@ -22,13 +22,13 @@ export function StationExperiencePreview({
 	}
 
 	return (
-		<div className="mt-3 rounded-lg border border-border bg-slate-100 px-3 py-2 text-xs text-muted-foreground dark:border-slate-300">
-			<div className="flex flex-col items-center justify-between gap-2">
+		<div className="mt-1 rounded-lg border border-border bg-slate-100 px-3 py-2 text-xs text-muted-foreground dark:border-slate-300">
+			<div className="flex flex-col items-center justify-between gap-1">
 				<div>
-					<p className="font-medium text-sky-700">
+					<p className="font-medium text-blue-700">
 						Fuel Station Experience
 					</p>
-					<p className="mt-0.5 text-[11px]">
+					<p className="mt-0.5 text-[10px]">
 						{count > 0
 							? `${count} approved experience${count === 1 ? "" : "s"}`
 							: "No approved experiences yet"}
@@ -76,8 +76,8 @@ export function StationExperiencePreview({
 					))}
 				</div>
 			) : (
-				<p className="mt-2 text-[11px]">
-					Be the first to share a good or bad station experience.
+				<p className="mt-2 text-[11px] text-center">
+					Be the first to share station experience.
 				</p>
 			)}
 		</div>
