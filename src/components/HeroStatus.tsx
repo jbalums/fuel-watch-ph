@@ -38,9 +38,18 @@ export function HeroStatus({ summary }: HeroStatusProps) {
 				{fuelTypes.map((fuelType) => (
 					<div key={fuelType}>
 						<p
-							className={`text-xs font-semibold uppercase tracking-[0.08em] ${fuelTypeTextColorClassNames[fuelType]}`}
+							className={`relative text-md font-semibold tracking-[0.08em] ${fuelTypeTextColorClassNames[fuelType]}`}
 						>
-							{fuelType}
+							{fuelType == "Premium Diesel" ? (
+								<span>
+									<span className="absolute -top-[10px] !text-[10px]">
+										Premium
+									</span>
+									<span>Diesel</span>
+								</span>
+							) : (
+								fuelType
+							)}
 						</p>
 						<p className="mt-1 text-xl font-semibold tabular-nums text-foreground">
 							{formatAveragePrice(summary, fuelType)}

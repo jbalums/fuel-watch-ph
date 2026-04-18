@@ -11,8 +11,12 @@ import { Clock3, Loader2, MapPinned, Navigation, Route, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/lib/app-toast";
 import { openGoogleMapsDirections } from "@/lib/google-maps-directions";
-import type { GasStation } from "@/types/station";
-import { fuelTypes } from "@/lib/fuel-prices";
+import type { FuelType, GasStation } from "@/types/station";
+import {
+	fuelTypes,
+	fuelTypeTextColorClassNames,
+	isFuelSellable,
+} from "@/lib/fuel-prices";
 import {
 	GOOGLE_MAPS_API_KEY,
 	GOOGLE_MAPS_CONTAINER_STYLE,
@@ -115,6 +119,8 @@ function GoogleStationMap({
 		isResolvingSelectedDiscoveryAddress,
 		setIsResolvingSelectedDiscoveryAddress,
 	] = useState(false);
+	const [selectedMapFuelType, setSelectedMapFuelType] =
+		useState<FuelType>("Unleaded");
 	const [isDiscovering, setIsDiscovering] = useState(false);
 	const [map, setMap] = useState<google.maps.Map | null>(null);
 	const [directionsRenderer, setDirectionsRenderer] =
@@ -190,6 +196,8 @@ function GoogleStationMap({
 					lat: station.lat,
 					lng: station.lng,
 				},
+				name: station.name,
+				stationBrandLogoId: station.stationBrandLogoId,
 				icon: buildResolvedStationMarkerIcon(
 					googleMaps,
 					{
@@ -198,6 +206,8 @@ function GoogleStationMap({
 					},
 					stationBrandLogos,
 				),
+				price: station.prices[selectedMapFuelType],
+				fuelAvailability: station.fuelAvailability[selectedMapFuelType],
 			}));
 		}
 
@@ -218,6 +228,8 @@ function GoogleStationMap({
 					lat: station.lat,
 					lng: station.lng,
 				},
+				name: station.name,
+				stationBrandLogoId: station.stationBrandLogoId,
 				icon: buildResolvedStationMarkerIcon(
 					googleMaps,
 					{
@@ -226,8 +238,88 @@ function GoogleStationMap({
 					},
 					stationBrandLogos,
 				),
+				price: station.prices[selectedMapFuelType],
+				fuelAvailability: station.fuelAvailability[selectedMapFuelType],
 			}));
-	}, [googleMaps, stationBrandLogos, stations, visibleBounds]);
+	}, [
+		googleMaps,
+		selectedMapFuelType,
+		stationBrandLogos,
+		stations,
+		visibleBounds,
+	]);
+	const shouldShowFuelPriceBadges = !focusedStation && !selectedGoogleStation;
+	const visibleStationPriceBadges = useMemo(() => {
+		if (!shouldShowFuelPriceBadges) {
+			return [];
+		}
+
+		return visibleStations
+			.map((stationMarker) => {
+				const hasPrice =
+					typeof stationMarker.price === "number" &&
+					Number.isFinite(stationMarker.price) &&
+					stationMarker.price > 0;
+				const priceStatus = stationMarker.fuelAvailability;
+
+				if (hasPrice && priceStatus !== "Out") {
+					if (priceStatus && !isFuelSellable(priceStatus)) {
+						return null;
+					}
+
+					return {
+						id: stationMarker.id,
+						position: stationMarker.position,
+						price: stationMarker.price,
+						isAverage: false,
+					};
+				}
+
+				const brandAverage = buildStationBrandAverage(
+					{
+						name: stationMarker.name,
+						stationBrandLogoId: stationMarker.stationBrandLogoId,
+					},
+					allStations.filter(
+						(station) => station.id !== stationMarker.id,
+					),
+					stationBrandLogos,
+				);
+				const averagePrice =
+					brandAverage?.averagePrices[selectedMapFuelType] ?? null;
+
+				if (
+					typeof averagePrice !== "number" ||
+					!Number.isFinite(averagePrice) ||
+					averagePrice <= 0
+				) {
+					return null;
+				}
+
+				return {
+					id: stationMarker.id,
+					position: stationMarker.position,
+					price: averagePrice,
+					isAverage: true,
+				};
+			})
+			.filter(
+				(
+					stationMarker,
+				): stationMarker is {
+					id: string;
+					position: CoordinatePair;
+					price: number;
+					isAverage: boolean;
+				} => Boolean(stationMarker),
+			);
+	}, [
+		allStations,
+		selectedMapFuelType,
+		shouldShowFuelPriceBadges,
+		stationBrandLogos,
+		visibleStations,
+	]);
 	const filteredDiscoveredStations = useMemo(() => {
 		return discoveredStations.filter((station) => {
 			if (getDuplicateMatch(station, allStations)) {
@@ -483,7 +575,9 @@ function GoogleStationMap({
 			detectedScope,
 		);
 
-		navigate(`/station-experiences${buildStationExperienceSearch(identity)}`);
+		navigate(
+			`/station-experiences${buildStationExperienceSearch(identity)}`,
+		);
 	}, [cities, navigate, provinces, selectedGoogleStation]);
 	const reportSelectedGoogleStation = useCallback(() => {
 		if (!selectedGoogleStation) {
@@ -501,8 +595,11 @@ function GoogleStationMap({
 			return;
 		}
 
-		const identity = buildStationExperienceIdentityFromStation(focusedStation);
-		navigate(`/station-experiences${buildStationExperienceSearch(identity)}`);
+		const identity =
+			buildStationExperienceIdentityFromStation(focusedStation);
+		navigate(
+			`/station-experiences${buildStationExperienceSearch(identity)}`,
+		);
 	}, [focusedStation, navigate]);
 	const reportFocusedStation = useCallback(() => {
 		if (!focusedStation) {
@@ -918,6 +1015,25 @@ function GoogleStationMap({
 	];
 	return (
 		<div className="relative">
+			<div className="absolute left-3 top-3 z-20 max-w-[calc(100%-1.5rem)] rounded-2xl border border-border bg-card/95 p-1.5 shadow-lg backdrop-blur">
+				<div className="flex max-w-full gap-1 overflow-x-auto">
+					{fuelTypes.map((fuelType) => (
+						<button
+							key={`map-fuel-selector-${fuelType}`}
+							type="button"
+							onClick={() => setSelectedMapFuelType(fuelType)}
+							className={`shrink-0 rounded-xl px-3 py-1.5 text-[11px] font-semibold sovereign-ease transition-colors ${
+								selectedMapFuelType === fuelType
+									? "bg-primary text-primary-foreground shadow-sm"
+									: `bg-background/80 ${fuelTypeTextColorClassNames[fuelType]} hover:bg-secondary`
+							}`}
+							aria-pressed={selectedMapFuelType === fuelType}
+						>
+							{fuelType}
+						</button>
+					))}
+				</div>
+			</div>
 			{isDiscovering ? (
 				<div className="pointer-events-none absolute right-3 top-3 z-20">
 					<div className="inline-flex items-center gap-2 rounded-full border border-border bg-card/95 px-3 py-1.5 text-xs font-medium text-foreground shadow-lg backdrop-blur">
@@ -998,6 +1114,27 @@ function GoogleStationMap({
 						icon={stationMarker.icon ?? undefined}
 						onClick={() => setSelectedStationId(stationMarker.id)}
 					/>
+				))}
+				{visibleStationPriceBadges.map((stationMarker) => (
+					<OverlayViewF
+						key={`price-badge-${stationMarker.id}-${selectedMapFuelType}`}
+						position={stationMarker.position}
+						mapPaneName="overlayMouseTarget"
+						zIndex={4_200}
+					>
+						<div className="pointer-events-none -translate-x-1/2 -translate-y-full pb-9">
+							<div
+								className={`whitespace-nowrap rounded-full border border-white/80 bg-black px-2.5 py-1 text-[12px] font-bold shadow-lg backdrop-blur ${fuelTypeTextColorClassNames[selectedMapFuelType]}`}
+							>
+								₱{stationMarker.price.toFixed(2)}
+								{stationMarker.isAverage ? (
+									<span className="-ml-3 bottom-0 absolute text-[6px] font-semibold uppercase tracking-wide text-amber-500">
+										Avg
+									</span>
+								) : null}
+							</div>
+						</div>
+					</OverlayViewF>
 				))}
 				{filteredDiscoveredStations.map((station) => (
 					<MarkerF
