@@ -203,7 +203,7 @@ export function StationCard({
 			{/* Status bar */}
 			{/* <div className={cn("w-1 shrink-0 rounded-lg", statusBarColor)} /> */}
 
-			<div className="flex flex-1 flex-col gap-3 p-5">
+			<div className="flex flex-1 flex-col gap-3 p-3 lg:p-5">
 				<div className="flex items-start justify-between gap-3 flex-wrap">
 					<div className="flex flex-col w-full">
 						<div className="flex w-full justify-between flex-wrap">
@@ -228,7 +228,7 @@ export function StationCard({
 							</span>
 						</div>
 						{(station.isLguVerified || station.isVerified) && (
-							<div className="absolute top-2 right-2 mt-3 flex flex-wrap items-center gap-2">
+							<div className="absolute top-0 lg:top-2 right-2 mt-3 flex flex-wrap items-center gap-2">
 								{station.isLguVerified && <LguVerifiedBadge />}
 								{station.isVerified && <VerifiedStationBadge />}
 							</div>
