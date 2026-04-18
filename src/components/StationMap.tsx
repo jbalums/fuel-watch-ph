@@ -13,6 +13,7 @@ import { toast } from "@/lib/app-toast";
 import { openGoogleMapsDirections } from "@/lib/google-maps-directions";
 import type { FuelType, GasStation } from "@/types/station";
 import {
+	fuelTypeBorderColorClassNames,
 	fuelTypes,
 	fuelTypeTextColorClassNames,
 	isFuelSellable,
@@ -527,6 +528,7 @@ function GoogleStationMap({
 	);
 	const mapOptions = useMemo(
 		() => ({
+			minZoom: 14,
 			fullscreenControl: true,
 			mapTypeControl: true,
 			streetViewControl: true,
@@ -1111,7 +1113,7 @@ function GoogleStationMap({
 	];
 	return (
 		<div className="relative">
-			<div className="absolute left-3 top-3 z-20 max-w-[calc(100%-1.5rem)] rounded-2xl border border-border bg-card/95 p-1.5 shadow-lg backdrop-blur">
+			<div className="absolute left-3 top-14 z-20 max-w-[calc(100%-1.5rem)] rounded-2xl border border-border bg-card/95 p-1.5 shadow-lg backdrop-blur">
 				<div className="flex max-w-full gap-1 overflow-x-auto">
 					{fuelTypes.map((fuelType) => (
 						<button
@@ -1220,9 +1222,13 @@ function GoogleStationMap({
 					>
 						<div className="pointer-events-none -translate-x-1/2 -translate-y-full pb-9">
 							<div
-								className={`relative whitespace-nowrap rounded-full border border-white/80 dark:bg-black bg-white px-1 py-1 text-[11px] font-bold shadow-lg backdrop-blur ${fuelTypeTextColorClassNames[selectedMapFuelType]}`}
+								className={`relative whitespace-nowrap border-[1px_solid] rounded-full shadow-sovereign dark:bg-black bg-white px-1.5 py-1 text-[11px] font-bold shadow-lg backdrop-blur ${fuelTypeTextColorClassNames[selectedMapFuelType]} ${fuelTypeBorderColorClassNames[selectedMapFuelType]}`}
 							>
-								₱{stationMarker.price.toFixed(2)}
+								<span className="text-[6px] absolute top-1.5">
+									₱
+								</span>
+								&nbsp;&nbsp;
+								{stationMarker.price.toFixed(2)}
 								{stationMarker.isAverage ? (
 									<span className="-ml-3.5 -bottom-0 absolute text-[6px] font-semibold uppercase tracking-wide text-amber-600">
 										Avg
@@ -1424,13 +1430,13 @@ export function StationMap({
 	}
 
 	return (
-		<div className="overflow-hidden rounded-2xl border border-border shadow-sovereign">
+		<div className="overflow-hidden rounded-b-2xl border border-t-0 border-border shadow-sovereign">
 			<LoadScriptNext
 				id={GOOGLE_MAPS_SCRIPT_ID}
 				googleMapsApiKey={GOOGLE_MAPS_API_KEY}
 				libraries={GOOGLE_MAPS_LIBRARIES}
 				loadingElement={
-					<div className="flex h-[calc(100dvh-185px)] items-center justify-center bg-card">
+					<div className="flex h-[calc(100dvh-210px)] items-center justify-center bg-card">
 						<Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
 					</div>
 				}

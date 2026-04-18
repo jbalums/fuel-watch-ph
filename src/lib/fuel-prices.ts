@@ -19,6 +19,13 @@ export const fuelTypeTextColorClassNames: Record<FuelType, string> = {
 	"Premium Diesel": "text-blue-600 dark:text-sky-400",
 	Kerosene: "text-violet-600 dark:text-violet-400",
 };
+export const fuelTypeBorderColorClassNames: Record<FuelType, string> = {
+	Unleaded: "border-green-600",
+	Premium: "border-red-600",
+	Diesel: "border-amber-600",
+	"Premium Diesel": "border-blue-600 dark:border-sky-400",
+	Kerosene: "border-violet-600 dark:border-violet-400",
+};
 
 export const stationStatuses = [
 	"Available",
