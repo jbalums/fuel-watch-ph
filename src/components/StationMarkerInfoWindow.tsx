@@ -55,7 +55,7 @@ export const StationMarkerInfoWindow = memo(function StationMarkerInfoWindow({
 	});
 
 	return (
-		<div className="flex flex-wrap max-w-[330px] min-w-[260px] flex-col gap-1.5 py-4 text-sm relative pl-4 pr-8 lg:pr-4 border rounded-sm">
+		<div className="flex flex-wrap max-w-[330px] min-w-[280px] flex-col gap-1.5 py-4 text-sm relative pl-4 pr-8 lg:pr-4 border rounded-sm">
 			<span className="font-semibold text-black dark:text-white pr-8 line-clamp-2 pointer-events-none">
 				{station.name}
 			</span>
@@ -158,22 +158,22 @@ export const StationMarkerInfoWindow = memo(function StationMarkerInfoWindow({
 				</div>
 			) : null}
 			{brandAverage ? (
-				<div className="mt-3 rounded-lg border border-border bg-slate-100 px-3 py-2 text-xs text-muted-foreground dark:border-slate-300">
-					<div className="font-medium text-indigo-700">
+				<div className="mt-3 rounded-sm border border-border bg-slate-100 py-2 text-xs text-muted-foreground dark:border-slate-600 dark:bg-slate-900">
+					<div className="relative pb-1 text-center font-medium text-indigo-700 dark:text-sky-400">
 						Average from other <u>{brandAverage.brandName}</u>{" "}
 						stations
+						<p className="absolute w-full -mt-1 text-center text-[8px] text-muted-foreground">
+							Based on {brandAverage.sampleCount} station
+							{brandAverage.sampleCount === 1 ? "" : "s"}
+						</p>
 					</div>
-					<p className="mt-0.5 text-[11px] text-muted-foreground">
-						Based on {brandAverage.sampleCount} station
-						{brandAverage.sampleCount === 1 ? "" : "s"}
-					</p>
 					{fuelTypes.some(
 						(fuelType) =>
 							typeof brandAverage.averagePrices[fuelType] ===
 							"number",
 					) ? (
 						<>
-							<div className="mb-2 mt-2 grid grid-cols-2 gap-x-3 gap-y-1">
+							<div className="mb-2 mt-2 grid grid-cols-1">
 								{fuelTypes.map((fuelType) => {
 									const averagePrice =
 										brandAverage.averagePrices[fuelType];
@@ -186,26 +186,29 @@ export const StationMarkerInfoWindow = memo(function StationMarkerInfoWindow({
 									}
 
 									return (
-										<div key={fuelType} className="min-w-0">
+										<div
+											key={fuelType}
+											className="flex items-center justify-center border-t bg-white px-3 py-2 last:border-b dark:bg-slate-950"
+										>
 											<p
-												className={`text-[12px] font-medium ${fuelTypeTextColorClassNames[fuelType]}`}
+												className={`w-full text-sm font-semibold ${fuelTypeTextColorClassNames[fuelType]}`}
 											>
 												{fuelType}
 											</p>
-											<p className="text-[16px] font-semibold text-black">
+											<p className="whitespace-nowrap text-sm font-bold text-black dark:text-white">
 												₱ {averagePrice.toFixed(2)}
 											</p>
 										</div>
 									);
 								})}
 							</div>
-							<span className="text-[10px] text-red-700">
+							<span className="flex w-full items-center justify-center gap-1 text-center text-[9px] font-medium leading-none text-amber-600">
 								Disclaimer: Prices are for reference only and
 								may not reflect current market prices.
 							</span>
 						</>
 					) : (
-						<p className="mt-2 text-[11px]">
+						<p className="mt-2 text-center text-[12px]">
 							No similar listed stations with price data yet.
 						</p>
 					)}
