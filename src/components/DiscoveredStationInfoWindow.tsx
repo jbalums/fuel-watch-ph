@@ -10,6 +10,7 @@ import {
 	CheckIcon,
 	FileIcon,
 	FilePlus2,
+	Info,
 	MapPinned,
 } from "lucide-react";
 
@@ -34,7 +35,8 @@ export function DiscoveredStationInfoWindow({
 	onReportGasStation,
 	onOpenExperiences,
 }: DiscoveredStationInfoWindowProps) {
-	const experienceIdentity = buildStationExperienceIdentityFromDiscoveredStation(station);
+	const experienceIdentity =
+		buildStationExperienceIdentityFromDiscoveredStation(station);
 
 	return (
 		<div className="flex max-w-[288px] flex-col gap-2 pr-3 md:pr-0 text-sm">
@@ -46,7 +48,7 @@ export function DiscoveredStationInfoWindow({
 					OpenStreetMap
 				</span>
 			</div>
-			<span className="text-xs text-gray-500 whitespace-normal pr-4">
+			<span className="text-xs text-gray-500 whitespace-normal pr-4 line-clamp-2">
 				{station.address}
 			</span>
 			{isResolvingAddress ? (
@@ -59,7 +61,7 @@ export function DiscoveredStationInfoWindow({
 					<MapPinned className="h-3.5 w-3.5" />
 					Not yet added to FuelWatch PH
 				</div>
-				<p className="mt-1">
+				<p className="mt-1 text-[10px]">
 					Lat {station.lat.toFixed(6)}, Lng {station.lng.toFixed(6)}
 				</p>
 			</div>
@@ -108,9 +110,12 @@ export function DiscoveredStationInfoWindow({
 									);
 								})}
 							</div>
-							<span className="text-red-700 text-[10px]">
-								Disclaimer: Prices are for reference only and
-								may not reflect current market prices.
+							<span
+								className="text-red-700 text-[9px] flex items-center gap-1"
+								style={{ lineHeight: "1em !important" }}
+							>
+								<Info className="text-amber-800 h-3 w-3" />{" "}
+								Prices may not reflect current market prices.
 							</span>
 						</>
 					) : (

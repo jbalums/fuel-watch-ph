@@ -1446,7 +1446,7 @@ export function StationMap({
 				googleMapsApiKey={GOOGLE_MAPS_API_KEY}
 				libraries={GOOGLE_MAPS_LIBRARIES}
 				loadingElement={
-					<div className="flex h-[calc(100dvh-210px)] items-center justify-center bg-card">
+					<div className="flex h-[calc(100dvh-190px)] items-center justify-center bg-card">
 						<Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
 					</div>
 				}

@@ -22,23 +22,18 @@ export function StationExperiencePreview({
 	}
 
 	return (
-		<div className="mt-1 rounded-lg border border-border bg-slate-100 px-3 py-2 text-xs text-muted-foreground dark:border-slate-300">
+		<div className="mt-1 rounded-lg border border-border bg-slate-50 px-2 py-2 text-xs text-muted-foreground dark:border-slate-300">
 			<div className="flex flex-col items-center justify-between gap-1">
 				<div>
-					<p className="font-medium text-blue-700">
+					<p className="font-medium text-indigo-700">
 						Fuel Station Experience
-					</p>
-					<p className="mt-0.5 text-[10px]">
-						{count > 0
-							? `${count} approved experience${count === 1 ? "" : "s"}`
-							: "No approved experiences yet"}
 					</p>
 				</div>
 				<Button
 					type="button"
 					size="sm"
 					variant="outline-primary"
-					className="h-7 px-2.5 text-[11px]"
+					className="h-6 px-2.5 text-[11px]"
 					onClick={onOpen}
 				>
 					Share your experience!

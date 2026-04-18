@@ -221,7 +221,12 @@
 		font-variant-numeric: tabular-nums;
 	}
 }
-
+.gm-style .gm-style-iw-c {
+	padding: 12px 8px !important;
+}
+.gm-style-iw-d {
+	margin-right: -15px !important;
+}
 .gm-style-iw-chr {
 	margin-bottom: -4px;
 	position: relative;
