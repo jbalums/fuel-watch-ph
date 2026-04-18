@@ -37,7 +37,7 @@ export function DiscoveredStationInfoWindow({
 		(showAdminAction && onOpenInDiscovery);
 
 	return (
-		<div className="flex flex-wrap max-w-[330px] min-w-[300px] flex-col gap-1.5 py-4 text-sm relative pl-4 pr-8 lg:pr-4 border rounded-sm">
+		<div className="flex flex-wrap max-w-[330px] min-w-[300px] flex-col gap-1.5 pt-4 pb-5 text-sm relative pl-4 pr-8 lg:pr-4 border rounded-sm">
 			<div className="flex flex-wrap items-center gap-2">
 				<span className="font-semibold dark:text-white text-black pr-2 pointer-events-none">
 					{station.name}

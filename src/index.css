@@ -223,6 +223,7 @@
 }
 .gm-style .gm-style-iw-c {
 	padding: 0 !important;
+	max-width: 315px !important;
 	@apply dark:bg-slate-950;
 }
 .gm-style-iw-d {
