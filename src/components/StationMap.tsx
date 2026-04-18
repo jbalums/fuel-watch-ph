@@ -33,6 +33,7 @@ import { detectGeoScopeFromAddress } from "@/lib/geo-detection";
 import {
 	buildResolvedStationMarkerIcon,
 	buildStationBrandAverage,
+	resolveStationBrandLogo,
 } from "@/lib/station-brand-logos";
 import {
 	buildStationExperienceIdentityFromDiscoveredStation,
@@ -58,6 +59,11 @@ const DEFAULT_CURRENT_LOCATION_ZOOM = 15;
 const DEFAULT_EMPTY_MAP_ZOOM = 15;
 const DEFAULT_SINGLE_STATION_ZOOM = 15;
 const FOCUSED_STATION_ZOOM = 16;
+
+type BrandFuelAverageEntry = {
+	brandName: string;
+	averagePrices: Record<FuelType, number | null>;
+};
 
 function hasAnyUsableStationPrice(station: GasStation) {
 	return fuelTypes.some((fuelType) => {
@@ -156,6 +162,100 @@ function GoogleStationMap({
 				: null,
 		[selectedStationId, stationById],
 	);
+	const brandAveragePriceIndex = useMemo(() => {
+		const totalsByBrand = new Map<
+			string,
+			{
+				brandName: string;
+				totals: Record<FuelType, number>;
+				counts: Record<FuelType, number>;
+			}
+		>();
+		const stationBrandIds = new Map<string, string>();
+
+		for (const station of allStations) {
+			const brandLogo = resolveStationBrandLogo(
+				{
+					name: station.name,
+					stationBrandLogoId: station.stationBrandLogoId,
+				},
+				stationBrandLogos,
+			);
+
+			if (!brandLogo) {
+				continue;
+			}
+
+			stationBrandIds.set(station.id, brandLogo.id);
+
+			let brandTotals = totalsByBrand.get(brandLogo.id);
+			if (!brandTotals) {
+				brandTotals = {
+					brandName: brandLogo.brandName,
+					totals: fuelTypes.reduce(
+						(accumulator, fuelType) => {
+							accumulator[fuelType] = 0;
+							return accumulator;
+						},
+						{} as Record<FuelType, number>,
+					),
+					counts: fuelTypes.reduce(
+						(accumulator, fuelType) => {
+							accumulator[fuelType] = 0;
+							return accumulator;
+						},
+						{} as Record<FuelType, number>,
+					),
+				};
+				totalsByBrand.set(brandLogo.id, brandTotals);
+			}
+
+			for (const fuelType of fuelTypes) {
+				const price = station.prices[fuelType];
+
+				if (
+					typeof price !== "number" ||
+					!Number.isFinite(price) ||
+					price <= 0
+				) {
+					continue;
+				}
+
+				brandTotals.totals[fuelType] += price;
+				brandTotals.counts[fuelType] += 1;
+			}
+		}
+
+		const averagesByBrand = new Map<string, BrandFuelAverageEntry>();
+
+		for (const [brandId, brandTotals] of totalsByBrand) {
+			const averagePrices = fuelTypes.reduce(
+				(accumulator, fuelType) => {
+					const count = brandTotals.counts[fuelType];
+					accumulator[fuelType] =
+						count > 0
+							? Number(
+									(
+										brandTotals.totals[fuelType] / count
+									).toFixed(2),
+								)
+							: null;
+					return accumulator;
+				},
+				{} as Record<FuelType, number | null>,
+			);
+
+			averagesByBrand.set(brandId, {
+				brandName: brandTotals.brandName,
+				averagePrices,
+			});
+		}
+
+		return {
+			averagesByBrand,
+			stationBrandIds,
+		};
+	}, [allStations, stationBrandLogos]);
 	const currentLocationIcon = useMemo(() => {
 		if (!googleMaps) {
 			return null;
@@ -258,7 +358,7 @@ function GoogleStationMap({
 					stationMarker.price > 0;
 				const priceStatus = stationMarker.fuelAvailability;
 
-				if (!hasPrice || priceStatus === "Out") {
+				if (priceStatus === "Out") {
 					return null;
 				}
 
@@ -266,10 +366,38 @@ function GoogleStationMap({
 					return null;
 				}
 
+				if (!hasPrice) {
+					const brandId = brandAveragePriceIndex.stationBrandIds.get(
+						stationMarker.id,
+					);
+					const averagePrice =
+						brandId === undefined
+							? null
+							: (brandAveragePriceIndex.averagesByBrand.get(
+									brandId,
+								)?.averagePrices[selectedMapFuelType] ?? null);
+
+					if (
+						typeof averagePrice !== "number" ||
+						!Number.isFinite(averagePrice) ||
+						averagePrice <= 0
+					) {
+						return null;
+					}
+
+					return {
+						id: stationMarker.id,
+						position: stationMarker.position,
+						price: averagePrice,
+						isAverage: true,
+					};
+				}
+
 				return {
 					id: stationMarker.id,
 					position: stationMarker.position,
 					price: stationMarker.price,
+					isAverage: false,
 				};
 			})
 			.filter(
@@ -279,9 +407,15 @@ function GoogleStationMap({
 					id: string;
 					position: CoordinatePair;
 					price: number;
+					isAverage: boolean;
 				} => Boolean(stationMarker),
 			);
-	}, [shouldShowFuelPriceBadges, visibleStations]);
+	}, [
+		brandAveragePriceIndex,
+		selectedMapFuelType,
+		shouldShowFuelPriceBadges,
+		visibleStations,
+	]);
 	const filteredDiscoveredStations = useMemo(() => {
 		return discoveredStations.filter((station) => {
 			if (getDuplicateMatch(station, allStations)) {
@@ -1086,9 +1220,14 @@ function GoogleStationMap({
 					>
 						<div className="pointer-events-none -translate-x-1/2 -translate-y-full pb-9">
 							<div
-								className={`whitespace-nowrap rounded-full border border-white/80 bg-black px-2.5 py-1 text-[11px] font-bold shadow-lg backdrop-blur ${fuelTypeTextColorClassNames[selectedMapFuelType]}`}
+								className={`relative whitespace-nowrap rounded-full border border-white/80 dark:bg-black bg-white px-1 py-1 text-[11px] font-bold shadow-lg backdrop-blur ${fuelTypeTextColorClassNames[selectedMapFuelType]}`}
 							>
 								₱{stationMarker.price.toFixed(2)}
+								{stationMarker.isAverage ? (
+									<span className="-ml-3.5 -bottom-0 absolute text-[6px] font-semibold uppercase tracking-wide text-amber-600">
+										Avg
+									</span>
+								) : null}
 							</div>
 						</div>
 					</OverlayViewF>
