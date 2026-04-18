@@ -22,6 +22,86 @@ export const GOOGLE_MAPS_CONTAINER_STYLE = {
 	height: "100%",
 } as const;
 
+export const GOOGLE_MAPS_DARK_MAP_STYLES: google.maps.MapTypeStyle[] = [
+	{ elementType: "geometry", stylers: [{ color: "#1d2433" }] },
+	{ elementType: "labels.text.fill", stylers: [{ color: "#dbe7ff" }] },
+	{ elementType: "labels.text.stroke", stylers: [{ color: "#111827" }] },
+	{
+		featureType: "administrative",
+		elementType: "geometry.stroke",
+		stylers: [{ color: "#4b5563" }],
+	},
+	{
+		featureType: "administrative.locality",
+		elementType: "labels.text.fill",
+		stylers: [{ color: "#f8fafc" }],
+	},
+	{
+		featureType: "poi",
+		elementType: "labels.text.fill",
+		stylers: [{ color: "#b7c7dc" }],
+	},
+	{
+		featureType: "poi.business",
+		stylers: [{ visibility: "off" }],
+	},
+	{
+		featureType: "poi.park",
+		elementType: "geometry",
+		stylers: [{ color: "#183524" }],
+	},
+	{
+		featureType: "poi.park",
+		elementType: "labels.text.fill",
+		stylers: [{ color: "#86efac" }],
+	},
+	{
+		featureType: "road",
+		elementType: "geometry",
+		stylers: [{ color: "#2f3b4f" }],
+	},
+	{
+		featureType: "road",
+		elementType: "geometry.stroke",
+		stylers: [{ color: "#111827" }],
+	},
+	{
+		featureType: "road",
+		elementType: "labels.text.fill",
+		stylers: [{ color: "#cbd5e1" }],
+	},
+	{
+		featureType: "road.highway",
+		elementType: "geometry",
+		stylers: [{ color: "#4b5563" }],
+	},
+	{
+		featureType: "road.highway",
+		elementType: "geometry.stroke",
+		stylers: [{ color: "#111827" }],
+	},
+	{
+		featureType: "road.highway",
+		elementType: "labels.text.fill",
+		stylers: [{ color: "#fef3c7" }],
+	},
+	{
+		featureType: "transit",
+		elementType: "geometry",
+		stylers: [{ color: "#263244" }],
+	},
+	{
+		featureType: "water",
+		elementType: "geometry",
+		stylers: [{ color: "#0f253f" }],
+	},
+	{
+		featureType: "water",
+		elementType: "labels.text.fill",
+		stylers: [{ color: "#93c5fd" }],
+	},
+];
+
 export const MANILA_CENTER: CoordinatePair = {
 	lat: 14.5995,
 	lng: 120.9842,

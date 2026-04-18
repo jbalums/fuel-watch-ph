@@ -9,6 +9,7 @@ import {
 } from "@react-google-maps/api";
 import { Clock3, Loader2, MapPinned, Navigation, Route, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useTheme } from "@/contexts/ThemeContext";
 import { toast } from "@/lib/app-toast";
 import { openGoogleMapsDirections } from "@/lib/google-maps-directions";
 import type { FuelType, GasStation } from "@/types/station";
@@ -21,6 +22,7 @@ import {
 import {
 	GOOGLE_MAPS_API_KEY,
 	GOOGLE_MAPS_CONTAINER_STYLE,
+	GOOGLE_MAPS_DARK_MAP_STYLES,
 	GOOGLE_MAPS_LIBRARIES,
 	GOOGLE_MAPS_SCRIPT_ID,
 	MANILA_CENTER,
@@ -107,6 +109,7 @@ function GoogleStationMap({
 	cityMunicipalityCode = "",
 }: StationMapProps) {
 	const navigate = useNavigate();
+	const { theme } = useTheme();
 	const { isAdmin } = useUserAccess();
 	const { data: mapDirectionsFeature } = useMapDirectionsFeature();
 	const { data: mapAutoDiscoverFeature } = useMapAutoDiscoverFeature();
@@ -547,9 +550,11 @@ function GoogleStationMap({
 						position: googleMaps.ControlPosition.RIGHT_BOTTOM,
 					}
 				: undefined,
+			styles:
+				theme === "dark" ? GOOGLE_MAPS_DARK_MAP_STYLES : undefined,
 			gestureHandling: "greedy" as const,
 		}),
-		[googleMaps],
+		[googleMaps, theme],
 	);
 	const routeOptions = useMemo(() => {
 		if (!renderedRoute) {

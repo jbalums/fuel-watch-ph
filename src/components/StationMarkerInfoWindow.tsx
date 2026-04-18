@@ -60,7 +60,7 @@ export const StationMarkerInfoWindow = memo(function StationMarkerInfoWindow({
 
 	return (
 		<div className="flex flex-wrap max-w-[288px] flex-col gap-1.5 pr-3 md:pr-0 text-sm">
-			<span className="font-semibold !text-black pr-8 line-clamp-2">
+			<span className="font-semibold text-black dark:text-white pr-8 line-clamp-2">
 				{station.name}
 			</span>
 			<span className="text-[8px] text-gray-500 leading-tight line-clamp-2">
@@ -78,11 +78,12 @@ export const StationMarkerInfoWindow = memo(function StationMarkerInfoWindow({
 			)}
 
 			{hasSelectedStationPrices ? (
-				<div className="rounded-lg border border-border dark:border-slate-300 bg-slate-100 px-3 py-2 text-xs text-muted-foreground">
-					<div className="font-medium text-indigo-700">
-						Selected Station Prices:
+				<div className="rounded-sm border border-border dark:border-slate-600 bg-slate-100 dark:bg-slate-900 px py-2 text-xs text-muted-foreground flex flex-col">
+					<div className="font-medium text-center text-indigo-700 dark:text-sky-400">
+						Selected Station Prices
 					</div>
-					<div className="grid grid-cols-2 gap-x-2 pt-2">
+
+					<div className="grid grid-cols-1 pt-2 mb-1">
 						{fuelTypes.map((fuelType) => {
 							const price = station.prices[fuelType];
 							const hasPrice =
@@ -100,7 +101,7 @@ export const StationMarkerInfoWindow = memo(function StationMarkerInfoWindow({
 							return (
 								<div
 									key={`station-info-${station.id}-${fuelType}`}
-									className="flex flex-col"
+									className="flex items-center border-t justify-center last:border-b bg-white dark:bg-slate-950 py-2 px-3"
 								>
 									<span
 										className={`w-full text-xs font-semibold ${fuelTypeTextColorClassNames[fuelType]}`}
@@ -117,7 +118,7 @@ export const StationMarkerInfoWindow = memo(function StationMarkerInfoWindow({
 										)}
 									</span>
 									<div
-										className={`flex-col text-left text-sm font-bold ${fuelTypeTextColorClassNames[fuelType]}`}
+										className={`flex text-left text-sm font-bold text-black dark:text-white items-center justify-center`}
 									>
 										<div className="flex items-center relative">
 											<span>
@@ -131,9 +132,9 @@ export const StationMarkerInfoWindow = memo(function StationMarkerInfoWindow({
 
 										{!isFuelSellable(priceStatus) ||
 										!hasPrice ? (
-											<div className="h-3"></div>
+											<div className="h-3 w-16"></div>
 										) : (
-											<div className="-mt-1.5 h-4">
+											<div className="mt-8 w-16 flex items-center justify-center absolute">
 												<PriceTrendIndicator
 													delta={
 														!isFuelSellable(
@@ -150,21 +151,14 @@ export const StationMarkerInfoWindow = memo(function StationMarkerInfoWindow({
 											</div>
 										)}
 									</div>
-									{/* {priceStatus ? (
-							<span
-								className="min-w-16 rounded-full px-2 py-0.5 text-xs"
-								style={{
-									backgroundColor: `${statusColors[priceStatus]}22`,
-									color: statusColors[priceStatus],
-								}}
-							>
-								{priceStatus}
-							</span>
-						) : null} */}
 								</div>
 							);
 						})}
 					</div>
+
+					<span className="text-[10px] italic text-gray-400 -mb-1 text-center">
+						Last updated: <b>{station.lastUpdated}</b>
+					</span>
 				</div>
 			) : null}
 			{brandAverage ? (
@@ -229,7 +223,7 @@ export const StationMarkerInfoWindow = memo(function StationMarkerInfoWindow({
 					{onOpenExperiences ? (
 						<Button
 							type="button"
-							variant="outline-secondary"
+							variant="outline-primary"
 							size="sm"
 							className="h-8 justify-center text-[10px]"
 							onClick={onOpenExperiences}
@@ -321,9 +315,6 @@ export const StationMarkerInfoWindow = memo(function StationMarkerInfoWindow({
 					) : null}
 				</div>
 			) : null}
-			<span className="text-xs text-gray-400 mt-1 mb-1">
-				Last updated: {station.lastUpdated}
-			</span>
 		</div>
 	);
 });

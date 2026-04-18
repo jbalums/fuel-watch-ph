@@ -223,6 +223,7 @@
 }
 .gm-style .gm-style-iw-c {
 	padding: 12px 8px !important;
+	@apply dark:bg-slate-950;
 }
 .gm-style-iw-d {
 	margin-right: -15px !important;
@@ -231,7 +232,9 @@
 	margin-bottom: -4px;
 	position: relative;
 }
-
+.gm-style .gm-style-iw-tc:after {
+	@apply dark:bg-slate-950;
+}
 .gm-style-iw-chr button {
 	position: absolute !important;
 	right: 8px;
@@ -243,7 +246,7 @@
 	@apply bg-red-600 !m-0 !p-0 !absolute top-0;
 }
 .gm-style-iw-ch {
-	@apply text-black;
+	@apply text-black hidden;
 }
 input[type="text"]:not([role="combobox"]),
 input[type="email"],
