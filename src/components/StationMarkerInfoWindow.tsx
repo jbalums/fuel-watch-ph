@@ -16,7 +16,13 @@ import {
 	fuelTypeTextColorClassNames,
 	isFuelSellable,
 } from "@/lib/fuel-prices";
-import { FileEdit, FilePlus2Icon, Navigation } from "lucide-react";
+import {
+	FileEdit,
+	FilePlus2Icon,
+	MapIcon,
+	MessageCircleMore,
+	Navigation,
+} from "lucide-react";
 const statusColors: Record<StationStatus, string> = {
 	Available: "#22c55e",
 	Low: "#f59e0b",
@@ -78,7 +84,7 @@ export const StationMarkerInfoWindow = memo(function StationMarkerInfoWindow({
 			)}
 
 			{hasSelectedStationPrices ? (
-				<div className="rounded-sm border border-border dark:border-slate-600 bg-slate-100 dark:bg-slate-900 px py-2 text-xs text-muted-foreground flex flex-col">
+				<div className="rounded-sm border border-border dark:border-slate-600 bg-slate-100 dark:bg-slate-900 px py-2 text-xs text-muted-foreground flex flex-col mt-1">
 					<div className="font-medium text-center text-indigo-700 dark:text-sky-400">
 						Selected Station Prices
 					</div>
@@ -104,7 +110,7 @@ export const StationMarkerInfoWindow = memo(function StationMarkerInfoWindow({
 									className="flex items-center border-t justify-center last:border-b bg-white dark:bg-slate-950 py-2 px-3"
 								>
 									<span
-										className={`w-full text-xs font-semibold ${fuelTypeTextColorClassNames[fuelType]}`}
+										className={`w-full text-sm font-semibold ${fuelTypeTextColorClassNames[fuelType]}`}
 									>
 										{fuelType == "Premium Diesel" ? (
 											<span>
@@ -219,37 +225,42 @@ export const StationMarkerInfoWindow = memo(function StationMarkerInfoWindow({
 			{showReportAction ||
 			showDirectionsAction ||
 			showOpenInMapsAction ? (
-				<div className="flex flex-wrap gap-2 px-[2px]">
+				<div className="grid grid-cols-2 gap-2 px-[2px] pt-2 pb-1">
+					{showReportAction && onReportFuelPrices ? (
+						<div className="col-span-2 flex flex-col">
+							<Button
+								type="button"
+								variant="amber"
+								size="sm"
+								className=" mb-0 h-8 justify-center text-[10px]"
+								onClick={onReportFuelPrices}
+							>
+								<FilePlus2Icon className="h-3 w-3" />
+								Report Price • Help Others
+							</Button>
+							<span className="text-center italic text-[10px]">
+								Takes less than 10 seconds
+							</span>
+						</div>
+					) : null}
 					{onOpenExperiences ? (
 						<Button
 							type="button"
 							variant="outline-primary"
 							size="sm"
-							className="h-8 justify-center text-[10px]"
+							className="h-7 justify-center text-[10px]"
 							onClick={onOpenExperiences}
 						>
-							<FileEdit className="h-4 w-4" />
-							Share experience!
-						</Button>
-					) : null}
-					{showReportAction && onReportFuelPrices ? (
-						<Button
-							type="button"
-							variant="destructive"
-							size="sm"
-							className="mb-0 h-8 justify-center text-[10px]"
-							onClick={onReportFuelPrices}
-						>
-							<FilePlus2Icon className="h-4 w-4" />
-							Fuel Prices!
+							<MessageCircleMore className="h-4 w-4" />
+							Write Feedback
 						</Button>
 					) : null}
 					{showOpenInMapsAction || showDirectionsAction ? (
 						<div
 							className={
 								showOpenInMapsAction && showDirectionsAction
-									? "grid grid-cols-2 gap-2"
-									: "grid grid-cols-1 gap-2"
+									? "col-span-1 grid grid-cols-2 gap-2"
+									: "col-span-1 grid grid-cols-1 gap-2"
 							}
 						>
 							{showOpenInMapsAction ? (
@@ -257,7 +268,7 @@ export const StationMarkerInfoWindow = memo(function StationMarkerInfoWindow({
 									type="button"
 									variant="outline-primary"
 									size="sm"
-									className="h-8 w-full justify-center text-[10px]"
+									className="h-7 w-full justify-center text-[10px]"
 									onClick={() => {
 										if (onOpenInMaps) {
 											onOpenInMaps();
@@ -281,10 +292,16 @@ export const StationMarkerInfoWindow = memo(function StationMarkerInfoWindow({
 									}}
 									disabled={!directionsUrl}
 								>
-									<Navigation className="h-4 w-4" />
-									{showDirectionsAction
-										? "Open in Maps"
-										: "Get Directions"}
+									{showDirectionsAction ? (
+										<>
+											<MapIcon className="h-4 w-4" />
+										</>
+									) : (
+										<>
+											<Navigation className="h-4 w-4" />
+											Open in maps
+										</>
+									)}
 								</Button>
 							) : null}
 							{showDirectionsAction ? (
@@ -292,7 +309,7 @@ export const StationMarkerInfoWindow = memo(function StationMarkerInfoWindow({
 									type="button"
 									variant="outlineprimary"
 									size="sm"
-									className="h-8 w-full transition-all duration-200 justify-center text-[10px]"
+									className="h-7 w-full transition-all duration-200 justify-center text-[10px]"
 									onClick={() => {
 										if (onGetDirections) {
 											onGetDirections();
@@ -308,7 +325,6 @@ export const StationMarkerInfoWindow = memo(function StationMarkerInfoWindow({
 									disabled={!directionsUrl}
 								>
 									<Navigation className="h-4 w-4" />
-									Get Directions
 								</Button>
 							) : null}
 						</div>

@@ -41,14 +41,14 @@ export function DiscoveredStationInfoWindow({
 	return (
 		<div className="flex max-w-[288px] flex-col gap-2 pr-3 md:pr-0 text-sm">
 			<div className="flex flex-wrap items-center gap-2">
-				<span className="font-semibold !text-black pr-2">
+				<span className="font-semibold dark:text-white text-black pr-2">
 					{station.name}
 				</span>
 				<span className="rounded-full bg-accent/10 px-2 py-0 text-[8px] font-medium text-accent">
 					OpenStreetMap
 				</span>
 			</div>
-			<span className="text-xs text-gray-500 whitespace-normal pr-4 line-clamp-2">
+			<span className="text-[8px] text-gray-500 whitespace-normal pr-4 line-clamp-2 leading-3">
 				{station.address}
 			</span>
 			{isResolvingAddress ? (
@@ -56,7 +56,7 @@ export function DiscoveredStationInfoWindow({
 					Resolving address...
 				</span>
 			) : null}
-			<div className="rounded-lg border border-border dark:border-slate-300 bg-slate-100 px-3 py-2 text-xs text-muted-foreground">
+			<div className="rounded-lg border border-border dark:border-slate-700 bg-slate-100 dark:bg-slate-950 px-3 py-2 text-xs text-muted-foreground">
 				<div className="flex items-center gap-2 font-medium text-amber-600">
 					<MapPinned className="h-3.5 w-3.5" />
 					Not yet added to FuelWatch PH
@@ -135,12 +135,12 @@ export function DiscoveredStationInfoWindow({
 				{showReportAction && onReportGasStation ? (
 					<Button
 						type="button"
-						variant="outline-destructive"
+						variant="amber"
 						size="sm"
 						className="h-8 w-full justify-center text-xs"
 						onClick={onReportGasStation}
 					>
-						<FileIcon className="h-4 w-4" />
+						<FilePlus2 className="h-4 w-4" />
 						Report Fuel Prices!
 					</Button>
 				) : null}
