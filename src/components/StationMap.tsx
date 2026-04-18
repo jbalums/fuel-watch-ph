@@ -553,8 +553,7 @@ function GoogleStationMap({
 						position: googleMaps.ControlPosition.RIGHT_BOTTOM,
 					}
 				: undefined,
-			styles:
-				theme === "dark" ? GOOGLE_MAPS_DARK_MAP_STYLES : undefined,
+			styles: theme === "dark" ? GOOGLE_MAPS_DARK_MAP_STYLES : undefined,
 			gestureHandling: "greedy" as const,
 		}),
 		[googleMaps, theme],
@@ -1134,7 +1133,7 @@ function GoogleStationMap({
 		},
 	];
 	return (
-		<div className="relative">
+		<div className="relative rounded-2xl overflow-hidden pt-[1px]">
 			<div className="absolute left-2 top-2 z-20 max-w-[calc(100%-1.5rem)] rounded-2xl border border-border bg-card/20 p-1.5 shadow-lg backdrop-blur">
 				<div className="flex max-w-full gap-1 overflow-x-auto">
 					{fuelTypes.map((fuelType) => (

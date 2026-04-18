@@ -222,11 +222,11 @@
 	}
 }
 .gm-style .gm-style-iw-c {
-	padding: 16px 10px !important;
+	padding: 0 !important;
 	@apply dark:bg-slate-950;
 }
 .gm-style-iw-d {
-	margin-right: -15px !important;
+	@apply -mr-[15px] lg:-mr-[18px] -mb-3;
 }
 .gm-style-iw-chr {
 	margin-bottom: -4px;
@@ -237,9 +237,9 @@
 }
 .gm-style-iw-chr button {
 	position: absolute !important;
-	right: 2px;
-	top: 0px;
-	@apply !outline-none !border-red-600 !h-6 !w-6 !p-0 rounded-full flex items-center justify-center;
+	right: 8px;
+	top: 8px;
+	@apply !outline-none !border-red-600 !h-6 !w-6 !p-0 rounded-full flex items-center justify-center z-20;
 }
 
 .gm-style-iw-chr button > span {

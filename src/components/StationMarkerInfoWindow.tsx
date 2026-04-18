@@ -55,8 +55,8 @@ export const StationMarkerInfoWindow = memo(function StationMarkerInfoWindow({
 	});
 
 	return (
-		<div className="flex flex-wrap max-w-[288px] flex-col gap-1.5 pr-3 md:pr-0 text-sm">
-			<span className="font-semibold text-black dark:text-white pr-8 line-clamp-2">
+		<div className="flex flex-wrap max-w-[330px] min-w-[260px] flex-col gap-1.5 py-4 text-sm relative pl-4 pr-8 lg:pr-4 border rounded-sm">
+			<span className="font-semibold text-black dark:text-white pr-8 line-clamp-2 pointer-events-none">
 				{station.name}
 			</span>
 			<span className="text-[8px] text-gray-500 leading-tight line-clamp-2">
