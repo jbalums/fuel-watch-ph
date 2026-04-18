@@ -1,12 +1,10 @@
 import { memo } from "react";
-import type { GasStation, StationStatus } from "@/types/station";
+import type { GasStation } from "@/types/station";
 import { Button } from "@/components/ui/button";
 import { LguVerifiedBadge } from "@/components/LguVerifiedBadge";
 import { PriceTrendIndicator } from "@/components/PriceTrendIndicator";
-import { StationExperiencePreview } from "@/components/StationExperiencePreview";
 import { VerifiedStationBadge } from "@/components/VerifiedStationBadge";
 import type { StationBrandAverage } from "@/lib/station-brand-logos";
-import { buildStationExperienceIdentityFromStation } from "@/lib/station-experience";
 import {
 	buildGoogleMapsDirectionsUrl,
 	openGoogleMapsDirections,
@@ -17,17 +15,11 @@ import {
 	isFuelSellable,
 } from "@/lib/fuel-prices";
 import {
-	FileEdit,
 	FilePlus2Icon,
 	MapIcon,
 	MessageCircleMore,
 	Navigation,
 } from "lucide-react";
-const statusColors: Record<StationStatus, string> = {
-	Available: "#22c55e",
-	Low: "#f59e0b",
-	Out: "#ef4444",
-};
 
 interface StationMarkerInfoWindowProps {
 	station: GasStation;
@@ -57,8 +49,6 @@ export const StationMarkerInfoWindow = memo(function StationMarkerInfoWindow({
 		lng: station.lng,
 		placeId: station.googlePlaceId,
 	});
-	const experienceIdentity =
-		buildStationExperienceIdentityFromStation(station);
 	const hasSelectedStationPrices = fuelTypes.some((fuelType) => {
 		const price = station.prices[fuelType];
 		return typeof price === "number" && Number.isFinite(price) && price > 0;
@@ -84,7 +74,7 @@ export const StationMarkerInfoWindow = memo(function StationMarkerInfoWindow({
 			)}
 
 			{hasSelectedStationPrices ? (
-				<div className="rounded-sm border border-border dark:border-slate-600 bg-slate-100 dark:bg-slate-900 px py-2 text-xs text-muted-foreground flex flex-col mt-1">
+				<div className="mt-1 flex flex-col rounded-sm border border-border bg-slate-100 py-2 text-xs text-muted-foreground dark:border-slate-600 dark:bg-slate-900">
 					<div className="font-medium text-center text-indigo-700 dark:text-sky-400">
 						Selected Station Prices
 					</div>

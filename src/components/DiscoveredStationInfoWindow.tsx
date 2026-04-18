@@ -1,17 +1,13 @@
 import { Button } from "@/components/ui/button";
-import { StationExperiencePreview } from "@/components/StationExperiencePreview";
 import { fuelTypes, fuelTypeTextColorClassNames } from "@/lib/fuel-prices";
-import { buildStationExperienceIdentityFromDiscoveredStation } from "@/lib/station-experience";
 import type { StationBrandAverage } from "@/lib/station-brand-logos";
 import type { DiscoveredStation } from "@/lib/station-discovery";
 import {
 	BadgePlus,
-	CheckCircle2,
-	CheckIcon,
-	FileIcon,
-	FilePlus2,
+	FilePlus2Icon,
 	Info,
 	MapPinned,
+	MessageCircleMore,
 } from "lucide-react";
 
 interface DiscoveredStationInfoWindowProps {
@@ -35,8 +31,10 @@ export function DiscoveredStationInfoWindow({
 	onReportGasStation,
 	onOpenExperiences,
 }: DiscoveredStationInfoWindowProps) {
-	const experienceIdentity =
-		buildStationExperienceIdentityFromDiscoveredStation(station);
+	const hasActions =
+		(showReportAction && onReportGasStation) ||
+		onOpenExperiences ||
+		(showAdminAction && onOpenInDiscovery);
 
 	return (
 		<div className="flex max-w-[288px] flex-col gap-2 pr-3 md:pr-0 text-sm">
@@ -48,7 +46,7 @@ export function DiscoveredStationInfoWindow({
 					OpenStreetMap
 				</span>
 			</div>
-			<span className="text-[8px] text-gray-500 whitespace-normal pr-4 line-clamp-2 leading-3">
+			<span className="line-clamp-2 whitespace-normal pr-4 text-[8px] leading-3 text-gray-500">
 				{station.address}
 			</span>
 			{isResolvingAddress ? (
@@ -56,7 +54,7 @@ export function DiscoveredStationInfoWindow({
 					Resolving address...
 				</span>
 			) : null}
-			<div className="rounded-lg border border-border dark:border-slate-700 bg-slate-100 dark:bg-slate-950 px-3 py-2 text-xs text-muted-foreground">
+			<div className="rounded-lg border border-border bg-slate-100 px-3 py-2 text-xs text-muted-foreground dark:border-slate-700 dark:bg-slate-950">
 				<div className="flex items-center gap-2 font-medium text-amber-600">
 					<MapPinned className="h-3.5 w-3.5" />
 					Not yet added to FuelWatch PH
@@ -66,15 +64,12 @@ export function DiscoveredStationInfoWindow({
 				</p>
 			</div>
 			{brandAverage ? (
-				<div className="rounded-lg border border-border dark:border-slate-300 bg-slate-100 px-3 py-2 text-xs text-muted-foreground">
-					<div className="font-medium text-indigo-700">
+				<div className="rounded-sm border border-border bg-slate-100 py-2 text-xs text-muted-foreground dark:border-slate-600 dark:bg-slate-900">
+					<div className="text-center font-medium text-indigo-700 dark:text-sky-400">
 						Average from other <u>{brandAverage.brandName}</u>{" "}
 						stations
 					</div>
-					{/* <p className="mt-1 font-medium text-black">
-						{brandAverage.brandName} average
-					</p> */}
-					<p className="mt-0.5 text-[11px] text-muted-foreground">
+					<p className="mt-0.5 text-center text-[10px] text-muted-foreground">
 						Based on {brandAverage.sampleCount} station
 						{brandAverage.sampleCount === 1 ? "" : "s"}
 					</p>
@@ -84,7 +79,7 @@ export function DiscoveredStationInfoWindow({
 							"number",
 					) ? (
 						<>
-							<div className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1 mb-2">
+							<div className="mb-2 mt-2 grid grid-cols-1">
 								{fuelTypes.map((fuelType) => {
 									const averagePrice =
 										brandAverage.averagePrices[fuelType];
@@ -97,66 +92,79 @@ export function DiscoveredStationInfoWindow({
 									}
 
 									return (
-										<div key={fuelType} className="min-w-0">
+										<div
+											key={fuelType}
+											className="flex items-center justify-center border-t bg-white px-3 py-2 last:border-b dark:bg-slate-950"
+										>
 											<p
-												className={`text-[12px] font-medium ${fuelTypeTextColorClassNames[fuelType]}`}
+												className={`w-full text-sm font-semibold ${fuelTypeTextColorClassNames[fuelType]}`}
 											>
 												{fuelType}
 											</p>
-											<p className="text-[16px] font-semibold text-black">
+											<p className="whitespace-nowrap text-sm font-bold text-black dark:text-white">
 												₱ {averagePrice.toFixed(2)}
 											</p>
 										</div>
 									);
 								})}
 							</div>
-							<span
-								className="text-red-700 text-[9px] flex items-center gap-1"
-								style={{ lineHeight: "1em !important" }}
-							>
-								<Info className="text-amber-800 h-3 w-3" />{" "}
+							<span className="flex items-center gap-1 text-[9px] leading-none text-amber-600 w-full text-center justify-center">
+								<Info className="text-amber-600 h-3 w-3" />{" "}
 								Prices may not reflect current market prices.
 							</span>
 						</>
 					) : (
-						<p className="mt-2 text-[11px]">
+						<p className="mt-2 text-center text-[12px]">
 							No similar listed stations with price data yet.
 						</p>
 					)}
 				</div>
 			) : null}
-			{onOpenExperiences ? (
-				<StationExperiencePreview
-					identity={experienceIdentity}
-					onOpen={onOpenExperiences}
-				/>
+			{hasActions ? (
+				<div className="grid grid-cols-2 gap-2 px-[2px] pb-1 pt-2">
+					{showReportAction && onReportGasStation ? (
+						<div className="col-span-2 flex flex-col">
+							<Button
+								type="button"
+								variant="amber"
+								size="sm"
+								className="mb-0 h-8 justify-center text-[10px]"
+								onClick={onReportGasStation}
+							>
+								<FilePlus2Icon className="h-3 w-3" />
+								Report Price • Help Others
+							</Button>
+							<span className="text-center text-[10px] italic">
+								Takes less than 10 seconds
+							</span>
+						</div>
+					) : null}
+					{onOpenExperiences ? (
+						<Button
+							type="button"
+							variant="outline-primary"
+							size="sm"
+							className="h-7 justify-center text-[10px]"
+							onClick={onOpenExperiences}
+						>
+							<MessageCircleMore className="h-4 w-4" />
+							Write Feedback
+						</Button>
+					) : null}
+					{showAdminAction && onOpenInDiscovery ? (
+						<Button
+							type="button"
+							variant="default"
+							size="sm"
+							className="h-7 justify-center text-[10px]"
+							onClick={onOpenInDiscovery}
+						>
+							<BadgePlus className="h-4 w-4" />
+							Open Discovery
+						</Button>
+					) : null}
+				</div>
 			) : null}
-			<div className="mt-1 flex flex-col gap-2 px-1 pb-2">
-				{showReportAction && onReportGasStation ? (
-					<Button
-						type="button"
-						variant="amber"
-						size="sm"
-						className="h-8 w-full justify-center text-xs"
-						onClick={onReportGasStation}
-					>
-						<FilePlus2 className="h-4 w-4" />
-						Report Fuel Prices!
-					</Button>
-				) : null}
-				{showAdminAction && onOpenInDiscovery ? (
-					<Button
-						type="button"
-						variant="default"
-						size="sm"
-						className="h-8 w-full justify-center text-xs"
-						onClick={onOpenInDiscovery}
-					>
-						<BadgePlus className="h-4 w-4" />
-						Open in Station Discovery
-					</Button>
-				) : null}
-			</div>
 		</div>
 	);
 }
