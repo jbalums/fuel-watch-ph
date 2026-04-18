@@ -196,8 +196,6 @@ function GoogleStationMap({
 					lat: station.lat,
 					lng: station.lng,
 				},
-				name: station.name,
-				stationBrandLogoId: station.stationBrandLogoId,
 				icon: buildResolvedStationMarkerIcon(
 					googleMaps,
 					{
@@ -228,8 +226,6 @@ function GoogleStationMap({
 					lat: station.lat,
 					lng: station.lng,
 				},
-				name: station.name,
-				stationBrandLogoId: station.stationBrandLogoId,
 				icon: buildResolvedStationMarkerIcon(
 					googleMaps,
 					{
@@ -262,45 +258,18 @@ function GoogleStationMap({
 					stationMarker.price > 0;
 				const priceStatus = stationMarker.fuelAvailability;
 
-				if (hasPrice && priceStatus !== "Out") {
-					if (priceStatus && !isFuelSellable(priceStatus)) {
-						return null;
-					}
-
-					return {
-						id: stationMarker.id,
-						position: stationMarker.position,
-						price: stationMarker.price,
-						isAverage: false,
-					};
+				if (!hasPrice || priceStatus === "Out") {
+					return null;
 				}
 
-				const brandAverage = buildStationBrandAverage(
-					{
-						name: stationMarker.name,
-						stationBrandLogoId: stationMarker.stationBrandLogoId,
-					},
-					allStations.filter(
-						(station) => station.id !== stationMarker.id,
-					),
-					stationBrandLogos,
-				);
-				const averagePrice =
-					brandAverage?.averagePrices[selectedMapFuelType] ?? null;
-
-				if (
-					typeof averagePrice !== "number" ||
-					!Number.isFinite(averagePrice) ||
-					averagePrice <= 0
-				) {
+				if (priceStatus && !isFuelSellable(priceStatus)) {
 					return null;
 				}
 
 				return {
 					id: stationMarker.id,
 					position: stationMarker.position,
-					price: averagePrice,
-					isAverage: true,
+					price: stationMarker.price,
 				};
 			})
 			.filter(
@@ -310,16 +279,9 @@ function GoogleStationMap({
 					id: string;
 					position: CoordinatePair;
 					price: number;
-					isAverage: boolean;
 				} => Boolean(stationMarker),
 			);
-	}, [
-		allStations,
-		selectedMapFuelType,
-		shouldShowFuelPriceBadges,
-		stationBrandLogos,
-		visibleStations,
-	]);
+	}, [shouldShowFuelPriceBadges, visibleStations]);
 	const filteredDiscoveredStations = useMemo(() => {
 		return discoveredStations.filter((station) => {
 			if (getDuplicateMatch(station, allStations)) {
@@ -1124,14 +1086,9 @@ function GoogleStationMap({
 					>
 						<div className="pointer-events-none -translate-x-1/2 -translate-y-full pb-9">
 							<div
-								className={`whitespace-nowrap rounded-full border border-white/80 bg-black px-2.5 py-1 text-[12px] font-bold shadow-lg backdrop-blur ${fuelTypeTextColorClassNames[selectedMapFuelType]}`}
+								className={`whitespace-nowrap rounded-full border border-white/80 bg-black px-2.5 py-1 text-[11px] font-bold shadow-lg backdrop-blur ${fuelTypeTextColorClassNames[selectedMapFuelType]}`}
 							>
 								₱{stationMarker.price.toFixed(2)}
-								{stationMarker.isAverage ? (
-									<span className="-ml-3 bottom-0 absolute text-[6px] font-semibold uppercase tracking-wide text-amber-500">
-										Avg
-									</span>
-								) : null}
 							</div>
 						</div>
 					</OverlayViewF>
