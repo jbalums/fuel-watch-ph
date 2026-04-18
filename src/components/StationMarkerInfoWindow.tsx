@@ -53,6 +53,10 @@ export const StationMarkerInfoWindow = memo(function StationMarkerInfoWindow({
 	});
 	const experienceIdentity =
 		buildStationExperienceIdentityFromStation(station);
+	const hasSelectedStationPrices = fuelTypes.some((fuelType) => {
+		const price = station.prices[fuelType];
+		return typeof price === "number" && Number.isFinite(price) && price > 0;
+	});
 
 	return (
 		<div className="flex flex-wrap max-w-[288px] flex-col gap-1.5 pr-3 md:pr-0 text-sm">
@@ -73,75 +77,78 @@ export const StationMarkerInfoWindow = memo(function StationMarkerInfoWindow({
 				</div>
 			)}
 
-			<div className="rounded-lg border border-border dark:border-slate-300 bg-slate-100 px-3 py-2 text-xs text-muted-foreground">
-				<div className="font-medium text-indigo-700">
-					Selected Station Prices:
-				</div>
-				<div className="grid grid-cols-2 gap-x-2 pt-2">
-					{fuelTypes.map((fuelType) => {
-						const price = station.prices[fuelType];
-						const hasPrice =
-							typeof price === "number" &&
-							Number.isFinite(price) &&
-							price > 0;
-						const priceStatus =
-							station.fuelAvailability[fuelType] ??
-							(hasPrice ? station.status : null);
-						const shouldShowRow = priceStatus !== null || hasPrice;
+			{hasSelectedStationPrices ? (
+				<div className="rounded-lg border border-border dark:border-slate-300 bg-slate-100 px-3 py-2 text-xs text-muted-foreground">
+					<div className="font-medium text-indigo-700">
+						Selected Station Prices:
+					</div>
+					<div className="grid grid-cols-2 gap-x-2 pt-2">
+						{fuelTypes.map((fuelType) => {
+							const price = station.prices[fuelType];
+							const hasPrice =
+								typeof price === "number" &&
+								Number.isFinite(price) &&
+								price > 0;
+							const priceStatus =
+								station.fuelAvailability[fuelType] ??
+								(hasPrice ? station.status : null);
+							const shouldShowRow =
+								priceStatus !== null || hasPrice;
 
-						return (
-							<div
-								key={`station-info-${station.id}-${fuelType}`}
-								className={` flex flex-col ${shouldShowRow ? "" : "hidden"}`}
-							>
-								<span
-									className={`w-full text-xs font-semibold ${fuelTypeTextColorClassNames[fuelType]}`}
-								>
-									{fuelType == "Premium Diesel" ? (
-										<span>
-											<span className="block -mt-1 -mb-1 text-[8px]">
-												Premium
-											</span>
-											<span>Diesel</span>
-										</span>
-									) : (
-										fuelType
-									)}
-								</span>
+							return (
 								<div
-									className={`flex-col text-left text-sm font-bold ${fuelTypeTextColorClassNames[fuelType]}`}
+									key={`station-info-${station.id}-${fuelType}`}
+									className={` flex flex-col ${shouldShowRow ? "" : "hidden"}`}
 								>
-									<div className="flex items-center relative">
-										<span>
-											{priceStatus === "Out"
-												? "—"
-												: hasPrice
-													? `₱${price.toFixed(2)}`
-													: "--.--"}
-										</span>
-									</div>
-
-									{!isFuelSellable(priceStatus) ||
-									!hasPrice ? (
-										<div className="h-3"></div>
-									) : (
-										<div className="-mt-1.5 h-4">
-											<PriceTrendIndicator
-												delta={
-													!isFuelSellable(
-														priceStatus,
-													) || !hasPrice
-														? null
-														: station.priceTrends[
-																fuelType
-															]
-												}
-												className="-mt-2 text-[8px]"
-											/>
+									<span
+										className={`w-full text-xs font-semibold ${fuelTypeTextColorClassNames[fuelType]}`}
+									>
+										{fuelType == "Premium Diesel" ? (
+											<span>
+												<span className="block -mt-1 -mb-1 text-[8px]">
+													Premium
+												</span>
+												<span>Diesel</span>
+											</span>
+										) : (
+											fuelType
+										)}
+									</span>
+									<div
+										className={`flex-col text-left text-sm font-bold ${fuelTypeTextColorClassNames[fuelType]}`}
+									>
+										<div className="flex items-center relative">
+											<span>
+												{priceStatus === "Out"
+													? "—"
+													: hasPrice
+														? `₱${price.toFixed(2)}`
+														: "--.--"}
+											</span>
 										</div>
-									)}
-								</div>
-								{/* {priceStatus ? (
+
+										{!isFuelSellable(priceStatus) ||
+										!hasPrice ? (
+											<div className="h-3"></div>
+										) : (
+											<div className="-mt-1.5 h-4">
+												<PriceTrendIndicator
+													delta={
+														!isFuelSellable(
+															priceStatus,
+														) || !hasPrice
+															? null
+															: station
+																	.priceTrends[
+																	fuelType
+																]
+													}
+													className="-mt-2 text-[8px]"
+												/>
+											</div>
+										)}
+									</div>
+									{/* {priceStatus ? (
 							<span
 								className="min-w-16 rounded-full px-2 py-0.5 text-xs"
 								style={{
@@ -152,11 +159,12 @@ export const StationMarkerInfoWindow = memo(function StationMarkerInfoWindow({
 								{priceStatus}
 							</span>
 						) : null} */}
-							</div>
-						);
-					})}
+								</div>
+							);
+						})}
+					</div>
 				</div>
-			</div>
+			) : null}
 			{brandAverage ? (
 				<div className="mt-3 rounded-lg border border-border bg-slate-100 px-3 py-2 text-xs text-muted-foreground dark:border-slate-300">
 					<div className="font-medium text-indigo-700">
