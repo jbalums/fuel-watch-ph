@@ -59,8 +59,7 @@ export default defineConfig(() => ({
 				cleanupOutdatedCaches: true,
 				runtimeCaching: [
 					{
-						urlPattern:
-							/^https:\/\/fonts\.googleapis\.com\/.*/i,
+						urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
 						handler: "StaleWhileRevalidate",
 						options: {
 							cacheName: "google-fonts-stylesheets",
