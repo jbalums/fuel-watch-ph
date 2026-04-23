@@ -384,7 +384,7 @@ export function MapFuelReportDialog({
 				>
 					<DialogHeader className="shrink-0 border-b border-border px-4 pb-4 pt-5 pr-12 text-left sm:px-6 sm:pt-6">
 						<DialogTitle>Report fuel prices</DialogTitle>
-						<DialogDescription>
+						<DialogDescription className="text-xs">
 							Share updated station prices to help nearby drivers.
 							Reports stay pending until reviewed.
 						</DialogDescription>
@@ -404,8 +404,8 @@ export function MapFuelReportDialog({
 												: "Discovered station"}
 										</Badge>
 									</div>
-									<p className="mt-2 flex gap-2 text-sm text-muted-foreground">
-										<MapPin className="mt-0.5 h-4 w-4 shrink-0" />
+									<p className=" flex gap-2 text-[10px] text-muted-foreground">
+										<MapPin className="mt-0.5 h-2 w-2 shrink-0" />
 										<span className="min-w-0 break-words">
 											{targetAddress}
 										</span>
@@ -414,7 +414,7 @@ export function MapFuelReportDialog({
 							</div>
 
 							{target.type === "listed" ? (
-								<div className="mt-4 rounded-xl border border-border bg-background/70 p-3">
+								<div className="mt-4 rounded-sm border border-border bg-background/70 p-3">
 									<p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
 										Current station prices
 									</p>
@@ -439,19 +439,16 @@ export function MapFuelReportDialog({
 												return (
 													<div
 														key={`current-${row.fuelType}`}
-														className="rounded-lg border border-border bg-card px-3 py-2"
+														className={`rounded-sm border border-border bg-card px-3 py-2 flex items-center gap-4 `}
 													>
-														<p className="text-xs text-muted-foreground">
+														<p className="text-sm font-medium ">
 															{row.fuelType}
 														</p>
-														<p className="mt-1 text-sm font-semibold text-foreground">
+														<p
+															className={`ml-auto text-sm font-semibold ${fuelTypeTextColorClassNames[row.fuelType]}`}
+														>
 															{priceText ??
 																"--.--"}
-															{statusText ? (
-																<span className="ml-1 text-[10px] font-medium text-muted-foreground sm:ml-2 sm:text-xs">
-																	{statusText}
-																</span>
-															) : null}
 														</p>
 													</div>
 												);
@@ -563,7 +560,7 @@ export function MapFuelReportDialog({
 								{fuelTypes.map((fuelType) => (
 									<div
 										key={fuelType}
-										className="grid gap-2 rounded-xl border border-border bg-card/70 p-3 sm:grid-cols-[minmax(0,1fr)_150px] sm:items-center lg:grid-cols-[minmax(0,1fr)_180px]"
+										className="grid gap-2 rounded-sm border border-border bg-card/70 py-1 px-2 sm:grid-cols-[minmax(0,1fr)_150px] sm:items-center lg:grid-cols-[minmax(0,1fr)_180px]"
 									>
 										<div className="flex min-w-0 items-center">
 											<p
