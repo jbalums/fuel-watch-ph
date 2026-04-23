@@ -41,7 +41,7 @@ export type Database = {
           station_name: string | null
           status: string | null
           submission_mode: string
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           applied_station_id?: string | null
@@ -69,7 +69,7 @@ export type Database = {
           station_name?: string | null
           status?: string | null
           submission_mode?: string
-          user_id: string
+          user_id?: string | null
         }
         Update: {
           applied_station_id?: string | null
@@ -97,7 +97,7 @@ export type Database = {
           station_name?: string | null
           status?: string | null
           submission_mode?: string
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: [
           {
@@ -687,6 +687,22 @@ export type Database = {
           _reported_address?: string | null
           _station_id?: string | null
           _station_name: string
+        }
+        Returns: string
+      }
+      submit_map_fuel_report: {
+        Args: {
+          _city_municipality_code?: string | null
+          _fuel_availability?: Json | null
+          _lat?: number | null
+          _lng?: number | null
+          _photo_filename?: string | null
+          _photo_path?: string | null
+          _prices?: Json | null
+          _province_code?: string | null
+          _reported_address?: string | null
+          _station_id?: string | null
+          _station_name?: string | null
         }
         Returns: string
       }

@@ -5,6 +5,7 @@ import {
 	createEmptyFuelAvailabilityFormMap,
 	createEmptyFuelPriceFormMap,
 	createEmptyFuelPriceMap,
+	deriveFuelAvailabilityFromPrices,
 	fuelTypes,
 	getFuelSummarySelection,
 	normalizeFuelAvailability,
@@ -21,6 +22,7 @@ import type {
 	FuelReportSubmissionMode,
 	FuelReportReviewStatus,
 	FuelType,
+	GasStation,
 	StationClaimReviewStatus,
 	StationStatus,
 } from "@/types/station";
@@ -92,9 +94,13 @@ export const initialStationForm: StationFormState = {
 };
 
 function formatReportedByLabel(
-	reportedBy: string,
+	reportedBy: string | null,
 	profile?: ProfileRow,
 ) {
+	if (!reportedBy) {
+		return "Anonymous map report";
+	}
+
 	const displayName = profile?.display_name?.trim();
 	if (displayName) {
 		return displayName;
@@ -484,6 +490,35 @@ export function formatReviewStatusLabel(status: FuelReportReviewStatus) {
 	return "Rejected";
 }
 
+export function CurrentStationPricesSummary({
+	station,
+}: {
+	station: GasStation | null | undefined;
+}) {
+	if (!station) {
+		return null;
+	}
+
+	const currentPrices = formatReportedPrices(
+		station.prices,
+		station.fuelAvailability,
+	);
+
+	return (
+		<div className="mt-3 rounded-lg border border-border/80 bg-background/70 px-3 py-2 text-xs">
+			<p className="font-medium text-foreground">
+				Current station prices
+			</p>
+			<p className="mt-1 text-muted-foreground">
+				{currentPrices || "No current prices added yet"}
+			</p>
+			<p className="mt-1 text-[11px] text-muted-foreground">
+				Last updated: {station.lastUpdated}
+			</p>
+		</div>
+	);
+}
+
 export function ReviewStatusBadge({
 	status,
 }: {
@@ -565,8 +600,9 @@ export function buildStationPayload(
 	const submittedPreviousPrices = parseFuelPriceForm(
 		stationForm.previousPrices,
 	);
-	const fuelAvailability = parseFuelAvailabilityForm(
-		stationForm.fuelAvailability,
+	const fuelAvailability = deriveFuelAvailabilityFromPrices(
+		prices,
+		parseFuelAvailabilityForm(stationForm.fuelAvailability),
 	);
 	validateFuelPriceAvailability(prices, fuelAvailability);
 	const previousPrices = existingStation

@@ -58,6 +58,10 @@ import {
 	useMapDirectionsFeature,
 } from "@/hooks/useSystemFeatureFlags";
 import { DiscoveredStationInfoWindow } from "./DiscoveredStationInfoWindow";
+import {
+	MapFuelReportDialog,
+	type MapFuelReportTarget,
+} from "./MapFuelReportDialog";
 import { StationMarkerInfoWindow } from "./StationMarkerInfoWindow";
 const DEFAULT_HIGHLIGHT_ZOOM = 15;
 const DEFAULT_CURRENT_LOCATION_ZOOM = 15;
@@ -133,6 +137,8 @@ function GoogleStationMap({
 	] = useState(false);
 	const [selectedMapFuelType, setSelectedMapFuelType] =
 		useState<FuelType>("Unleaded");
+	const [reportDialogTarget, setReportDialogTarget] =
+		useState<MapFuelReportTarget | null>(null);
 	const [isDiscovering, setIsDiscovering] = useState(false);
 	const [map, setMap] = useState<google.maps.Map | null>(null);
 	const [directionsRenderer, setDirectionsRenderer] =
@@ -685,8 +691,6 @@ function GoogleStationMap({
 
 		const detectedScope = detectGeoScopeFromAddress({
 			address: buildAddressSearchText(selectedGoogleStation),
-			lat: selectedGoogleStation.lat,
-			lng: selectedGoogleStation.lng,
 			provinces,
 			cities,
 		});
@@ -704,12 +708,19 @@ function GoogleStationMap({
 			return;
 		}
 
-		navigate("/report", {
-			state: {
-				prefilledGoogleStation: selectedGoogleStation,
-			},
+		const detectedScope = detectGeoScopeFromAddress({
+			address: buildAddressSearchText(selectedGoogleStation),
+			provinces,
+			cities,
 		});
-	}, [navigate, selectedGoogleStation]);
+
+		setReportDialogTarget({
+			type: "discovered",
+			station: selectedGoogleStation,
+			provinceCode: detectedScope?.provinceCode ?? "",
+			cityMunicipalityCode: detectedScope?.cityMunicipalityCode ?? "",
+		});
+	}, [cities, provinces, selectedGoogleStation]);
 	const openFocusedStationExperiences = useCallback(() => {
 		if (!focusedStation) {
 			return;
@@ -726,13 +737,11 @@ function GoogleStationMap({
 			return;
 		}
 
-		navigate("/report", {
-			state: {
-				prefilledStationId: focusedStation.id,
-				prefilledSubmissionMode: "standard",
-			},
+		setReportDialogTarget({
+			type: "listed",
+			station: focusedStation,
 		});
-	}, [focusedStation, navigate]);
+	}, [focusedStation]);
 	const openFocusedStationInGoogleMaps = useCallback(() => {
 		if (!focusedStation) {
 			return;
@@ -1418,6 +1427,17 @@ function GoogleStationMap({
 					</div>
 				</div>
 			) : null}
+			<MapFuelReportDialog
+				open={reportDialogTarget !== null}
+				target={reportDialogTarget}
+				provinces={provinces}
+				cities={cities}
+				onOpenChange={(open) => {
+					if (!open) {
+						setReportDialogTarget(null);
+					}
+				}}
+			/>
 		</div>
 	);
 }

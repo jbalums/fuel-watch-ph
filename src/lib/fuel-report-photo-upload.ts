@@ -83,25 +83,31 @@ export function validateFuelReportPhoto(file: File) {
   return null;
 }
 
-export function createFuelReportPhotoPath(userId: string, file: File) {
+export function createFuelReportPhotoPath(folderName: string, file: File) {
   const extension = getSafeFileExtension(file);
   if (!extension) {
     throw new Error("Unsupported photo type");
   }
 
-  return `${userId}/${Date.now()}-${crypto.randomUUID()}.${extension}`;
+  return `${folderName}/${Date.now()}-${crypto.randomUUID()}.${extension}`;
 }
 
 export async function uploadFuelReportPhoto(options: {
   file: File;
-  userId: string;
+  userId?: string | null;
+  folderName?: string;
 }) {
   const validationError = validateFuelReportPhoto(options.file);
   if (validationError) {
     throw new Error(validationError);
   }
 
-  const path = createFuelReportPhotoPath(options.userId, options.file);
+  const folderName = options.folderName ?? options.userId;
+  if (!folderName) {
+    throw new Error("A photo upload folder is required");
+  }
+
+  const path = createFuelReportPhotoPath(folderName, options.file);
   const { error } = await supabase.storage
     .from(FUEL_REPORT_PHOTOS_BUCKET)
     .upload(path, options.file, {

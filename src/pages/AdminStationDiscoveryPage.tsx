@@ -41,7 +41,7 @@ import { useGeoReferences } from "@/hooks/useGeoReferences";
 import { useStationBrandLogos } from "@/hooks/useStationBrandLogos";
 import { detectGeoScopeFromAddress } from "@/lib/geo-detection";
 import { buildResolvedStationMarkerIcon } from "@/lib/station-brand-logos";
-import { fuelTypes, stationStatuses } from "@/lib/fuel-prices";
+import { fuelTypes } from "@/lib/fuel-prices";
 import {
 	buildDiscoveredStationForm,
 	buildAddressSearchText,
@@ -466,44 +466,13 @@ function DiscoveryStationForm({
 									}
 									className="rounded-lg border border-border bg-surface-alt px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground"
 								/>
-								<select
-									value={form.fuelAvailability[fuelType]}
-									onChange={(event) =>
-										onFormChange((current) => ({
-											...current,
-											prices:
-												event.target.value === "Out"
-													? {
-															...current.prices,
-															[fuelType]: "",
-														}
-													: current.prices,
-											fuelAvailability: {
-												...current.fuelAvailability,
-												[fuelType]: event.target
-													.value as
-													| ""
-													| "Available"
-													| "Low"
-													| "Out",
-											},
-										}))
-									}
-									className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
-								>
-									<option value="">No data</option>
-									{stationStatuses.map((status) => (
-										<option key={status} value={status}>
-											{status}
-										</option>
-									))}
-								</select>
 							</div>
 						))}
 					</div>
 					<p className="mt-3 text-xs text-muted-foreground">
 						Optional for station discovery. Add prices only when you
-						already have verified fuel data.
+						already have verified fuel data. Blank fields are
+						ignored.
 					</p>
 				</div>
 

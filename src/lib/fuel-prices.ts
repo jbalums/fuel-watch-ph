@@ -182,6 +182,22 @@ export function parseFuelAvailabilityForm(
 	return availability;
 }
 
+export function deriveFuelAvailabilityFromPrices(
+	prices: FuelPriceMap,
+	fuelAvailability: FuelAvailabilityMap,
+): FuelAvailabilityMap {
+	return fuelTypes.reduce((nextAvailability, fuelType) => {
+		const price = prices[fuelType];
+		const status = fuelAvailability[fuelType];
+		const hasPrice =
+			typeof price === "number" && Number.isFinite(price) && price > 0;
+
+		nextAvailability[fuelType] = hasPrice ? "Available" : status;
+
+		return nextAvailability;
+	}, createEmptyFuelAvailabilityMap());
+}
+
 export function isFuelSellable(
 	status: StationStatus | null | undefined,
 ): status is Extract<StationStatus, "Available" | "Low"> {
@@ -195,6 +211,10 @@ export function validateFuelPriceAvailability(
 	for (const fuelType of fuelTypes) {
 		const price = prices[fuelType];
 		const status = fuelAvailability[fuelType];
+
+		if (status === null && price !== null) {
+			continue;
+		}
 
 		if (isFuelSellable(status)) {
 			if (
@@ -221,9 +241,7 @@ export function validateFuelPriceAvailability(
 		}
 
 		if (price !== null) {
-			throw new Error(
-				`Select an availability for ${fuelType} when a price is entered`,
-			);
+			continue;
 		}
 	}
 }
@@ -238,7 +256,7 @@ export function getPrimaryFuelPriceSelection(
 		const price = prices[fuelType];
 		const status = fuelAvailability?.[fuelType] ?? null;
 
-		if (fuelAvailability && !isFuelSellable(status)) {
+		if (fuelAvailability && status !== null && !isFuelSellable(status)) {
 			continue;
 		}
 

@@ -220,7 +220,7 @@ function GoogleStationLocationPicker({
 		}, 500);
 
 		return () => window.clearTimeout(timeoutId);
-	}, [onAddressResolved, resolveAddress, selectedPosition]);
+	}, []);
 
 	const markerIcon = useMemo<google.maps.Icon>(() => {
 		return {
@@ -345,7 +345,7 @@ function GoogleStationLocationPicker({
 							});
 						}}
 						disabled={!selectedPosition || isResolvingAddress}
-						className="inline-flex items-center gap-2 rounded-lg bg-primary px-3 py-2 text-xs font-medium text-muted transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
+						className="inline-flex items-center gap-2 rounded-lg bg-primary px-3 py-2 text-xs font-medium text-muted dark:text-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
 					>
 						{isResolvingAddress && (
 							<Loader2 className="h-3.5 w-3.5 animate-spin" />

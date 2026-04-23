@@ -21,6 +21,7 @@ import { LguVerifiedBadge } from "@/components/LguVerifiedBadge";
 import { StatusBadge } from "@/components/StatusBadge";
 import {
 	createEasyReportApprovalForm,
+	CurrentStationPricesSummary,
 	type EasyReportApprovalFormState,
 	getFuelReportDisplayName,
 	getFuelReportModeLabel,
@@ -35,6 +36,7 @@ import {
 import { EasyReportApprovalDialog } from "@/components/admin/EasyReportApprovalDialog";
 import { ReportPhotoPreviewDialog } from "@/components/admin/ReportPhotoPreviewDialog";
 import {
+	deriveFuelAvailabilityFromPrices,
 	hasAnyFuelAvailability,
 	parseFuelAvailabilityForm,
 	parseFuelPriceForm,
@@ -135,8 +137,9 @@ export default function LguReportsPage() {
 			form: EasyReportApprovalFormState;
 		}) => {
 			const normalizedPrices = parseFuelPriceForm(form.prices);
-			const normalizedAvailability = parseFuelAvailabilityForm(
-				form.fuelAvailability,
+			const normalizedAvailability = deriveFuelAvailabilityFromPrices(
+				normalizedPrices,
+				parseFuelAvailabilityForm(form.fuelAvailability),
 			);
 			validateFuelPriceAvailability(
 				normalizedPrices,
@@ -145,7 +148,7 @@ export default function LguReportsPage() {
 
 			if (!hasAnyFuelAvailability(normalizedAvailability)) {
 				throw new Error(
-					"Add at least one fuel availability or price before approval",
+					"Add at least one fuel price before approval",
 				);
 			}
 
@@ -347,9 +350,14 @@ export default function LguReportsPage() {
 					</p>
 				) : (
 					paginatedReports.map((report) => {
+						const appliedStation = report.appliedStationId
+							? stationLookup.get(report.appliedStationId)
+							: null;
 						const linkedStation = report.stationId
 							? stationLookup.get(report.stationId)
 							: null;
+						const currentStation =
+							linkedStation ?? appliedStation ?? null;
 						const isPending = report.reviewStatus === "pending";
 
 						return (
@@ -466,6 +474,9 @@ export default function LguReportsPage() {
 												</button>
 											</p>
 										)}
+										<CurrentStationPricesSummary
+											station={currentStation}
+										/>
 										<p className="mt-2 text-xs text-muted-foreground">
 											Reported by {report.reportedByLabel}
 											{report.reviewedAt
@@ -575,6 +586,15 @@ export default function LguReportsPage() {
 									reportToApprove.reportedAt,
 								).toLocaleString()}
 							</p>
+							<CurrentStationPricesSummary
+								station={
+									reportToApprove.stationId
+										? stationLookup.get(
+												reportToApprove.stationId,
+											)
+										: null
+								}
+							/>
 						</div>
 					)}
 					<AlertDialogFooter>

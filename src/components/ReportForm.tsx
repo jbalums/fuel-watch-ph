@@ -37,11 +37,11 @@ import { ReportLocationPicker } from "@/components/ReportLocationPicker";
 import {
 	createEmptyFuelAvailabilityFormMap,
 	createEmptyFuelPriceFormMap,
+	deriveFuelAvailabilityFromPrices,
 	getFuelSummarySelection,
 	hasAnyFuelAvailability,
 	parseFuelAvailabilityForm,
 	parseFuelPriceForm,
-	stationStatuses,
 	validateFuelPriceAvailability,
 	fuelTypes,
 	type FuelAvailabilityFormMap,
@@ -749,8 +749,10 @@ export function ReportForm() {
 			}
 
 			try {
-				normalizedAvailability =
-					parseFuelAvailabilityForm(fuelAvailability);
+				normalizedAvailability = deriveFuelAvailabilityFromPrices(
+					normalizedPrices,
+					parseFuelAvailabilityForm(fuelAvailability),
+				);
 				validateFuelPriceAvailability(
 					normalizedPrices,
 					normalizedAvailability,
@@ -759,7 +761,7 @@ export function ReportForm() {
 				toast.error(
 					error instanceof Error
 						? error.message
-						: "Invalid fuel availability",
+						: "Invalid fuel price",
 				);
 				return;
 			}
@@ -774,7 +776,7 @@ export function ReportForm() {
 				!summarySelection ||
 				!hasAnyFuelAvailability(normalizedAvailability)
 			) {
-				toast.error("Add at least one fuel availability or price");
+				toast.error("Add at least one fuel price");
 				return;
 			}
 		}
@@ -823,6 +825,7 @@ export function ReportForm() {
 						Premium: null,
 						Diesel: null,
 						"Premium Diesel": null,
+						Kerosene: null,
 					}
 				: normalizedAvailability,
 			status: isEasyReport ? null : summarySelection!.status,
@@ -920,8 +923,7 @@ export function ReportForm() {
 						Standard Report
 					</p>
 					<p className="mt-1 text-xs text-muted-foreground">
-						Enter the station name, fuel prices, and per-fuel
-						availability yourself.
+						Enter the station name and fuel prices yourself.
 					</p>
 				</button>
 			</div>
@@ -1021,42 +1023,12 @@ export function ReportForm() {
 									placeholder="0.00"
 									className="rounded-xl bg-surface-alt px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:bg-card focus:ring-2 focus:ring-primary/20 sovereign-ease transition-all tabular-nums"
 								/>
-								<select
-									value={fuelAvailability[fuelType]}
-									onChange={(event) => {
-										const nextStatus = event.target
-											.value as
-											| ""
-											| "Available"
-											| "Low"
-											| "Out";
-										setFuelAvailability((current) => ({
-											...current,
-											[fuelType]: nextStatus,
-										}));
-
-										if (nextStatus === "Out") {
-											setPrices((current) => ({
-												...current,
-												[fuelType]: "",
-											}));
-										}
-									}}
-									className="rounded-xl bg-background px-4 py-3 text-sm text-foreground outline-none focus:ring-2 focus:ring-primary/20 sovereign-ease transition-all"
-								>
-									<option value="">No data</option>
-									{stationStatuses.map((status) => (
-										<option key={status} value={status}>
-											{status}
-										</option>
-									))}
-								</select>
 							</div>
 						))}
 					</div>
 					<p className="text-xs text-muted-foreground">
-						Mark each reported fuel as Available, Low, or Out. Leave
-						both fields blank when you have no data for that fuel.
+						Add prices for the fuels you want to report. Blank
+						fields are ignored.
 					</p>
 				</div>
 			) : null}

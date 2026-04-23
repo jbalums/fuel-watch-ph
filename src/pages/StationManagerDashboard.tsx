@@ -10,11 +10,11 @@ import { supabase } from "@/integrations/supabase/client";
 import {
   createEmptyFuelAvailabilityFormMap,
   createEmptyFuelPriceFormMap,
+  deriveFuelAvailabilityFromPrices,
   fuelTypes,
   getFuelSummarySelection,
   parseFuelAvailabilityForm,
   parseFuelPriceForm,
-  stationStatuses,
   validateFuelPriceAvailability,
   type FuelAvailabilityFormMap,
 } from "@/lib/fuel-prices";
@@ -83,7 +83,10 @@ export default function StationManagerDashboard() {
       }
 
       const payload = parseFuelPriceForm(prices);
-      const normalizedAvailability = parseFuelAvailabilityForm(fuelAvailability);
+      const normalizedAvailability = deriveFuelAvailabilityFromPrices(
+        payload,
+        parseFuelAvailabilityForm(fuelAvailability),
+      );
       validateFuelPriceAvailability(payload, normalizedAvailability);
       const summarySelection = getFuelSummarySelection(
         payload,
@@ -97,7 +100,7 @@ export default function StationManagerDashboard() {
 
       if (!summarySelection) {
         throw new Error(
-          "At least one fuel must be marked Available or Low and include a valid price",
+          "Add at least one valid fuel price",
         );
       }
 
@@ -218,7 +221,7 @@ export default function StationManagerDashboard() {
                   className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
                 />
                 <div className="flex items-center rounded-lg border border-border bg-muted px-3 py-2 text-sm text-muted-foreground">
-                  At least one fuel must be marked Available or Low with a valid price.
+                  Add at least one valid fuel price before saving.
                 </div>
               </div>
 
@@ -229,9 +232,9 @@ export default function StationManagerDashboard() {
                       Fuel Prices
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      Update each fuel's price and availability for your
-                      station. The main displayed fuel is derived automatically
-                      from the fuel rows.
+                      Update each fuel's price for your station. The main
+                      displayed fuel is derived automatically from the fuel
+                      rows.
                     </p>
                   </div>
                 </div>
@@ -254,41 +257,12 @@ export default function StationManagerDashboard() {
                         }
                         className="rounded-lg border border-border bg-surface-alt px-3 py-2 text-sm text-foreground"
                       />
-                      <select
-                        value={fuelAvailability[type]}
-                        onChange={(event) => {
-                          const nextStatus = event.target.value as
-                            | ""
-                            | "Available"
-                            | "Low"
-                            | "Out";
-                          setFuelAvailability((current) => ({
-                            ...current,
-                            [type]: nextStatus,
-                          }));
-
-                          if (nextStatus === "Out") {
-                            setPrices((current) => ({
-                              ...current,
-                              [type]: "",
-                            }));
-                          }
-                        }}
-                        className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
-                      >
-                        <option value="">No data</option>
-                        {stationStatuses.map((status) => (
-                          <option key={status} value={status}>
-                            {status}
-                          </option>
-                        ))}
-                      </select>
                     </div>
                   ))}
                 </div>
                 <p className="mt-3 text-xs text-muted-foreground">
-                  Mark a fuel as Out only when it has no price. Leave both
-                  fields blank when you have no data for that fuel.
+                  Add prices for the fuels you want to update. Blank fields are
+                  ignored.
                 </p>
               </div>
 

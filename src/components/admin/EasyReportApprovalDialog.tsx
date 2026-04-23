@@ -20,7 +20,7 @@ import type {
 	GeoProvince,
 } from "@/hooks/useGeoReferences";
 import { createFuelReportPhotoUrl } from "@/lib/fuel-report-photo-upload";
-import { fuelTypes, stationStatuses } from "@/lib/fuel-prices";
+import { fuelTypes } from "@/lib/fuel-prices";
 import type { FuelReport } from "@/types/station";
 import type { GasStationRow } from "@/components/admin/admin-shared";
 import type { EasyReportApprovalFormState } from "@/components/admin/admin-shared";
@@ -158,8 +158,7 @@ export function EasyReportApprovalDialog({
 					<DialogTitle>Complete and approve easy report</DialogTitle>
 					<DialogDescription>
 						Review the uploaded photo and manually enter the station
-						details, prices, and per-fuel availability before
-						approval.
+						details and prices before approval.
 					</DialogDescription>
 				</DialogHeader>
 
@@ -361,7 +360,7 @@ export function EasyReportApprovalDialog({
 
 						<div className="flex flex-col gap-2">
 							<label className="text-label text-muted-foreground">
-								Fuel Prices and Availability
+								Fuel Prices
 							</label>
 							<div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
 								{fuelTypes.map((fuelType) => (
@@ -389,48 +388,6 @@ export function EasyReportApprovalDialog({
 											placeholder="0.00"
 											className="mt-2 w-full rounded-xl bg-surface-alt px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-primary/20"
 										/>
-										<select
-											value={
-												form.fuelAvailability[fuelType]
-											}
-											onChange={(event) => {
-												const nextStatus = event.target
-													.value as
-													| ""
-													| "Available"
-													| "Low"
-													| "Out";
-
-												updateForm((current) => ({
-													...current,
-													prices: {
-														...current.prices,
-														[fuelType]:
-															nextStatus === "Out"
-																? ""
-																: current
-																		.prices[
-																		fuelType
-																	],
-													},
-													fuelAvailability: {
-														...current.fuelAvailability,
-														[fuelType]: nextStatus,
-													},
-												}));
-											}}
-											className="mt-2 w-full rounded-xl bg-surface-alt px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-primary/20"
-										>
-											<option value="">No data</option>
-											{stationStatuses.map((status) => (
-												<option
-													key={status}
-													value={status}
-												>
-													{status}
-												</option>
-											))}
-										</select>
 									</div>
 								))}
 							</div>

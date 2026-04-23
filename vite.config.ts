@@ -57,6 +57,7 @@ export default defineConfig(() => ({
 			workbox: {
 				navigateFallback: "/",
 				cleanupOutdatedCaches: true,
+				maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
 				runtimeCaching: [
 					{
 						urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,

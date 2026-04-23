@@ -135,7 +135,7 @@ export interface FuelReport {
   fuelType: FuelType | null;
   status: StationStatus | null;
   reportedAt: string;
-  reportedBy: string;
+  reportedBy: string | null;
   reportedByLabel: string;
   submissionMode: FuelReportSubmissionMode;
   reviewStatus: FuelReportReviewStatus;

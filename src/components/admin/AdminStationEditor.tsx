@@ -19,7 +19,7 @@ import { useGeoReferences } from "@/hooks/useGeoReferences";
 import { useStationBrandLogos } from "@/hooks/useStationBrandLogos";
 import { toast } from "@/lib/app-toast";
 import { detectGeoScopeFromAddress } from "@/lib/geo-detection";
-import { fuelTypes, stationStatuses } from "@/lib/fuel-prices";
+import { fuelTypes } from "@/lib/fuel-prices";
 import type { GasStationRow, StationFormState } from "./admin-shared";
 
 interface AdminStationEditorProps {
@@ -253,9 +253,9 @@ function EditorForm({
 									Current Prices
 								</p>
 								<p className="text-xs text-muted-foreground">
-									Set each fuel's price and availability. The
-									main displayed fuel is derived
-									automatically from the fuel rows.
+									Set each fuel's price. The main displayed
+									fuel is derived automatically from the fuel
+									rows.
 								</p>
 							</div>
 						</div>
@@ -285,42 +285,13 @@ function EditorForm({
 										}
 										className="rounded-lg border border-border bg-surface-alt px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground"
 									/>
-									<select
-										value={form.fuelAvailability[fuelType]}
-										onChange={(event) =>
-											onFormChange((current) => ({
-												...current,
-												prices:
-													event.target.value === "Out"
-														? {
-																...current.prices,
-																[fuelType]: "",
-															}
-														: current.prices,
-												fuelAvailability: {
-													...current.fuelAvailability,
-													[fuelType]: event.target
-														.value as
-														"" | "Available" | "Low" | "Out",
-												},
-											}))
-										}
-										className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
-									>
-										<option value="">No data</option>
-										{stationStatuses.map((status) => (
-											<option key={status} value={status}>
-												{status}
-											</option>
-										))}
-									</select>
 								</div>
 							))}
 						</div>
 						<p className="mt-3 text-xs text-muted-foreground">
 							{mode === "edit"
-								? "Prices are optional during editing. Mark a fuel as Out only when it has no price, or leave both fields blank when you have no current data yet."
-								: "At least one fuel must be marked Available or Low with a valid price. Mark a fuel as Out only when it has no price. Leave both fields blank when you have no data for that fuel."}
+								? "Prices are optional during editing. Blank fields are ignored when you have no current data yet."
+								: "Add at least one valid fuel price. Blank fields are ignored when you have no data for that fuel."}
 						</p>
 					</div>
 					<div className="rounded-lg border border-border bg-background p-3 md:col-span-2">
