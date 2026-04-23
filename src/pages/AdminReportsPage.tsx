@@ -114,17 +114,6 @@ export default function AdminReportsPage() {
 			if (error) throw error;
 			return data;
 		},
-		onSuccess: async (stationId) => {
-			await refreshAdminData(queryClient);
-			const matchedStation = stationId
-				? stationLookup.get(stationId)
-				: null;
-			toast.success(
-				matchedStation
-					? `Report approved and applied to ${matchedStation.name}`
-					: "Report approved",
-			);
-		},
 		onError: (error) => toast.error(error.message),
 	});
 
@@ -184,17 +173,6 @@ export default function AdminReportsPage() {
 
 			if (error) throw error;
 			return data;
-		},
-		onSuccess: async (stationId) => {
-			await refreshAdminData(queryClient);
-			const matchedStation = stationId
-				? stationLookup.get(stationId)
-				: null;
-			toast.success(
-				matchedStation
-					? `Easy report approved and applied to ${matchedStation.name}`
-					: "Easy report approved",
-			);
 		},
 		onError: (error) => {
 			setEasyApprovalError(error.message);
