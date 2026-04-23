@@ -1471,7 +1471,7 @@ export function StationMap({
 	}
 
 	return (
-		<div className="overflow-hidden rounded-2xl border border-t-0 border-border shadow-sovereign">
+		<div className="overflow-hidden rounded-2xl border border-t border-border shadow-sovereign">
 			<LoadScriptNext
 				id={GOOGLE_MAPS_SCRIPT_ID}
 				googleMapsApiKey={GOOGLE_MAPS_API_KEY}
