@@ -377,9 +377,12 @@ export function MapFuelReportDialog({
 
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent className="max-h-[92dvh] overflow-y-auto sm:max-w-3xl">
-				<form onSubmit={(event) => void handleSubmit(event)}>
-					<DialogHeader>
+			<DialogContent className="flex h-[100dvh] max-h-[100dvh] w-screen max-w-none grid-rows-none flex-col overflow-hidden rounded-none border-x-0 p-0 sm:h-auto sm:max-h-[92dvh] sm:w-[calc(100vw-2rem)] sm:max-w-3xl sm:rounded-2xl sm:border-x sm:p-0">
+				<form
+					onSubmit={(event) => void handleSubmit(event)}
+					className="flex min-h-0 flex-1 flex-col"
+				>
+					<DialogHeader className="shrink-0 border-b border-border px-4 pb-4 pt-5 pr-12 text-left sm:px-6 sm:pt-6">
 						<DialogTitle>Report fuel prices</DialogTitle>
 						<DialogDescription>
 							Share updated station prices to help nearby drivers.
@@ -387,12 +390,12 @@ export function MapFuelReportDialog({
 						</DialogDescription>
 					</DialogHeader>
 
-					<div className="mt-5 space-y-5">
-						<section className="rounded-2xl border border-border bg-surface-alt/70 p-4">
+					<div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-4 sm:space-y-5 sm:px-6 sm:py-5">
+						<section className="rounded-2xl border border-border bg-surface-alt/70 p-3 sm:p-4">
 							<div className="flex flex-wrap items-start justify-between gap-3">
 								<div className="min-w-0">
 									<div className="flex flex-wrap items-center gap-2">
-										<h3 className="truncate text-base font-semibold text-foreground">
+										<h3 className="min-w-0 break-words text-base font-semibold leading-snug text-foreground">
 											{target.station.name}
 										</h3>
 										<Badge variant="outline">
@@ -403,7 +406,9 @@ export function MapFuelReportDialog({
 									</div>
 									<p className="mt-2 flex gap-2 text-sm text-muted-foreground">
 										<MapPin className="mt-0.5 h-4 w-4 shrink-0" />
-										<span>{targetAddress}</span>
+										<span className="min-w-0 break-words">
+											{targetAddress}
+										</span>
 									</p>
 								</div>
 							</div>
@@ -416,7 +421,7 @@ export function MapFuelReportDialog({
 									{hasAnyCurrentStationPrice(
 										target.station,
 									) && currentPrices.length > 0 ? (
-										<div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+										<div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-2 lg:grid-cols-3">
 											{currentPrices.map((row) => {
 												const priceText = formatPrice(
 													row.price,
@@ -443,7 +448,7 @@ export function MapFuelReportDialog({
 															{priceText ??
 																"--.--"}
 															{statusText ? (
-																<span className="ml-2 text-xs font-medium text-muted-foreground">
+																<span className="ml-1 text-[10px] font-medium text-muted-foreground sm:ml-2 sm:text-xs">
 																	{statusText}
 																</span>
 															) : null}
@@ -463,7 +468,7 @@ export function MapFuelReportDialog({
 						</section>
 
 						{shouldShowScopeSelectors ? (
-							<section className="grid gap-3 rounded-2xl border border-border bg-card/70 p-4 sm:grid-cols-2">
+							<section className="grid gap-3 rounded-2xl border border-border bg-card/70 p-3 sm:grid-cols-2 sm:p-4">
 								<div className="space-y-2">
 									<Label htmlFor="map-report-province">
 										Province
@@ -550,19 +555,19 @@ export function MapFuelReportDialog({
 								</h3>
 								<p className="mt-1 text-xs text-muted-foreground">
 									Enter only the fuels you want to report.
-									Mark Rows left blank will be ignored.
+									Rows left blank will be ignored.
 								</p>
 							</div>
 
-							<div className="grid grid-cols-2 gap-3">
+							<div className="grid gap-2 sm:gap-3 md:grid-cols-2">
 								{fuelTypes.map((fuelType) => (
 									<div
 										key={fuelType}
-										className="grid gap-3 rounded-sm border border-border bg-card/70 px-2 py-1 sm:grid-cols-[1fr_180px]"
+										className="grid gap-2 rounded-xl border border-border bg-card/70 p-3 sm:grid-cols-[minmax(0,1fr)_150px] sm:items-center lg:grid-cols-[minmax(0,1fr)_180px]"
 									>
-										<div className="flex items-center">
+										<div className="flex min-w-0 items-center">
 											<p
-												className={`text-sm font-medium ${fuelTypeTextColorClassNames[fuelType]}`}
+												className={`text-sm font-semibold ${fuelTypeTextColorClassNames[fuelType]}`}
 											>
 												{fuelType}
 											</p>
@@ -573,6 +578,7 @@ export function MapFuelReportDialog({
 												inputMode="decimal"
 												placeholder="00.00"
 												value={priceForm[fuelType]}
+												className="h-11 text-base sm:h-10 sm:text-sm"
 												onChange={(event) =>
 													updateFuelPrice(
 														fuelType,
@@ -586,7 +592,7 @@ export function MapFuelReportDialog({
 							</div>
 						</section>
 
-						<section className="rounded-2xl border border-border bg-card/70 p-4">
+						<section className="rounded-2xl border border-border bg-card/70 p-3 sm:p-4">
 							<div className="flex flex-wrap items-center justify-between gap-3">
 								<div>
 									<h3 className="text-sm font-semibold text-foreground">
@@ -608,14 +614,14 @@ export function MapFuelReportDialog({
 								) : null}
 							</div>
 
-							<label className="mt-3 flex cursor-pointer flex-wrap items-center gap-3 rounded-xl border border-dashed border-border bg-surface-alt px-4 py-3 text-sm text-muted-foreground transition-colors hover:text-foreground">
+							<label className="mt-3 flex cursor-pointer flex-col items-stretch gap-3 rounded-xl border border-dashed border-border bg-surface-alt px-4 py-3 text-sm text-muted-foreground transition-colors hover:text-foreground sm:flex-row sm:flex-wrap sm:items-center">
 								<ImagePlus className="h-4 w-4 shrink-0" />
-								<span className="min-w-0 flex-1 truncate">
+								<span className="min-w-0 flex-1 break-words sm:truncate">
 									{photoFile
 										? photoFile.name
 										: "Choose a verification photo"}
 								</span>
-								<span className="rounded-full bg-background px-3 py-1 text-xs font-medium text-foreground">
+								<span className="rounded-full bg-background px-3 py-1 text-center text-xs font-medium text-foreground">
 									{photoFile ? "Replace" : "Browse"}
 								</span>
 								<input
@@ -654,7 +660,7 @@ export function MapFuelReportDialog({
 						) : null}
 					</div>
 
-					<DialogFooter className="mt-6">
+					<DialogFooter className="shrink-0 gap-2 border-t border-border bg-background/95 px-4 py-3 sm:px-6 sm:py-4 [&>button]:w-full sm:[&>button]:w-auto">
 						<Button
 							type="button"
 							variant="outline"
