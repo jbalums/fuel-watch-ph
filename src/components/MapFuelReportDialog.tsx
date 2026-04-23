@@ -612,12 +612,14 @@ export function MapFuelReportDialog({
 							</div>
 
 							<label className="mt-3 flex cursor-pointer flex-col items-stretch gap-3 rounded-xl border border-dashed border-border bg-surface-alt px-4 py-3 text-sm text-muted-foreground transition-colors hover:text-foreground sm:flex-row sm:flex-wrap sm:items-center">
-								<ImagePlus className="h-4 w-4 shrink-0" />
-								<span className="min-w-0 flex-1 break-words sm:truncate">
-									{photoFile
-										? photoFile.name
-										: "Choose a verification photo"}
-								</span>
+								<div className="flex items-center gap-2">
+									<ImagePlus className="h-4 w-4 shrink-0" />
+									<span className="min-w-0 flex break-words sm:truncate text-xs">
+										{photoFile
+											? photoFile.name
+											: "Choose a verification photo"}
+									</span>
+								</div>
 								<span className="rounded-full bg-background px-3 py-1 text-center text-xs font-medium text-foreground">
 									{photoFile ? "Replace" : "Browse"}
 								</span>
