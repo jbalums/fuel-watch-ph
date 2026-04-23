@@ -37,9 +37,9 @@ import {
 import { EasyReportApprovalDialog } from "@/components/admin/EasyReportApprovalDialog";
 import { ReportPhotoPreviewDialog } from "@/components/admin/ReportPhotoPreviewDialog";
 import {
+	createEmptyFuelAvailabilityMap,
 	deriveFuelAvailabilityFromPrices,
 	hasAnyFuelAvailability,
-	parseFuelAvailabilityForm,
 	parseFuelPriceForm,
 	validateFuelPriceAvailability,
 } from "@/lib/fuel-prices";
@@ -139,7 +139,7 @@ export default function AdminReportsPage() {
 			const normalizedPrices = parseFuelPriceForm(form.prices);
 			const normalizedAvailability = deriveFuelAvailabilityFromPrices(
 				normalizedPrices,
-				parseFuelAvailabilityForm(form.fuelAvailability),
+				createEmptyFuelAvailabilityMap(),
 			);
 			validateFuelPriceAvailability(
 				normalizedPrices,
