@@ -20,6 +20,10 @@ function formatAveragePrice(
 }
 
 export function HeroStatus({ summary }: HeroStatusProps) {
+	const sampleReportCount = summary?.sampleReportCount ?? 0;
+	const windowDays = summary?.windowDays ?? 10;
+	const reportLabel = sampleReportCount === 1 ? "report" : "reports";
+
 	return (
 		<motion.div
 			initial={{ opacity: 0, filter: "blur(10px)" }}
@@ -62,7 +66,8 @@ export function HeroStatus({ summary }: HeroStatusProps) {
 				real-time changes. Verify at the station before refueling.
 			</p>
 			<p className="mt-4 text-base text-muted-foreground">
-				{summary?.totalStations ?? 0} Stations Listed
+				Based on {sampleReportCount} recent approved {reportLabel} in
+				the last {windowDays} days
 			</p>
 		</motion.div>
 	);

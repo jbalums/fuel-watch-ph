@@ -12,7 +12,8 @@ async function fetchPublicStationSummary(): Promise<PublicStationSummary> {
 
 	return mapPublicStationSummaryRow(
 		data?.[0] ?? {
-			total_stations: 0,
+			sample_report_count: 0,
+			window_days: 10,
 			average_unleaded: null,
 			average_premium: null,
 			average_diesel: null,

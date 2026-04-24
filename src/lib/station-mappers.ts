@@ -123,7 +123,8 @@ export function mapGasStationRow(station: Tables<"gas_stations">): GasStation {
 }
 
 export function mapPublicStationSummaryRow(summaryRow: {
-	total_stations: number | null;
+	sample_report_count: number | null;
+	window_days: number | null;
 	average_unleaded: number | null;
 	average_premium: number | null;
 	average_diesel: number | null;
@@ -131,7 +132,8 @@ export function mapPublicStationSummaryRow(summaryRow: {
 	average_kerosene: number | null;
 }): PublicStationSummary {
 	return {
-		totalStations: Number(summaryRow.total_stations ?? 0),
+		sampleReportCount: Number(summaryRow.sample_report_count ?? 0),
+		windowDays: Number(summaryRow.window_days ?? 10),
 		averagePrices: {
 			Unleaded: safeNumber(summaryRow.average_unleaded),
 			Premium: safeNumber(summaryRow.average_premium),

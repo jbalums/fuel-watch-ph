@@ -782,7 +782,8 @@ export type Database = {
           average_premium_diesel: number | null
           average_premium: number | null
           average_unleaded: number | null
-          total_stations: number | null
+          sample_report_count: number | null
+          window_days: number | null
         }[]
       }
       get_scoped_dashboard_stats: {

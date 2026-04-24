@@ -96,7 +96,8 @@ export interface StationExperience extends StationExperienceIdentity {
 }
 
 export interface PublicStationSummary {
-  totalStations: number;
+  sampleReportCount: number;
+  windowDays: number;
   averagePrices: Record<FuelType, number | null>;
 }
 
