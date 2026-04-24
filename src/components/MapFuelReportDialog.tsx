@@ -384,21 +384,24 @@ export function MapFuelReportDialog({
 				>
 					<DialogHeader className="shrink-0 border-b border-border px-4 pb-4 pt-5 pr-12 text-left sm:px-6 sm:pt-6">
 						<DialogTitle>Report fuel prices</DialogTitle>
-						<DialogDescription className="text-xs">
+						{/* <DialogDescription className="text-xs">
 							Share updated station prices to help nearby drivers.
 							Reports stay pending until reviewed.
-						</DialogDescription>
+						</DialogDescription> */}
 					</DialogHeader>
 
-					<div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-4 sm:space-y-5 sm:px-6 sm:py-5">
+					<div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-4 sm:space-y-4 sm:px-6 sm:py-5">
 						<section className="rounded-2xl border border-border bg-surface-alt/70 p-3 sm:p-4">
-							<div className="flex flex-wrap items-start justify-between gap-3">
-								<div className="min-w-0">
+							<div className="flex flex-wrap items-start justify-between gap-3 relative">
+								<div className="min-w-0 ">
 									<div className="flex flex-wrap items-center gap-2">
 										<h3 className="min-w-0 break-words text-base font-semibold leading-snug text-foreground">
 											{target.station.name}
 										</h3>
-										<Badge variant="outline">
+										<Badge
+											variant="outline"
+											className="absolute -top-6 right-0 bg-card"
+										>
 											{target.type === "listed"
 												? "Listed station"
 												: "Discovered station"}
@@ -414,7 +417,7 @@ export function MapFuelReportDialog({
 							</div>
 
 							{target.type === "listed" ? (
-								<div className="mt-4 rounded-sm border border-border bg-background/70 p-3">
+								<div className="mt-2 rounded-sm border border-border bg-background/70 p-3">
 									<p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
 										Current station prices
 									</p>
@@ -550,13 +553,13 @@ export function MapFuelReportDialog({
 								<h3 className="text-sm font-semibold text-foreground">
 									Fuel prices to report
 								</h3>
-								<p className="mt-1 text-xs text-muted-foreground">
+								<p className="mt-1 text-[10px] text-muted-foreground">
 									Enter only the fuels you want to report.
 									Rows left blank will be ignored.
 								</p>
 							</div>
 
-							<div className="grid gap-2 sm:gap-3 md:grid-cols-2">
+							<div className="grid gap-2 sm:gap-3 grid-cols-2">
 								{fuelTypes.map((fuelType) => (
 									<div
 										key={fuelType}
@@ -575,7 +578,7 @@ export function MapFuelReportDialog({
 												inputMode="decimal"
 												placeholder="00.00"
 												value={priceForm[fuelType]}
-												className="h-11 text-base sm:h-10 sm:text-sm"
+												className="h-11 text-base sm:h-8 sm:text-sm"
 												onChange={(event) =>
 													updateFuelPrice(
 														fuelType,
@@ -620,7 +623,7 @@ export function MapFuelReportDialog({
 											: "Choose a verification photo"}
 									</span>
 								</div>
-								<span className="rounded-full bg-background px-3 py-1 text-center text-xs font-medium text-foreground">
+								<span className="rounded-full bg-background px-3 py-2 text-center text-xs font-medium text-foreground">
 									{photoFile ? "Replace" : "Browse"}
 								</span>
 								<input
