@@ -32,6 +32,8 @@ import {
 	createEmptyFuelPriceFormMap,
 	deriveFuelAvailabilityFromPrices,
 	fuelTypes,
+	fuelTypeBorderColorClassNames,
+	fuelTypeTextColorClassNames,
 	getFuelSummarySelection,
 	parseFuelAvailabilityForm,
 	parseFuelPriceForm,
@@ -438,46 +440,68 @@ export default function StationManagerDashboard() {
 											{fuelTypes.map((type) => (
 												<div
 													key={type}
-													className="flex flex-col gap-1.5"
+													className={`flex flex-col gap-2 rounded border bg-surface-alt/60 p-3 ${fuelTypeBorderColorClassNames[type]}`}
 												>
-													<label className="text-xs font-medium text-muted-foreground">
+													<label
+														className={`text-xs font-semibold ${fuelTypeTextColorClassNames[type]}`}
+													>
 														{type}
 													</label>
-													<div className="flex items-center gap-2 rounded-lg border border-border bg-surface-alt px-3 py-2">
-														<span className="whitespace-nowrap text-xs font-semibold text-muted-foreground">
-															{typeof station.prices[
-																type
-															] === "number" &&
-															station.prices[
-																type
-															] !== null
-																? `₱ ${station.prices[
-																		type
-																	]?.toFixed(2)}`
-																: "--.--"}
-														</span>
-														<span className="text-xs text-muted-foreground">
+													<div className="flex items-center gap-2 rounded-lg border border-border bg-background/80 px-3 py-2">
+														<div className="min-w-0">
+															<p className="text-[10px] uppercase tracking-wide text-muted-foreground">
+																Current
+															</p>
+															<p
+																className={`whitespace-nowrap text-sm font-bold ${fuelTypeTextColorClassNames[type]}`}
+															>
+																{typeof station
+																	.prices[
+																	type
+																] ===
+																	"number" &&
+																station.prices[
+																	type
+																] !== null
+																	? `₱ ${station.prices[
+																			type
+																		]?.toFixed(
+																			2,
+																		)}`
+																	: "--.--"}
+															</p>
+														</div>
+														<span className="text-xs font-semibold text-muted-foreground">
 															→
 														</span>
-														<input
-															type="number"
-															step="0.01"
-															placeholder="0.00"
-															value={prices[type]}
-															onChange={(event) =>
-																setPrices(
-																	(
-																		current,
-																	) => ({
-																		...current,
-																		[type]: event
-																			.target
-																			.value,
-																	}),
-																)
-															}
-															className="min-w-0 flex-1 bg-transparent text-sm text-foreground outline-none"
-														/>
+														<div className="min-w-0 flex-1">
+															<p className="text-[10px] uppercase tracking-wide text-muted-foreground">
+																New
+															</p>
+															<input
+																type="number"
+																step="0.01"
+																placeholder="0.00"
+																value={
+																	prices[type]
+																}
+																onChange={(
+																	event,
+																) =>
+																	setPrices(
+																		(
+																			current,
+																		) => ({
+																			...current,
+																			[type]: event
+																				.target
+																				.value,
+																		}),
+																	)
+																}
+																className="min-w-0 w-full bg-transparent text-sm font-semibold text-foreground outline-none"
+															/>
+														</div>
 													</div>
 												</div>
 											))}
