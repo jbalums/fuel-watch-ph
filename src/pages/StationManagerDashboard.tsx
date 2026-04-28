@@ -443,23 +443,42 @@ export default function StationManagerDashboard() {
 													<label className="text-xs font-medium text-muted-foreground">
 														{type}
 													</label>
-													<input
-														type="number"
-														step="0.01"
-														placeholder="0.00"
-														value={prices[type]}
-														onChange={(event) =>
-															setPrices(
-																(current) => ({
-																	...current,
-																	[type]: event
-																		.target
-																		.value,
-																}),
-															)
-														}
-														className="rounded-lg border border-border bg-surface-alt px-3 py-2 text-sm text-foreground"
-													/>
+													<div className="flex items-center gap-2 rounded-lg border border-border bg-surface-alt px-3 py-2">
+														<span className="whitespace-nowrap text-xs font-semibold text-muted-foreground">
+															{typeof station.prices[
+																type
+															] === "number" &&
+															station.prices[
+																type
+															] !== null
+																? `₱ ${station.prices[
+																		type
+																	]?.toFixed(2)}`
+																: "--.--"}
+														</span>
+														<span className="text-xs text-muted-foreground">
+															→
+														</span>
+														<input
+															type="number"
+															step="0.01"
+															placeholder="0.00"
+															value={prices[type]}
+															onChange={(event) =>
+																setPrices(
+																	(
+																		current,
+																	) => ({
+																		...current,
+																		[type]: event
+																			.target
+																			.value,
+																	}),
+																)
+															}
+															className="min-w-0 flex-1 bg-transparent text-sm text-foreground outline-none"
+														/>
+													</div>
 												</div>
 											))}
 										</div>
