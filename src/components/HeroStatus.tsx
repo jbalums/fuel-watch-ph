@@ -65,10 +65,10 @@ export function HeroStatus({ summary }: HeroStatusProps) {
 				⚠️&nbsp;Fuel prices are crowd-sourced and may not reflect
 				real-time changes. Verify at the station before refueling.
 			</p>
-			<p className="mt-4 text-base text-muted-foreground">
+			{/* <p className="mt-4 text-base text-muted-foreground">
 				Based on {sampleReportCount} recent approved {reportLabel} in
 				the last {windowDays} days
-			</p>
+			</p> */}
 		</motion.div>
 	);
 }
