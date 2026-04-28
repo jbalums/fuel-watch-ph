@@ -571,23 +571,22 @@ export default function StationManagerDashboard() {
 											<label className="text-xs font-medium text-muted-foreground">
 												Station Name
 											</label>
-											<input
-												type="text"
+											<textarea
 												value={stationName}
 												onChange={(event) =>
 													setStationName(
 														event.target.value,
 													)
 												}
-												className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
+												rows={3}
+												className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground resize-y"
 											/>
 										</div>
 										<div className="flex flex-col gap-1.5">
 											<label className="text-xs font-medium text-muted-foreground">
 												Station Address
 											</label>
-											<input
-												type="text"
+											<textarea
 												value={address}
 												onChange={(event) =>
 													setAddress(
@@ -595,7 +594,8 @@ export default function StationManagerDashboard() {
 													)
 												}
 												placeholder="Station address"
-												className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
+												rows={4}
+												className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground resize-y"
 											/>
 										</div>
 									</div>
