@@ -62,6 +62,8 @@ export default function StationManagerDashboard() {
 	const [selectedStationId, setSelectedStationId] = useState<string | null>(
 		null,
 	);
+	const [isStationPickerExpanded, setIsStationPickerExpanded] =
+		useState(true);
 	const [stationName, setStationName] = useState("");
 	const [address, setAddress] = useState("");
 	const [releaseDialogOpen, setReleaseDialogOpen] = useState(false);
@@ -92,6 +94,7 @@ export default function StationManagerDashboard() {
 	useEffect(() => {
 		if (stations.length === 0) {
 			setSelectedStationId(null);
+			setIsStationPickerExpanded(true);
 			return;
 		}
 
@@ -106,6 +109,15 @@ export default function StationManagerDashboard() {
 			return null;
 		});
 	}, [stations]);
+
+	useEffect(() => {
+		if (!selectedStationId) {
+			setIsStationPickerExpanded(true);
+			return;
+		}
+
+		setIsStationPickerExpanded(false);
+	}, [selectedStationId]);
 
 	useEffect(() => {
 		if (!station) {
@@ -303,63 +315,84 @@ export default function StationManagerDashboard() {
 					</div>
 				) : (
 					<>
-						<div className="rounded-2xl bg-card p-5 shadow-sovereign">
-							<div className="mb-4">
-								<h3 className="text-xl font-semibold text-foreground">
-									My Stations
-								</h3>
-								<p className="text-sm text-muted-foreground">
-									Choose which station you want to manage.
-								</p>
-							</div>
-							<div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-								{stations.map((managedStation) => {
-									const isSelected =
-										managedStation.id === selectedStationId;
+						{isStationPickerExpanded ? (
+							<div className="rounded-2xl bg-card p-5 shadow-sovereign">
+								<div className="mb-4">
+									<h3 className="text-xl font-semibold text-foreground">
+										My Stations
+									</h3>
+									<p className="text-sm text-muted-foreground">
+										Choose which station you want to manage.
+									</p>
+								</div>
+								<div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+									{stations.map((managedStation) => {
+										const isSelected =
+											managedStation.id ===
+											selectedStationId;
 
-									return (
-										<button
-											key={managedStation.id}
-											type="button"
-											onClick={() =>
-												setSelectedStationId(
-													managedStation.id,
-												)
-											}
-											className={`rounded-xl border p-4 text-left sovereign-ease transition-colors ${
-												isSelected
-													? "border-primary bg-primary/10"
-													: "border-border bg-secondary/40 hover:bg-secondary"
-											}`}
-										>
-											<div className="flex items-start justify-between gap-3">
-												<div className="min-w-0">
-													<p className="font-semibold text-foreground">
-														{managedStation.name}
-													</p>
-													<p className="mt-1 line-clamp-2 text-sm text-muted-foreground">
-														{managedStation.address}
-													</p>
+										return (
+											<button
+												key={managedStation.id}
+												type="button"
+												onClick={() =>
+													setSelectedStationId(
+														managedStation.id,
+													)
+												}
+												className={`rounded-xl border p-4 text-left sovereign-ease transition-colors ${
+													isSelected
+														? "border-primary bg-primary/10"
+														: "border-border bg-secondary/40 hover:bg-secondary"
+												}`}
+											>
+												<div className="flex items-start justify-between gap-3">
+													<div className="min-w-0">
+														<p className="font-semibold text-foreground">
+															{managedStation.name}
+														</p>
+														<p className="mt-1 line-clamp-2 text-sm text-muted-foreground">
+															{
+																managedStation.address
+															}
+														</p>
+													</div>
+													<ChevronRight
+														className={`h-4 w-4 shrink-0 ${
+															isSelected
+																? "text-primary"
+																: "text-muted-foreground"
+														}`}
+													/>
 												</div>
-												<ChevronRight
-													className={`h-4 w-4 shrink-0 ${
-														isSelected
-															? "text-primary"
-															: "text-muted-foreground"
-													}`}
-												/>
-											</div>
-											<div className="mt-3 flex flex-wrap items-center gap-2">
-												<span className="inline-flex items-center gap-1.5 rounded-full bg-accent/10 px-3 py-1 text-xs font-medium text-accent">
-													<ShieldCheck className="h-3.5 w-3.5" />
-													Verified
-												</span>
-											</div>
-										</button>
-									);
-								})}
+												<div className="mt-3 flex flex-wrap items-center gap-2">
+													<span className="inline-flex items-center gap-1.5 rounded-full bg-accent/10 px-3 py-1 text-xs font-medium text-accent">
+														<ShieldCheck className="h-3.5 w-3.5" />
+														Verified
+													</span>
+												</div>
+											</button>
+										);
+									})}
+								</div>
 							</div>
-						</div>
+						) : station ? (
+							<button
+								type="button"
+								onClick={() => setIsStationPickerExpanded(true)}
+								className="flex items-center justify-between rounded-2xl border border-border bg-card px-5 py-4 text-left shadow-sovereign sovereign-ease transition-colors hover:bg-secondary/40"
+							>
+								<div className="min-w-0">
+									<p className="text-sm font-semibold text-foreground">
+										Managing {station.name}
+									</p>
+									<p className="text-xs text-muted-foreground">
+										Select another station
+									</p>
+								</div>
+								<ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+							</button>
+						) : null}
 
 						{!station ? (
 							<div className="rounded-2xl bg-card p-6 shadow-sovereign">
