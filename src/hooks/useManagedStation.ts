@@ -4,43 +4,38 @@ import { supabase } from "@/integrations/supabase/client";
 import type { GasStation } from "@/types/station";
 import { mapGasStationRow } from "@/lib/station-mappers";
 
-function mapManagedStation(station: Awaited<ReturnType<typeof fetchManagedStation>>) {
-  return station;
-}
-
-async function fetchManagedStation(userId: string): Promise<GasStation | null> {
+async function fetchManagedStations(userId: string): Promise<GasStation[]> {
   const { data, error } = await supabase
     .from("gas_stations")
     .select("*")
     .eq("manager_user_id", userId)
     .eq("is_verified", true)
     .order("verified_at", { ascending: false })
-    .limit(1);
 
   if (error) {
     throw error;
   }
 
-  const station = data?.[0];
-
-  if (!station) {
-    return null;
-  }
-
-  return mapGasStationRow(station);
+  return (data ?? []).map(mapGasStationRow);
 }
 
-export function useManagedStation() {
+export function useManagedStations() {
   const { user } = useAuth();
 
   return useQuery({
-    queryKey: ["managed_station", user?.id],
+    queryKey: ["managed_stations", user?.id],
     enabled: !!user,
-    queryFn: async () => {
-      const station = await fetchManagedStation(user!.id);
-      return mapManagedStation(station);
-    },
+    queryFn: async () => fetchManagedStations(user!.id),
   });
+}
+
+export function useManagedStation() {
+  const managedStationsQuery = useManagedStations();
+
+  return {
+    ...managedStationsQuery,
+    data: managedStationsQuery.data?.[0] ?? null,
+  };
 }
 
 export function useReleaseManagedStation() {
@@ -61,6 +56,7 @@ export function useReleaseManagedStation() {
     onSuccess: async () => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["managed_station"] }),
+        queryClient.invalidateQueries({ queryKey: ["managed_stations"] }),
         queryClient.invalidateQueries({ queryKey: ["gas_stations"] }),
         queryClient.invalidateQueries({ queryKey: ["admin", "gas_stations"] }),
         queryClient.invalidateQueries({
