@@ -9,9 +9,9 @@ import {
 	useSubmitStationClaim,
 } from "@/hooks/useStationClaims";
 import {
-  STATION_CLAIM_FILE_INPUT_ACCEPT,
-  uploadStationClaimProof,
-  validateStationClaimProofFile,
+	STATION_CLAIM_FILE_INPUT_ACCEPT,
+	uploadStationClaimProof,
+	validateStationClaimProofFile,
 } from "@/lib/station-claim-upload";
 import { contactUsChannels } from "@/lib/legal";
 import { Button } from "@/components/ui/button";
@@ -56,10 +56,10 @@ export function ClaimStationDialog({
 	);
 	const [contactPhone, setContactPhone] = useState("");
 	const [notes, setNotes] = useState("");
-  const [proofFile, setProofFile] = useState<File | null>(null);
-  const [uploadError, setUploadError] = useState<string | null>(null);
-  const [uploadingProof, setUploadingProof] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
+	const [proofFile, setProofFile] = useState<File | null>(null);
+	const [uploadError, setUploadError] = useState<string | null>(null);
+	const [uploadingProof, setUploadingProof] = useState(false);
+	const fileInputRef = useRef<HTMLInputElement | null>(null);
 
 	const activeClaim = useMemo(
 		() =>
@@ -78,54 +78,56 @@ export function ClaimStationDialog({
 			: "Claim Approved"
 		: "Claim Your Station";
 
-  const handleOpen = () => {
+	const handleOpen = () => {
 		if (!user) {
 			navigate("/auth");
 			return;
 		}
 
-    setOpen(true);
-    setUploadError(null);
-  };
+		setOpen(true);
+		setUploadError(null);
+	};
 
-  const clearSelectedFile = () => {
-    setProofFile(null);
-    setUploadError(null);
+	const clearSelectedFile = () => {
+		setProofFile(null);
+		setUploadError(null);
 
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
-  };
+		if (fileInputRef.current) {
+			fileInputRef.current.value = "";
+		}
+	};
 
-  const resetForm = () => {
-    setBusinessName("");
-    setContactName(
-      user?.user_metadata?.display_name || user?.user_metadata?.name || "",
-    );
-    setContactPhone("");
-    setNotes("");
-    setUploadingProof(false);
-    clearSelectedFile();
-  };
+	const resetForm = () => {
+		setBusinessName("");
+		setContactName(
+			user?.user_metadata?.display_name ||
+				user?.user_metadata?.name ||
+				"",
+		);
+		setContactPhone("");
+		setNotes("");
+		setUploadingProof(false);
+		clearSelectedFile();
+	};
 
 	const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
 		const file = event.target.files?.[0] ?? null;
-    setUploadError(null);
+		setUploadError(null);
 
-    if (!file) {
-      clearSelectedFile();
-      return;
-    }
+		if (!file) {
+			clearSelectedFile();
+			return;
+		}
 
-    const validationError = validateStationClaimProofFile(file);
-    if (validationError) {
-      clearSelectedFile();
-      setUploadError(validationError);
-      return;
-    }
+		const validationError = validateStationClaimProofFile(file);
+		if (validationError) {
+			clearSelectedFile();
+			setUploadError(validationError);
+			return;
+		}
 
-    setProofFile(file);
-  };
+		setProofFile(file);
+	};
 
 	const handleSubmit = async (event: React.FormEvent) => {
 		event.preventDefault();
@@ -221,29 +223,34 @@ export function ClaimStationDialog({
 				</button>
 			)}
 
-      <Dialog
-        open={open}
-        onOpenChange={(nextOpen) => {
-          setOpen(nextOpen);
-          if (!nextOpen) {
-            resetForm();
-          }
-        }}
-      >
-        <DialogContent>
+			<Dialog
+				open={open}
+				onOpenChange={(nextOpen) => {
+					setOpen(nextOpen);
+					if (!nextOpen) {
+						resetForm();
+					}
+				}}
+			>
+				<DialogContent className="max-h-[100dvh] overflow-y-auto block">
 					<DialogHeader>
 						<DialogTitle className="flex items-center gap-2">
 							<ShieldCheck className="h-5 w-5 text-accent" />
-							Claim {station.name}
+							<span>Claim Station Form</span>
 						</DialogTitle>
-						<DialogDescription>
-							Submit your business details for admin review.
-							Approved claims receive a verified station badge and
-							access to the station manager dashboard.
+						<DialogDescription className="text-left">
+							Submit details for review to get your verified badge
+							and dashboard access.
 						</DialogDescription>
 					</DialogHeader>
-
-					<form onSubmit={handleSubmit} className="grid gap-3">
+					<div className="px-2 my-4 ">
+						<small>Station Name: </small>
+						<br /> <b>{station.name}</b>
+					</div>
+					<form
+						onSubmit={handleSubmit}
+						className="flex flex-col gap-3"
+					>
 						<input
 							type="text"
 							value={businessName}
@@ -289,12 +296,12 @@ export function ClaimStationDialog({
 										admin verification.
 									</p>
 								</div>
-                {proofFile ? (
-                  <button
-                    type="button"
-                    onClick={clearSelectedFile}
-                    className="inline-flex items-center gap-1 rounded-full bg-destructive/10 px-2.5 py-1 text-xs font-medium text-destructive transition-colors hover:bg-destructive/15"
-                  >
+								{proofFile ? (
+									<button
+										type="button"
+										onClick={clearSelectedFile}
+										className="inline-flex items-center gap-1 rounded-full bg-destructive/10 px-2.5 py-1 text-xs font-medium text-destructive transition-colors hover:bg-destructive/15"
+									>
 										<X className="h-3.5 w-3.5" />
 										Remove
 									</button>
@@ -341,8 +348,9 @@ export function ClaimStationDialog({
 								Need to reach the FuelWatch PH team?
 							</p>
 							<p className="mt-1 text-xs leading-5 text-muted-foreground">
-								You can contact the admin team through the channels
-								below if you need help with your station claim.
+								You can contact the admin team through the
+								channels below if you need help with your
+								station claim.
 							</p>
 							<div className="mt-3 grid gap-2">
 								{contactUsChannels.map((channel) => {
@@ -383,7 +391,7 @@ export function ClaimStationDialog({
 							</div>
 						</div>
 
-						<DialogFooter>
+						<DialogFooter className="gap-3">
 							<Button
 								type="button"
 								variant="outline"
