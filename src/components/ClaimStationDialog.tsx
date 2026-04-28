@@ -374,7 +374,7 @@ export function ClaimStationDialog({
 											}
 											className="flex items-start gap-3 rounded-lg border border-border bg-background px-3 py-2 text-left transition-colors relative hover:border-accent/30 hover:bg-secondary/40"
 										>
-											<div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg  text-primary absolute right-2 top-1 opacity-60">
+											<div className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-lg  text-primary absolute right-2 top-1 opacity-60">
 												<Icon className="h-4 w-4" />
 											</div>
 											<div className="min-w-0">
