@@ -9,31 +9,65 @@ export const privacyPolicySections = [
 		title: "Information We Collect",
 		paragraphs: [
 			"FuelWatch PH may collect account information such as your email address, display name, and profile image when you sign in or update your profile.",
-			"We may also collect report submissions, fuel station updates, and location-related data that you choose to provide while using the app's reporting and map features.",
+			"We may also collect report submissions, fuel station updates, uploaded images, claim requests, contact details, and location-related data that you choose to provide while using the app's reporting, map, and station management features.",
+			"For station owners, representatives, or administrators, we may collect additional information needed to verify station claims, ownership, or authorized access.",
+		],
+	},
+	{
+		title: "Confidential Information",
+		paragraphs: [
+			"Any personal, account-related, verification-related, or ownership-related information you submit is treated as private and confidential.",
+			"This includes, but is not limited to:",
+		],
+		bullets: [
+			"Email addresses",
+			"Profile details",
+			"Contact information",
+			"Station claim details",
+			"Verification information",
+			"Uploaded proof or supporting documents",
+			"Admin or contributor access details",
+			"Internal review notes",
+			"Any information submitted for account assistance or station verification",
 		],
 	},
 	{
 		title: "How We Use Information",
 		paragraphs: [
-			"We use collected information to operate the platform, display station updates, personalize your account, support map-based features, and improve the quality of fuel price reporting.",
-			"Information may also be used to help moderate reports, prevent abuse, maintain service security, and troubleshoot technical issues.",
+			"We use collected information to operate the platform, display station updates, manage user accounts, support map-based features, verify reports, process station claims, and improve the quality of fuel price reporting.",
+			"Information may also be used to help moderate reports, prevent abuse, maintain service security, troubleshoot technical issues, and confirm whether a user is authorized to manage a station or submit official updates.",
+		],
+	},
+	{
+		title: "Public Reports and Station Updates",
+		paragraphs: [
+			"FuelWatch PH is a crowd-sourced fuel price platform. When you submit fuel prices, station availability, or station updates, those details may be displayed publicly to help motorists find useful fuel-related information.",
+			"However, your private account details and confidential information will not be shown publicly unless you clearly choose to include them in a public submission.",
 		],
 	},
 	{
 		title: "Sharing and Third-Party Services",
 		paragraphs: [
-			"FuelWatch PH may rely on third-party services such as authentication, storage, analytics, and mapping providers to deliver parts of the service.",
-			"We do not sell your personal information, but limited data may be processed by service providers when necessary to run the platform or comply with legal obligations.",
+			"FuelWatch PH may rely on third-party services such as authentication, database storage, analytics, hosting, and mapping providers to deliver parts of the service.",
+			"We do not sell your personal information.",
+			"Limited data may be processed by trusted service providers only when necessary to run the platform, improve the service, protect the app from abuse, or comply with legal obligations.",
+		],
+	},
+	{
+		title: "Data Access and Protection",
+		paragraphs: [
+			"Access to confidential information is limited to authorized maintainers or administrators who need it to operate, review, verify, or support the platform.",
+			"FuelWatch PH takes reasonable steps to protect submitted information from unauthorized access, misuse, loss, or public exposure.",
 		],
 	},
 	{
 		title: "Your Choices",
 		paragraphs: [
-			"You may update your profile details, limit what information you submit, or stop using location-enabled features at any time through your device or browser settings.",
-			"If you have questions about your data or need account-related assistance, please contact the app administrator or maintainer responsible for FuelWatch PH.",
+			"You may update your profile details, limit the information you submit, avoid uploading sensitive documents, or stop using location-enabled features at any time through your device or browser settings.",
+			"You may also contact FuelWatch PH if you need help with your account, station claim, submitted report, or privacy-related concern.",
 		],
 	},
-];
+] as const;
 
 export const aboutUsSections = [
 	{

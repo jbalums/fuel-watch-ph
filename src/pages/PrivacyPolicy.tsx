@@ -59,8 +59,9 @@ export default function PrivacyPolicy() {
 						</div>
 						<p className="mt-1 text-sm leading-6 text-muted-foreground">
 							This page explains how FuelWatch PH handles account
-							information, reports, and location-aware features
-							used throughout the app.
+							information, reports, station-related
+							submissions, and location-aware features used
+							throughout the app.
 						</p>
 					</div>
 
@@ -74,6 +75,13 @@ export default function PrivacyPolicy() {
 									{section.paragraphs.map((paragraph) => (
 										<p key={paragraph}>{paragraph}</p>
 									))}
+									{section.bullets ? (
+										<ul className="list-disc space-y-1 pl-5">
+											{section.bullets.map((bullet) => (
+												<li key={bullet}>{bullet}</li>
+											))}
+										</ul>
+									) : null}
 								</div>
 							</section>
 						))}
