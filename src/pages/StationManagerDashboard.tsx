@@ -44,17 +44,6 @@ import {
 type StationPricesFormState = Record<(typeof fuelTypes)[number], string>;
 type StationAvailabilityFormState = FuelAvailabilityFormMap;
 
-function normalizePrices(
-	prices: Record<FuelType, number | null>,
-): StationPricesFormState {
-	return fuelTypes.reduce((formattedPrices, fuelType) => {
-		const price = prices[fuelType];
-		formattedPrices[fuelType] =
-			typeof price === "number" && price > 0 ? price.toFixed(2) : "";
-		return formattedPrices;
-	}, createEmptyFuelPriceFormMap());
-}
-
 function normalizeAvailability(
 	availability: Record<FuelType, "Available" | "Low" | "Out" | null>,
 ): StationAvailabilityFormState {
@@ -129,7 +118,7 @@ export default function StationManagerDashboard() {
 
 		setStationName(station.name);
 		setAddress(station.address);
-		setPrices(normalizePrices(station.prices));
+		setPrices(createEmptyFuelPriceFormMap());
 		setFuelAvailability(normalizeAvailability(station.fuelAvailability));
 	}, [station]);
 
