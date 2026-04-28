@@ -392,23 +392,6 @@ export default function StationManagerDashboard() {
 											Verified
 										</span>
 									</div>
-									<button
-										type="button"
-										onClick={() =>
-											setReleaseDialogOpen(true)
-										}
-										disabled={
-											releaseManagedStation.isPending
-										}
-										className="mt-4 inline-flex items-center gap-2 rounded-xl bg-destructive px-4 py-3 text-sm font-semibold text-destructive-foreground transition-colors hover:bg-destructive/90 disabled:opacity-50"
-									>
-										{releaseManagedStation.isPending ? (
-											<Loader2 className="h-4 w-4 animate-spin" />
-										) : (
-											<Trash2 className="h-4 w-4" />
-										)}
-										Unclaim station
-									</button>
 									<div className="mt-3 flex items-start gap-2 text-sm text-muted-foreground">
 										<MapPin className="mt-0.5 h-4 w-4 shrink-0" />
 										<span>{station.address}</span>
@@ -523,16 +506,16 @@ export default function StationManagerDashboard() {
 											<label className="text-xs font-medium text-muted-foreground">
 												Station Name
 											</label>
-										<input
-											type="text"
-											value={stationName}
-											onChange={(event) =>
-												setStationName(
-													event.target.value,
-												)
-											}
-											className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
-										/>
+											<input
+												type="text"
+												value={stationName}
+												onChange={(event) =>
+													setStationName(
+														event.target.value,
+													)
+												}
+												className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
+											/>
 										</div>
 										<div className="flex flex-col gap-1.5">
 											<label className="text-xs font-medium text-muted-foreground">
@@ -564,6 +547,33 @@ export default function StationManagerDashboard() {
 										Save Station Details
 									</button>
 								</form>
+								<div className="rounded-2xl border border-destructive/20 bg-destructive/5 p-6 shadow-sovereign">
+									<h3 className="text-xl font-semibold text-foreground">
+										Unclaim Station
+									</h3>
+									<p className="mt-2 text-sm text-muted-foreground">
+										Remove your manager access and verified
+										claim for this station. The station
+										record will stay listed in FuelWatch PH.
+									</p>
+									<button
+										type="button"
+										onClick={() =>
+											setReleaseDialogOpen(true)
+										}
+										disabled={
+											releaseManagedStation.isPending
+										}
+										className="mt-4 inline-flex items-center gap-2 rounded-xl bg-destructive px-4 py-3 text-sm font-semibold text-destructive-foreground transition-colors hover:bg-destructive/90 disabled:opacity-50"
+									>
+										{releaseManagedStation.isPending ? (
+											<Loader2 className="h-4 w-4 animate-spin" />
+										) : (
+											<Trash2 className="h-4 w-4" />
+										)}
+										Unclaim station
+									</button>
+								</div>
 							</div>
 						)}
 					</>
