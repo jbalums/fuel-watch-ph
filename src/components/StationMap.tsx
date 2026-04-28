@@ -31,6 +31,7 @@ import {
 import { useCurrentLocation } from "@/hooks/useCurrentLocation";
 import { useStationBrandLogos } from "@/hooks/useStationBrandLogos";
 import { useUserAccess } from "@/hooks/useUserAccess";
+import { useAuth } from "@/contexts/AuthContext";
 import { useGeoReferences } from "@/hooks/useGeoReferences";
 import { detectGeoScopeFromAddress } from "@/lib/geo-detection";
 import {
@@ -62,6 +63,7 @@ import {
 	MapFuelReportDialog,
 	type MapFuelReportTarget,
 } from "./MapFuelReportDialog";
+import { ClaimStationDialog } from "./ClaimStationDialog";
 import { StationMarkerInfoWindow } from "./StationMarkerInfoWindow";
 const DEFAULT_HIGHLIGHT_ZOOM = 15;
 const DEFAULT_CURRENT_LOCATION_ZOOM = 15;
@@ -116,6 +118,7 @@ function GoogleStationMap({
 }: StationMapProps) {
 	const navigate = useNavigate();
 	const { theme } = useTheme();
+	const { user } = useAuth();
 	const { isAdmin } = useUserAccess();
 	const { data: mapDirectionsFeature } = useMapDirectionsFeature();
 	const { data: mapAutoDiscoverFeature } = useMapAutoDiscoverFeature();
@@ -742,6 +745,27 @@ function GoogleStationMap({
 			station: focusedStation,
 		});
 	}, [focusedStation]);
+	const focusedStationClaimLink = useMemo(() => {
+		if (!focusedStation || !user) {
+			return null;
+		}
+
+		return (
+			<ClaimStationDialog
+				station={focusedStation}
+				renderTrigger={({ disabled, onOpen }) => (
+					<button
+						type="button"
+						onClick={onOpen}
+						disabled={disabled}
+						className="text-[10px] font-medium text-sky-700 underline underline-offset-2 transition-colors hover:text-sky-800 disabled:cursor-not-allowed disabled:opacity-60 dark:text-sky-400 dark:hover:text-sky-300"
+					>
+						Do you own this gasoline station?
+					</button>
+				)}
+			/>
+		);
+	}, [focusedStation, user]);
 	const openFocusedStationInGoogleMaps = useCallback(() => {
 		if (!focusedStation) {
 			return;
@@ -1298,6 +1322,7 @@ function GoogleStationMap({
 						<StationMarkerInfoWindow
 							station={focusedStation}
 							brandAverage={focusedStationBrandAverage}
+							claimStationLink={focusedStationClaimLink}
 							showDirectionsAction={isInlineDirectionsEnabled}
 							showOpenInMapsAction
 							showReportAction

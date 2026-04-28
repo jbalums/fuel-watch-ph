@@ -1,4 +1,4 @@
-import { memo } from "react";
+import { type ReactNode, memo } from "react";
 import type { GasStation } from "@/types/station";
 import { Button } from "@/components/ui/button";
 import { LguVerifiedBadge } from "@/components/LguVerifiedBadge";
@@ -27,6 +27,7 @@ interface StationMarkerInfoWindowProps {
 	showDirectionsAction?: boolean;
 	showOpenInMapsAction?: boolean;
 	showReportAction?: boolean;
+	claimStationLink?: ReactNode;
 	onReportFuelPrices?: () => void;
 	onGetDirections?: () => void;
 	onOpenInMaps?: () => void;
@@ -39,6 +40,7 @@ export const StationMarkerInfoWindow = memo(function StationMarkerInfoWindow({
 	showDirectionsAction = false,
 	showOpenInMapsAction = showDirectionsAction,
 	showReportAction = false,
+	claimStationLink,
 	onReportFuelPrices,
 	onGetDirections,
 	onOpenInMaps,
@@ -72,6 +74,9 @@ export const StationMarkerInfoWindow = memo(function StationMarkerInfoWindow({
 					)}
 				</div>
 			)}
+			{claimStationLink ? (
+				<div className="mt-1">{claimStationLink}</div>
+			) : null}
 
 			{hasSelectedStationPrices ? (
 				<div className="mt-1 flex flex-col rounded-sm border border-border bg-slate-100 py-2 text-xs text-muted-foreground dark:border-slate-600 dark:bg-slate-900">

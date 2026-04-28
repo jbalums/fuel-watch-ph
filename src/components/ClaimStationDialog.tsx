@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { type ReactNode, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { FileUp, Loader2, ShieldCheck, X } from "lucide-react";
 import { toast } from "@/lib/app-toast";
@@ -25,9 +25,17 @@ import {
 
 interface ClaimStationDialogProps {
 	station: GasStation;
+	renderTrigger?: (props: {
+		onOpen: () => void;
+		disabled: boolean;
+		buttonLabel: string;
+	}) => ReactNode;
 }
 
-export function ClaimStationDialog({ station }: ClaimStationDialogProps) {
+export function ClaimStationDialog({
+	station,
+	renderTrigger,
+}: ClaimStationDialogProps) {
 	const navigate = useNavigate();
 	const { user } = useAuth();
 	const { data: myClaims = [] } = useMyStationClaims();
@@ -187,14 +195,22 @@ export function ClaimStationDialog({ station }: ClaimStationDialogProps) {
 
 	return (
 		<>
-			<button
-				type="button"
-				onClick={handleOpen}
-				disabled={!!activeClaim}
-				className="rounded-full bg-background px-3 py-1.5 text-xs font-medium text-accent transition-colors hover:bg-accent/10 disabled:cursor-not-allowed disabled:opacity-60"
-			>
-				{buttonLabel}
-			</button>
+			{renderTrigger ? (
+				renderTrigger({
+					onOpen: handleOpen,
+					disabled: !!activeClaim,
+					buttonLabel,
+				})
+			) : (
+				<button
+					type="button"
+					onClick={handleOpen}
+					disabled={!!activeClaim}
+					className="rounded-full bg-background px-3 py-1.5 text-xs font-medium text-accent transition-colors hover:bg-accent/10 disabled:cursor-not-allowed disabled:opacity-60"
+				>
+					{buttonLabel}
+				</button>
+			)}
 
       <Dialog
         open={open}

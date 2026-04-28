@@ -197,4 +197,23 @@ describe("StationMarkerInfoWindow", () => {
 		expect(screen.getByText(/based on 2 stations/i)).toBeInTheDocument();
 		expect(screen.getByText("₱ 61.25")).toBeInTheDocument();
 	});
+
+	it("renders the small claim station link when provided", () => {
+		render(
+			<StationMarkerInfoWindow
+				station={station}
+				claimStationLink={
+					<button type="button">
+						Do you own this gasoline station?
+					</button>
+				}
+			/>,
+		);
+
+		expect(
+			screen.getByRole("button", {
+				name: /do you own this gasoline station/i,
+			}),
+		).toBeInTheDocument();
+	});
 });
