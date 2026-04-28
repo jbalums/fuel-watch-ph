@@ -71,6 +71,7 @@ export default function StationManagerDashboard() {
 	const [selectedStationId, setSelectedStationId] = useState<string | null>(
 		null,
 	);
+	const [stationName, setStationName] = useState("");
 	const [address, setAddress] = useState("");
 	const [releaseDialogOpen, setReleaseDialogOpen] = useState(false);
 	const [prices, setPrices] = useState<StationPricesFormState>(
@@ -117,12 +118,14 @@ export default function StationManagerDashboard() {
 
 	useEffect(() => {
 		if (!station) {
+			setStationName("");
 			setAddress("");
 			setPrices(createEmptyFuelPriceFormMap());
 			setFuelAvailability(createEmptyFuelAvailabilityFormMap());
 			return;
 		}
 
+		setStationName(station.name);
 		setAddress(station.address);
 		setPrices(normalizePrices(station.prices));
 		setFuelAvailability(normalizeAvailability(station.fuelAvailability));
@@ -138,10 +141,15 @@ export default function StationManagerDashboard() {
 				throw new Error("Station address is required");
 			}
 
+			if (!stationName.trim()) {
+				throw new Error("Station name is required");
+			}
+
 			const { error } = await supabase.rpc(
 				"update_managed_station_details",
 				{
 					_station_id: station.id,
+					_name: stationName.trim(),
 					_address: address.trim(),
 				},
 			);
@@ -414,65 +422,6 @@ export default function StationManagerDashboard() {
 								<form
 									onSubmit={(event) => {
 										event.preventDefault();
-										saveStationDetails.mutate();
-									}}
-									className="rounded-2xl bg-card p-6 shadow-sovereign"
-								>
-									<div className="mb-4">
-										<h3 className="text-xl font-semibold text-foreground">
-											Update Station Details
-										</h3>
-										<p className="text-sm text-muted-foreground">
-											Update the basic public details for
-											this station.
-										</p>
-									</div>
-									<div className="grid gap-3 md:grid-cols-2">
-										<div className="flex flex-col gap-1.5">
-											<label className="text-xs font-medium text-muted-foreground">
-												Station Name
-											</label>
-											<input
-												type="text"
-												value={station.name}
-												readOnly
-												className="rounded-lg border border-border bg-muted px-3 py-2 text-sm text-muted-foreground"
-											/>
-										</div>
-										<div className="flex flex-col gap-1.5">
-											<label className="text-xs font-medium text-muted-foreground">
-												Station Address
-											</label>
-											<input
-												type="text"
-												value={address}
-												onChange={(event) =>
-													setAddress(
-														event.target.value,
-													)
-												}
-												placeholder="Station address"
-												className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
-											/>
-										</div>
-									</div>
-									<button
-										type="submit"
-										disabled={saveStationDetails.isPending}
-										className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-3.5 font-semibold text-primary-foreground transition-colors hover:bg-primary-hover disabled:opacity-50"
-									>
-										{saveStationDetails.isPending ? (
-											<Loader2 className="h-4 w-4 animate-spin" />
-										) : (
-											<Save className="h-4 w-4" />
-										)}
-										Save Station Details
-									</button>
-								</form>
-
-								<form
-									onSubmit={(event) => {
-										event.preventDefault();
 										saveStationPrices.mutate();
 									}}
 									className="rounded-2xl bg-card p-6 shadow-sovereign"
@@ -551,6 +500,68 @@ export default function StationManagerDashboard() {
 											<Save className="h-4 w-4" />
 										)}
 										Save Fuel Prices
+									</button>
+								</form>
+								<form
+									onSubmit={(event) => {
+										event.preventDefault();
+										saveStationDetails.mutate();
+									}}
+									className="rounded-2xl bg-card p-6 shadow-sovereign"
+								>
+									<div className="mb-4">
+										<h3 className="text-xl font-semibold text-foreground">
+											Update Station Details
+										</h3>
+										<p className="text-sm text-muted-foreground">
+											Update the basic public details for
+											this station.
+										</p>
+									</div>
+									<div className="grid gap-3 md:grid-cols-2">
+										<div className="flex flex-col gap-1.5">
+											<label className="text-xs font-medium text-muted-foreground">
+												Station Name
+											</label>
+										<input
+											type="text"
+											value={stationName}
+											onChange={(event) =>
+												setStationName(
+													event.target.value,
+												)
+											}
+											className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
+										/>
+										</div>
+										<div className="flex flex-col gap-1.5">
+											<label className="text-xs font-medium text-muted-foreground">
+												Station Address
+											</label>
+											<input
+												type="text"
+												value={address}
+												onChange={(event) =>
+													setAddress(
+														event.target.value,
+													)
+												}
+												placeholder="Station address"
+												className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
+											/>
+										</div>
+									</div>
+									<button
+										type="submit"
+										disabled={saveStationDetails.isPending}
+										className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-3.5 font-semibold text-primary-foreground transition-colors hover:bg-primary-hover disabled:opacity-50"
+									>
+										{saveStationDetails.isPending ? (
+											<Loader2 className="h-4 w-4 animate-spin" />
+										) : (
+											<Save className="h-4 w-4" />
+										)}
+										Save Station Details
 									</button>
 								</form>
 							</div>

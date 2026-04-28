@@ -1,5 +1,6 @@
 CREATE OR REPLACE FUNCTION public.update_managed_station_details(
   _station_id uuid,
+  _name text,
   _address text
 )
 RETURNS uuid
@@ -19,6 +20,10 @@ BEGIN
     RAISE EXCEPTION 'Station address is required';
   END IF;
 
+  IF btrim(COALESCE(_name, '')) = '' THEN
+    RAISE EXCEPTION 'Station name is required';
+  END IF;
+
   SELECT *
   INTO _station
   FROM public.gas_stations
@@ -34,7 +39,8 @@ BEGIN
   END IF;
 
   UPDATE public.gas_stations
-  SET address = btrim(_address)
+  SET name = btrim(_name),
+      address = btrim(_address)
   WHERE id = _station.id;
 
   RETURN _station.id;

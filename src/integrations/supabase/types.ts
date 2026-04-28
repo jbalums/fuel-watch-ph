@@ -1095,6 +1095,7 @@ export type Database = {
       update_managed_station_details: {
         Args: {
           _address: string
+          _name: string
           _station_id: string
         }
         Returns: string
