@@ -1092,6 +1092,13 @@ export type Database = {
         }
         Returns: string
       }
+      update_managed_station_details: {
+        Args: {
+          _address: string
+          _station_id: string
+        }
+        Returns: string
+      }
     }
     Enums: {
       app_role:

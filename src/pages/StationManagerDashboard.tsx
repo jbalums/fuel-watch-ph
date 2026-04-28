@@ -128,7 +128,52 @@ export default function StationManagerDashboard() {
 		setFuelAvailability(normalizeAvailability(station.fuelAvailability));
 	}, [station]);
 
-	const saveStation = useMutation({
+	const saveStationDetails = useMutation({
+		mutationFn: async () => {
+			if (!station) {
+				throw new Error("No managed station found");
+			}
+
+			if (!address.trim()) {
+				throw new Error("Station address is required");
+			}
+
+			const { error } = await supabase.rpc(
+				"update_managed_station_details",
+				{
+					_station_id: station.id,
+					_address: address.trim(),
+				},
+			);
+
+			if (error) {
+				throw error;
+			}
+		},
+		onSuccess: async () => {
+			await Promise.all([
+				queryClient.invalidateQueries({
+					queryKey: ["managed_station"],
+				}),
+				queryClient.invalidateQueries({
+					queryKey: ["managed_stations"],
+				}),
+				queryClient.invalidateQueries({ queryKey: ["gas_stations"] }),
+				queryClient.invalidateQueries({
+					queryKey: ["admin", "gas_stations"],
+				}),
+				queryClient.invalidateQueries({
+					queryKey: ["public_station_browse"],
+				}),
+			]);
+			toast.success("Station details updated");
+		},
+		onError: (error) => {
+			toast.error(error.message);
+		},
+	});
+
+	const saveStationPrices = useMutation({
 		mutationFn: async () => {
 			if (!station) {
 				throw new Error("No managed station found");
@@ -145,10 +190,6 @@ export default function StationManagerDashboard() {
 				normalizedAvailability,
 				station.fuelType,
 			);
-
-			if (!address.trim()) {
-				throw new Error("Station address is required");
-			}
 
 			if (!summarySelection) {
 				throw new Error("Add at least one valid fuel price");
@@ -185,7 +226,7 @@ export default function StationManagerDashboard() {
 					queryKey: ["public_station_summary"],
 				}),
 			]);
-			toast.success("Station details updated");
+			toast.success("Fuel prices updated");
 		},
 		onError: (error) => {
 			toast.error(error.message);
@@ -373,29 +414,80 @@ export default function StationManagerDashboard() {
 								<form
 									onSubmit={(event) => {
 										event.preventDefault();
-										saveStation.mutate();
+										saveStationDetails.mutate();
 									}}
 									className="rounded-2xl bg-card p-6 shadow-sovereign"
 								>
+									<div className="mb-4">
+										<h3 className="text-xl font-semibold text-foreground">
+											Update Station Details
+										</h3>
+										<p className="text-sm text-muted-foreground">
+											Update the basic public details for
+											this station.
+										</p>
+									</div>
 									<div className="grid gap-3 md:grid-cols-2">
-										<input
-											type="text"
-											value={station.name}
-											readOnly
-											className="rounded-lg border border-border bg-muted px-3 py-2 text-sm text-muted-foreground"
-										/>
-										<input
-											type="text"
-											value={address}
-											onChange={(event) =>
-												setAddress(event.target.value)
-											}
-											placeholder="Station address"
-											className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
-										/>
+										<div className="flex flex-col gap-1.5">
+											<label className="text-xs font-medium text-muted-foreground">
+												Station Name
+											</label>
+											<input
+												type="text"
+												value={station.name}
+												readOnly
+												className="rounded-lg border border-border bg-muted px-3 py-2 text-sm text-muted-foreground"
+											/>
+										</div>
+										<div className="flex flex-col gap-1.5">
+											<label className="text-xs font-medium text-muted-foreground">
+												Station Address
+											</label>
+											<input
+												type="text"
+												value={address}
+												onChange={(event) =>
+													setAddress(
+														event.target.value,
+													)
+												}
+												placeholder="Station address"
+												className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
+											/>
+										</div>
+									</div>
+									<button
+										type="submit"
+										disabled={saveStationDetails.isPending}
+										className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-3.5 font-semibold text-primary-foreground transition-colors hover:bg-primary-hover disabled:opacity-50"
+									>
+										{saveStationDetails.isPending ? (
+											<Loader2 className="h-4 w-4 animate-spin" />
+										) : (
+											<Save className="h-4 w-4" />
+										)}
+										Save Station Details
+									</button>
+								</form>
+
+								<form
+									onSubmit={(event) => {
+										event.preventDefault();
+										saveStationPrices.mutate();
+									}}
+									className="rounded-2xl bg-card p-6 shadow-sovereign"
+								>
+									<div className="mb-4">
+										<h3 className="text-xl font-semibold text-foreground">
+											Update Fuel Station Prices
+										</h3>
+										<p className="text-sm text-muted-foreground">
+											Update fuel prices separately from
+											the station details.
+										</p>
 									</div>
 
-									<div className="mt-5 rounded-xl border border-border bg-background p-4">
+									<div className="rounded-xl border border-border bg-background p-4">
 										<div className="mb-3">
 											<div>
 												<p className="text-sm font-medium text-foreground">
@@ -450,15 +542,15 @@ export default function StationManagerDashboard() {
 									</p>
 									<button
 										type="submit"
-										disabled={saveStation.isPending}
+										disabled={saveStationPrices.isPending}
 										className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-3.5 font-semibold text-primary-foreground transition-colors hover:bg-primary-hover disabled:opacity-50"
 									>
-										{saveStation.isPending ? (
+										{saveStationPrices.isPending ? (
 											<Loader2 className="h-4 w-4 animate-spin" />
 										) : (
 											<Save className="h-4 w-4" />
 										)}
-										Save Station Updates
+										Save Fuel Prices
 									</button>
 								</form>
 							</div>
