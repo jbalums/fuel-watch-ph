@@ -24,6 +24,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useGeoReferences } from "@/hooks/useGeoReferences";
 import { useProfile } from "@/hooks/useProfile";
 import { useCurrentUserScope } from "@/hooks/useCurrentUserScope";
+import { useManagedStation } from "@/hooks/useManagedStation";
 import { useUserAccess } from "@/hooks/useUserAccess";
 import { getDashboardPathForAccessLevel } from "@/lib/access-control";
 import {
@@ -68,6 +69,7 @@ export function AppShellLayout() {
 	const { theme, toggleTheme } = useTheme();
 	const { user, signOut } = useAuth();
 	const { data: profile } = useProfile();
+	const { data: managedStation } = useManagedStation();
 	const {
 		accessLevel,
 		isLoading: accessLoading,
@@ -300,6 +302,7 @@ export function AppShellLayout() {
 				dashboardPath={dashboardPath}
 				dashboardLabel={dashboardLabel}
 				isAuthenticated={!!user}
+				showManagedStationTab={!!managedStation}
 			/>
 		</div>
 	);

@@ -3,9 +3,9 @@ import {
 	FilePlus2Icon,
 	Home,
 	Map,
-	PlusCircle,
 	Search,
 	Shield,
+	Store,
 } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -14,6 +14,7 @@ interface BottomNavProps {
 	dashboardPath?: string | null;
 	dashboardLabel?: string;
 	isAuthenticated?: boolean;
+	showManagedStationTab?: boolean;
 }
 
 const baseTabs: {
@@ -32,20 +33,33 @@ export function BottomNav({
 	dashboardPath,
 	dashboardLabel = "Admin",
 	isAuthenticated,
+	showManagedStationTab = false,
 }: BottomNavProps) {
 	const location = useLocation();
 	const navigate = useNavigate();
-	const tabs = dashboardPath
-		? [
-				...baseTabs,
-				{
-					id: "dashboard",
-					path: dashboardPath,
-					icon: Shield,
-					label: dashboardLabel,
-				},
-			]
-		: baseTabs;
+	const tabs = [
+		...baseTabs,
+		...(showManagedStationTab
+			? [
+					{
+						id: "manager",
+						path: "/manager",
+						icon: Store,
+						label: "My Stations",
+					},
+				]
+			: []),
+		...(dashboardPath
+			? [
+					{
+						id: "dashboard",
+						path: dashboardPath,
+						icon: Shield,
+						label: dashboardLabel,
+					},
+				]
+			: []),
+	];
 	const isActivePath = (path: string) => {
 		if (path === "/") {
 			return location.pathname === "/";

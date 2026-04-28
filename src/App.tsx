@@ -134,6 +134,10 @@ function RouterContent() {
 						<Route path="/report" element={<ReportPage />} />
 						<Route path="/donate" element={<DonatePage />} />
 						<Route
+							path="/manager"
+							element={<StationManagerDashboard />}
+						/>
+						<Route
 							path="/station-experiences"
 							element={<StationExperiencesPage />}
 						/>
@@ -234,10 +238,6 @@ function RouterContent() {
 					<Route path="/about-us" element={<AboutUs />} />
 					<Route path="/contact-us" element={<ContactUs />} />
 					<Route path="/profile" element={<Profile />} />
-					<Route
-						path="/manager"
-						element={<StationManagerDashboard />}
-					/>
 					<Route path="/privacy-policy" element={<PrivacyPolicy />} />
 					<Route path="/terms" element={<Terms />} />
 					<Route path="*" element={<NotFound />} />

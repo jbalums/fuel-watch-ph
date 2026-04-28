@@ -1033,6 +1033,12 @@ export type Database = {
         }
         Returns: string
       }
+      release_managed_station: {
+        Args: {
+          _station_id: string
+        }
+        Returns: string
+      }
       revoke_lgu_staff_access: {
         Args: {
           _target_user_id: string

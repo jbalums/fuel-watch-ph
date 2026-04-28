@@ -2,11 +2,24 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { ArrowLeft, Loader2, MapPin, Save, ShieldCheck } from "lucide-react";
+import { Loader2, MapPin, Save, ShieldCheck, Trash2 } from "lucide-react";
 import { toast } from "@/lib/app-toast";
 import { useAuth } from "@/contexts/AuthContext";
-import { useManagedStation } from "@/hooks/useManagedStation";
+import {
+  useManagedStation,
+  useReleaseManagedStation,
+} from "@/hooks/useManagedStation";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import {
   createEmptyFuelAvailabilityFormMap,
   createEmptyFuelPriceFormMap,
@@ -47,7 +60,9 @@ export default function StationManagerDashboard() {
   const queryClient = useQueryClient();
   const { user, loading: authLoading } = useAuth();
   const { data: station, isLoading } = useManagedStation();
+  const releaseManagedStation = useReleaseManagedStation();
   const [address, setAddress] = useState("");
+  const [releaseDialogOpen, setReleaseDialogOpen] = useState(false);
   const [prices, setPrices] = useState<StationPricesFormState>(
     createEmptyFuelPriceFormMap(),
   );
@@ -135,43 +150,64 @@ export default function StationManagerDashboard() {
     },
   });
 
+  const confirmReleaseStation = () => {
+    if (!station || releaseManagedStation.isPending) {
+      return;
+    }
+
+    releaseManagedStation.mutate(station.id, {
+      onSuccess: () => {
+        toast.success("Station unclaimed successfully");
+        setReleaseDialogOpen(false);
+      },
+      onError: (error) => {
+        toast.error(error.message);
+      },
+    });
+  };
+
   if (authLoading || isLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
+      <div className="flex items-center justify-center rounded-2xl bg-card p-10 shadow-sovereign">
         <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background px-5 pb-10">
-      <header className="sticky top-0 z-40 surface-glass py-4">
-        <div className="container flex items-center gap-3">
-          <button
-            onClick={() => navigate("/profile")}
-            className="flex h-9 w-9 items-center justify-center rounded-xl bg-surface-alt text-muted-foreground transition-colors hover:text-foreground"
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </button>
-          <div>
-            <h1 className="text-base font-bold tracking-tight text-foreground">
-              Station Manager
-            </h1>
-            <p className="text-xs text-muted-foreground">
-              Manage your verified station
-            </p>
-          </div>
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ ease: [0.2, 0.8, 0.2, 1] }}
+      className="flex flex-col gap-6 pb-10"
+    >
+      <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+        <div>
+          <h2 className="text-headline text-foreground">
+            Station Manager Dashboard
+          </h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Manage your verified station details and keep fuel prices updated.
+          </p>
         </div>
-      </header>
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => navigate("/manager")}
+            className="rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground sovereign-ease transition-colors"
+          >
+            My Station
+          </button>
+        </div>
+      </div>
 
       <motion.div
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ ease: [0.2, 0.8, 0.2, 1] }}
-        className="container mt-6"
       >
         {!station ? (
-          <div className="mx-auto max-w-2xl rounded-2xl bg-card p-6 shadow-sovereign">
+          <div className="rounded-2xl bg-card p-6 shadow-sovereign">
             <h2 className="text-lg font-semibold text-foreground">
               No verified station assigned
             </h2>
@@ -181,7 +217,7 @@ export default function StationManagerDashboard() {
             </p>
           </div>
         ) : (
-          <div className="mx-auto flex max-w-3xl flex-col gap-5">
+          <div className="flex max-w-4xl flex-col gap-5">
             <div className="rounded-2xl bg-card p-6 shadow-sovereign">
               <div className="flex flex-wrap items-center gap-3">
                 <h2 className="text-headline text-foreground">{station.name}</h2>
@@ -279,9 +315,72 @@ export default function StationManagerDashboard() {
                 Save Station Updates
               </button>
             </form>
+
+            <div className="rounded-2xl border border-destructive/20 bg-destructive/5 p-6 shadow-sovereign">
+              <h3 className="text-lg font-semibold text-foreground">
+                Remove My Station
+              </h3>
+              <p className="mt-2 text-sm text-muted-foreground">
+                This will unclaim the station and remove your manager access.
+                The station record will stay listed in FuelWatch PH so it can
+                still be maintained or claimed again later.
+              </p>
+              <button
+                type="button"
+                onClick={() => setReleaseDialogOpen(true)}
+                disabled={releaseManagedStation.isPending}
+                className="mt-4 inline-flex items-center gap-2 rounded-xl bg-destructive px-4 py-3 text-sm font-semibold text-destructive-foreground transition-colors hover:bg-destructive/90 disabled:opacity-50"
+              >
+                {releaseManagedStation.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Trash2 className="h-4 w-4" />
+                )}
+                Remove My Station
+              </button>
+            </div>
           </div>
         )}
       </motion.div>
-    </div>
+
+      <AlertDialog
+        open={releaseDialogOpen}
+        onOpenChange={(open) => {
+          if (!releaseManagedStation.isPending) {
+            setReleaseDialogOpen(open);
+          }
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove your station claim?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will remove your manager access and verified claim for this
+              station. The station itself will remain listed in FuelWatch PH.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          {station ? (
+            <div className="rounded-xl border border-destructive/20 bg-destructive/5 p-4 text-sm">
+              <p className="font-semibold text-foreground">{station.name}</p>
+              <p className="mt-1 text-muted-foreground">{station.address}</p>
+            </div>
+          ) : null}
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={releaseManagedStation.isPending}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmReleaseStation}
+              disabled={releaseManagedStation.isPending}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {releaseManagedStation.isPending
+                ? "Removing..."
+                : "Remove My Station"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </motion.div>
   );
 }

@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import type { GasStation } from "@/types/station";
@@ -39,6 +39,43 @@ export function useManagedStation() {
     queryFn: async () => {
       const station = await fetchManagedStation(user!.id);
       return mapManagedStation(station);
+    },
+  });
+}
+
+export function useReleaseManagedStation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (stationId: string) => {
+      const { data, error } = await supabase.rpc("release_managed_station", {
+        _station_id: stationId,
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      return data;
+    },
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["managed_station"] }),
+        queryClient.invalidateQueries({ queryKey: ["gas_stations"] }),
+        queryClient.invalidateQueries({ queryKey: ["admin", "gas_stations"] }),
+        queryClient.invalidateQueries({
+          queryKey: ["public_station_browse"],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["public_station_summary"],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["station_claim_requests", "mine"],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["admin", "station_claim_requests"],
+        }),
+      ]);
     },
   });
 }
