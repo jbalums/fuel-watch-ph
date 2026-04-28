@@ -1,6 +1,6 @@
 import { type ReactNode, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { FileUp, Loader2, ShieldCheck, X } from "lucide-react";
+import { FileUp, Globe, Loader2, Mail, ShieldCheck, X } from "lucide-react";
 import { toast } from "@/lib/app-toast";
 import type { GasStation } from "@/types/station";
 import { useAuth } from "@/contexts/AuthContext";
@@ -13,6 +13,7 @@ import {
   uploadStationClaimProof,
   validateStationClaimProofFile,
 } from "@/lib/station-claim-upload";
+import { contactUsChannels } from "@/lib/legal";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
@@ -22,6 +23,14 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
+
+function getContactChannelIcon(title: string) {
+	if (title === "Email") {
+		return Mail;
+	}
+
+	return Globe;
+}
 
 interface ClaimStationDialogProps {
 	station: GasStation;
@@ -325,6 +334,53 @@ export function ClaimStationDialog({
 									{uploadError}
 								</p>
 							)}
+						</div>
+
+						<div className="rounded-xl border border-border bg-secondary/30 p-4">
+							<p className="text-sm font-medium text-foreground">
+								Need to reach the FuelWatch PH team?
+							</p>
+							<p className="mt-1 text-xs leading-5 text-muted-foreground">
+								You can contact the admin team through the channels
+								below if you need help with your station claim.
+							</p>
+							<div className="mt-3 grid gap-2">
+								{contactUsChannels.map((channel) => {
+									const Icon = getContactChannelIcon(
+										channel.title,
+									);
+
+									return (
+										<a
+											key={channel.title}
+											href={channel.href}
+											target={
+												channel.href.startsWith("http")
+													? "_blank"
+													: undefined
+											}
+											rel={
+												channel.href.startsWith("http")
+													? "noreferrer"
+													: undefined
+											}
+											className="flex items-start gap-3 rounded-lg border border-border bg-background px-3 py-2 text-left transition-colors hover:border-accent/30 hover:bg-secondary/40"
+										>
+											<div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+												<Icon className="h-4 w-4" />
+											</div>
+											<div className="min-w-0">
+												<p className="text-xs font-semibold text-foreground">
+													{channel.title}
+												</p>
+												<p className="mt-0.5 break-all text-xs text-accent">
+													{channel.label}
+												</p>
+											</div>
+										</a>
+									);
+								})}
+							</div>
 						</div>
 
 						<DialogFooter>
