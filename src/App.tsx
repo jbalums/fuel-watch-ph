@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes, useLocation } from "react-router-dom";
 import { PageLoader } from "@/components/PageLoader";
+import { RouteSeo } from "@/components/RouteSeo";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -120,6 +121,7 @@ function RouterContent() {
 
 	return (
 		<div className="flex min-h-screen flex-col">
+			<RouteSeo />
 			<PageLoader visible={pageLoaderVisible} />
 			<div className="flex-1">
 				<Routes>

@@ -1,8 +1,26 @@
 User-agent: Googlebot
 Allow: /
+Disallow: /admin
+Disallow: /lgu
+Disallow: /auth
+Disallow: /profile
+Disallow: /manager
+Disallow: /embed
+Disallow: /report
+Disallow: /admin-access-request
+Disallow: /admin-invite
 
 User-agent: Bingbot
 Allow: /
+Disallow: /admin
+Disallow: /lgu
+Disallow: /auth
+Disallow: /profile
+Disallow: /manager
+Disallow: /embed
+Disallow: /report
+Disallow: /admin-access-request
+Disallow: /admin-invite
 
 User-agent: Twitterbot
 Allow: /
@@ -12,3 +30,14 @@ Allow: /
 
 User-agent: *
 Allow: /
+Disallow: /admin
+Disallow: /lgu
+Disallow: /auth
+Disallow: /profile
+Disallow: /manager
+Disallow: /embed
+Disallow: /report
+Disallow: /admin-access-request
+Disallow: /admin-invite
+
+Sitemap: https://fuelwatchph.com/sitemap.xml
