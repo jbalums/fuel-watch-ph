@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import {
 	Select,
 	SelectContent,
@@ -57,6 +58,7 @@ import type { DiscoveredStation } from "@/lib/station-discovery";
 import type { FuelType, GasStation } from "@/types/station";
 
 const EMPTY_SELECT_VALUE = "__none__";
+type MapReportSubmissionMode = "standard" | "easy";
 
 export type MapFuelReportTarget =
 	| {
@@ -156,6 +158,8 @@ export function MapFuelReportDialog({
 	const [photoUploadError, setPhotoUploadError] = useState<string | null>(
 		null,
 	);
+	const [submissionMode, setSubmissionMode] =
+		useState<MapReportSubmissionMode>("standard");
 	const [submissionError, setSubmissionError] = useState<string | null>(null);
 	const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -177,6 +181,7 @@ export function MapFuelReportDialog({
 		setCityMunicipalityCode(getInitialCityMunicipalityCode(target));
 		setPhotoFile(null);
 		setPhotoUploadError(null);
+		setSubmissionMode("standard");
 		setSubmissionError(null);
 		if (fileInputRef.current) {
 			fileInputRef.current.value = "";
@@ -227,6 +232,7 @@ export function MapFuelReportDialog({
 	}, [target]);
 
 	const targetAddress = getStationDisplayAddress(target);
+	const isEasyReport = submissionMode === "easy";
 
 	const updateFuelPrice = (fuelType: FuelType, value: string) => {
 		setPriceForm((current) => ({
@@ -277,28 +283,6 @@ export function MapFuelReportDialog({
 		setIsSubmitting(true);
 
 		try {
-			const prices = parseFuelPriceForm(priceForm);
-			const fuelAvailability = deriveFuelAvailabilityFromPrices(
-				prices,
-				parseFuelAvailabilityForm(availabilityForm),
-			);
-			validateFuelPriceAvailability(prices, fuelAvailability);
-
-			if (!hasAnyFuelAvailability(fuelAvailability)) {
-				throw new Error("Add at least one fuel price.");
-			}
-
-			const fallbackFuelType =
-				target.type === "listed" ? target.station.fuelType : undefined;
-			const summarySelection = getFuelSummarySelection(
-				prices,
-				fuelAvailability,
-				fallbackFuelType,
-			);
-			if (!summarySelection) {
-				throw new Error("Add at least one fuel price.");
-			}
-
 			if (shouldShowScopeSelectors) {
 				if (!provinceCode || !cityMunicipalityCode) {
 					throw new Error(
@@ -316,6 +300,41 @@ export function MapFuelReportDialog({
 					? target.station.cityMunicipalityCode ||
 						cityMunicipalityCode
 					: cityMunicipalityCode;
+
+			const prices = isEasyReport
+				? createEmptyFuelPriceFormMap()
+				: parseFuelPriceForm(priceForm);
+			const fuelAvailability = isEasyReport
+				? createEmptyFuelAvailabilityFormMap()
+				: deriveFuelAvailabilityFromPrices(
+						prices,
+						parseFuelAvailabilityForm(availabilityForm),
+					);
+
+			if (!isEasyReport) {
+				validateFuelPriceAvailability(prices, fuelAvailability);
+
+				if (!hasAnyFuelAvailability(fuelAvailability)) {
+					throw new Error("Add at least one fuel price.");
+				}
+
+				const fallbackFuelType =
+					target.type === "listed"
+						? target.station.fuelType
+						: undefined;
+				const summarySelection = getFuelSummarySelection(
+					prices,
+					fuelAvailability,
+					fallbackFuelType,
+				);
+				if (!summarySelection) {
+					throw new Error("Add at least one fuel price.");
+				}
+			}
+
+			if (isEasyReport && !photoFile) {
+				throw new Error("Upload a fuel price photo for Easy Report.");
+			}
 
 			if (photoFile) {
 				uploadedPhoto = await uploadFuelReportPhoto({
@@ -340,6 +359,7 @@ export function MapFuelReportDialog({
 				_fuel_availability: fuelAvailability,
 				_photo_path: uploadedPhoto?.path ?? null,
 				_photo_filename: uploadedPhoto?.filename ?? null,
+				_submission_mode: submissionMode,
 			});
 
 			if (error) {
@@ -349,7 +369,9 @@ export function MapFuelReportDialog({
 			}
 
 			toast.success(
-				"Fuel price report submitted. It will be reviewed before going public.",
+				isEasyReport
+					? "Easy report submitted. It will be reviewed before going public."
+					: "Fuel price report submitted. It will be reviewed before going public.",
 			);
 			onSubmitted?.();
 			onOpenChange(false);
@@ -382,12 +404,46 @@ export function MapFuelReportDialog({
 					onSubmit={(event) => void handleSubmit(event)}
 					className="flex min-h-0 flex-1 flex-col"
 				>
-					<DialogHeader className="shrink-0 border-b border-border px-4 pb-4 pt-5 pr-12 text-left sm:px-6 sm:pt-6">
-						<DialogTitle>Report fuel prices</DialogTitle>
-						{/* <DialogDescription className="text-xs">
-							Share updated station prices to help nearby drivers.
-							Reports stay pending until reviewed.
-						</DialogDescription> */}
+					<DialogHeader className="shrink-0 border-b border-border px-4 pb-4 pt-5 pr-4 text-left sm:px-6 sm:pt-6">
+						<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+							<div>
+								<DialogTitle>Report fuel prices</DialogTitle>
+								<DialogDescription className="mt-1 text-xs">
+									{isEasyReport
+										? "Upload a pump or price-board photo for manual review."
+										: "Enter only the fuel prices you want to report."}
+								</DialogDescription>
+							</div>
+							<ToggleGroup
+								type="single"
+								value={submissionMode}
+								onValueChange={(value) => {
+									if (
+										value === "standard" ||
+										value === "easy"
+									) {
+										setSubmissionMode(value);
+										setSubmissionError(null);
+									}
+								}}
+								className="absolute right-1/2 translate-x-1/2 top-14 lg:top-[60px] mt-1 grid w-1/3 grid-cols-2 rounded-lg border border-border bg-surface-alt/10 backdrop-blur-sm p-0.5 sm:w-auto"
+							>
+								<ToggleGroupItem
+									value="standard"
+									aria-label="Use Standard report"
+									className="h-5 rounded-sm px-3 text-xs data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
+								>
+									Standard
+								</ToggleGroupItem>
+								<ToggleGroupItem
+									value="easy"
+									aria-label="Use Easy report"
+									className="h-5 rounded-sm px-3 text-xs data-[state=on]:bg-amber-600 data-[state=on]:text-white"
+								>
+									Easy
+								</ToggleGroupItem>
+							</ToggleGroup>
+						</div>
 					</DialogHeader>
 
 					<div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-4 sm:space-y-4 sm:px-6 sm:py-5">
@@ -548,49 +604,51 @@ export function MapFuelReportDialog({
 							</section>
 						) : null}
 
-						<section className="space-y-3">
-							<div>
-								<h3 className="text-sm font-semibold text-foreground">
-									Fuel prices to report
-								</h3>
-								<p className="mt-1 text-[10px] text-muted-foreground">
-									Enter only the fuels you want to report.
-									Rows left blank will be ignored.
-								</p>
-							</div>
+						{isEasyReport ? null : (
+							<section className="space-y-3">
+								<div>
+									<h3 className="text-sm font-semibold text-foreground">
+										Fuel prices to report
+									</h3>
+									<p className="mt-1 text-[10px] text-muted-foreground">
+										Enter only the fuels you want to report.
+										Rows left blank will be ignored.
+									</p>
+								</div>
 
-							<div className="grid gap-2 sm:gap-3 grid-cols-2">
-								{fuelTypes.map((fuelType) => (
-									<div
-										key={fuelType}
-										className="grid gap-2 rounded-sm border border-border bg-card/70 py-1 px-2 sm:grid-cols-[minmax(0,1fr)_150px] sm:items-center lg:grid-cols-[minmax(0,1fr)_180px]"
-									>
-										<div className="flex min-w-0 items-center">
-											<p
-												className={`text-sm font-semibold ${fuelTypeTextColorClassNames[fuelType]}`}
-											>
-												{fuelType}
-											</p>
+								<div className="grid gap-2 sm:gap-3 grid-cols-2">
+									{fuelTypes.map((fuelType) => (
+										<div
+											key={fuelType}
+											className="grid gap-2 rounded-sm border border-border bg-card/70 py-1 px-1 sm:grid-cols-[minmax(0,1fr)_150px] sm:items-center lg:grid-cols-[minmax(0,1fr)_180px]"
+										>
+											<div className="flex min-w-0 items-center pl-1">
+												<p
+													className={`text-sm font-semibold ${fuelTypeTextColorClassNames[fuelType]}`}
+												>
+													{fuelType}
+												</p>
+											</div>
+											<div className="space-y-1.5">
+												<Input
+													id={`map-report-price-${fuelType}`}
+													inputMode="decimal"
+													placeholder="00.00"
+													value={priceForm[fuelType]}
+													className="h-11 text-base sm:h-8 sm:text-sm !rounded-sm"
+													onChange={(event) =>
+														updateFuelPrice(
+															fuelType,
+															event.target.value,
+														)
+													}
+												/>
+											</div>
 										</div>
-										<div className="space-y-1.5">
-											<Input
-												id={`map-report-price-${fuelType}`}
-												inputMode="decimal"
-												placeholder="00.00"
-												value={priceForm[fuelType]}
-												className="h-11 text-base sm:h-8 sm:text-sm"
-												onChange={(event) =>
-													updateFuelPrice(
-														fuelType,
-														event.target.value,
-													)
-												}
-											/>
-										</div>
-									</div>
-								))}
-							</div>
-						</section>
+									))}
+								</div>
+							</section>
+						)}
 
 						<section className="rounded-2xl border border-border bg-card/70 p-3 sm:p-4">
 							<div className="flex flex-wrap items-center justify-between gap-3">
@@ -599,7 +657,9 @@ export function MapFuelReportDialog({
 										Verification photo
 									</h3>
 									<p className="mt-1 text-xs text-muted-foreground">
-										Optional. JPG, JPEG, or PNG, up to 10MB.
+										{isEasyReport
+											? "Required for Easy Report. JPG, JPEG, or PNG, up to 10MB."
+											: "Optional. JPG, JPEG, or PNG, up to 10MB."}
 									</p>
 								</div>
 								{photoFile ? (

@@ -703,6 +703,7 @@ export type Database = {
           _reported_address?: string | null
           _station_id?: string | null
           _station_name?: string | null
+          _submission_mode?: string | null
         }
         Returns: string
       }
