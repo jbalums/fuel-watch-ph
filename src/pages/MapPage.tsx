@@ -14,6 +14,7 @@ type MapPageLocationState = {
 	reportLocation?: CoordinatePair & {
 		label?: string;
 	};
+	openMapReportDialog?: boolean;
 };
 
 export default function MapPage() {
@@ -46,6 +47,11 @@ export default function MapPage() {
 
 		return candidate;
 	}, [location.state]);
+	const mapReportRequestKey = useMemo(() => {
+		const state = location.state as MapPageLocationState | null;
+
+		return state?.openMapReportDialog ? location.key : null;
+	}, [location.key, location.state]);
 	const availableCities = useMemo(
 		() => (provinceCode ? (citiesByProvince.get(provinceCode) ?? []) : []),
 		[citiesByProvince, provinceCode],
@@ -138,6 +144,7 @@ export default function MapPage() {
 				allStations={stations}
 				focusedStationId={selectedStationId}
 				highlightLocation={reportLocation}
+				reportRequestKey={mapReportRequestKey}
 				provinceCode={provinceCode}
 				cityMunicipalityCode={cityMunicipalityCode}
 				onFocusedStationChange={(stationId) => {

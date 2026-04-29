@@ -102,6 +102,7 @@ interface StationMapProps {
 	allStations?: GasStation[];
 	focusedStationId?: string | null;
 	highlightLocation?: (CoordinatePair & { label?: string }) | null;
+	reportRequestKey?: string | null;
 	onFocusedStationChange?: (stationId: string | null) => void;
 	provinceCode?: string;
 	cityMunicipalityCode?: string;
@@ -112,6 +113,7 @@ function GoogleStationMap({
 	allStations = stations,
 	focusedStationId,
 	highlightLocation,
+	reportRequestKey,
 	onFocusedStationChange,
 	provinceCode = "",
 	cityMunicipalityCode = "",
@@ -158,6 +160,7 @@ function GoogleStationMap({
 	const closeInfoWindowTimeoutRef = useRef<number | null>(null);
 	const discoveryRequestIdRef = useRef(0);
 	const hasInitializedCenterRef = useRef(false);
+	const handledReportRequestKeyRef = useRef<string | null>(null);
 	const { coordinates: currentLocation } = useCurrentLocation();
 	const googleMaps =
 		typeof window !== "undefined" ? window.google?.maps : undefined;
@@ -745,6 +748,37 @@ function GoogleStationMap({
 			station: focusedStation,
 		});
 	}, [focusedStation]);
+	useEffect(() => {
+		if (!reportRequestKey) {
+			return;
+		}
+
+		if (handledReportRequestKeyRef.current === reportRequestKey) {
+			return;
+		}
+
+		handledReportRequestKeyRef.current = reportRequestKey;
+
+		if (focusedStation) {
+			reportFocusedStation();
+			return;
+		}
+
+		if (selectedGoogleStation) {
+			reportSelectedGoogleStation();
+			return;
+		}
+
+		toast.error("Select a station to report fuel prices.", {
+			position: "top-center",
+		});
+	}, [
+		focusedStation,
+		reportFocusedStation,
+		reportRequestKey,
+		reportSelectedGoogleStation,
+		selectedGoogleStation,
+	]);
 	const focusedStationClaimLink = useMemo(() => {
 		if (!focusedStation || !user) {
 			return null;
@@ -1472,6 +1506,7 @@ export function StationMap({
 	allStations,
 	focusedStationId,
 	highlightLocation,
+	reportRequestKey,
 	onFocusedStationChange,
 	provinceCode,
 	cityMunicipalityCode,
@@ -1512,6 +1547,7 @@ export function StationMap({
 					allStations={allStations}
 					focusedStationId={focusedStationId}
 					highlightLocation={highlightLocation}
+					reportRequestKey={reportRequestKey}
 					onFocusedStationChange={onFocusedStationChange}
 					provinceCode={provinceCode}
 					cityMunicipalityCode={cityMunicipalityCode}

@@ -1,5 +1,4 @@
 import {
-	FilePlus2,
 	FilePlus2Icon,
 	Home,
 	Map,
@@ -22,11 +21,18 @@ const baseTabs: {
 	path: string;
 	icon: typeof Home;
 	label: string;
+	navigationState?: Record<string, unknown>;
 }[] = [
 	{ id: "home", path: "/", icon: Home, label: "Home" },
 	{ id: "map", path: "/map", icon: Map, label: "Map" },
 	{ id: "search", path: "/search", icon: Search, label: "Search" },
-	{ id: "report", path: "/report", icon: FilePlus2Icon, label: "Report" },
+	{
+		id: "report",
+		path: "/map",
+		icon: FilePlus2Icon,
+		label: "Report",
+		navigationState: { openMapReportDialog: true },
+	},
 ];
 
 export function BottomNav({
@@ -74,7 +80,7 @@ export function BottomNav({
 	return (
 		<div className="sticky bottom-4 flex items-center justify-center pt-4">
 			<nav className="bottom-4 z-50 flex gap-1 rounded-2xl p-1.5 dark:bg-black/20 surface-glass shadow-sovereign-lg">
-				{tabs.map(({ id, path, icon: Icon, label }) => (
+				{tabs.map(({ id, path, icon: Icon, label, navigationState }) => (
 					<button
 						key={id}
 						onClick={() => {
@@ -83,14 +89,19 @@ export function BottomNav({
 								return;
 							}
 
-							navigate({
-								pathname: path,
-								search: location.search,
-							});
+							navigate(
+								{
+									pathname: path,
+									search: location.search,
+								},
+								navigationState
+									? { state: navigationState }
+									: undefined,
+							);
 						}}
 						className={cn(
 							"flex flex-col items-center gap-0.5 rounded-md px-4 md:px-5 py-2 text-xs font-medium sovereign-ease transition-colors duration-300 relative",
-							isActivePath(path)
+							id !== "report" && isActivePath(path)
 								? "bg-primary text-primary-foreground border border-amber-500"
 								: "text-muted-foreground dark:text-white hover:text-foreground",
 						)}
