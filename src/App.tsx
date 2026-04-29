@@ -1,4 +1,11 @@
-import { useEffect, useRef, useState } from "react";
+import {
+	lazy,
+	Suspense,
+	useEffect,
+	useRef,
+	useState,
+	type ReactNode,
+} from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes, useLocation } from "react-router-dom";
 import { PageLoader } from "@/components/PageLoader";
@@ -7,59 +14,97 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { SiteFooter } from "@/components/SiteFooter";
-import { AppShellLayout } from "@/components/AppShellLayout";
-import { AdminLayout } from "@/components/admin/AdminLayout";
-import { LguLayout } from "@/components/lgu/LguLayout";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { useMaintenanceModeFeature } from "@/hooks/useSystemFeatureFlags";
-import Index from "./pages/Index";
-import MapPage from "./pages/MapPage";
-import SearchPage from "./pages/SearchPage";
-import EmbeddedStationsPage from "./pages/EmbeddedStationsPage";
-import ReportPage from "./pages/ReportPage";
-import AdminPage from "./pages/AdminPage";
-import AdminStationsPage from "./pages/AdminStationsPage";
-import AdminStationsSummaryPage from "./pages/AdminStationsSummaryPage";
-import AdminReportsPage from "./pages/AdminReportsPage";
-import AdminClaimsPage from "./pages/AdminClaimsPage";
-import AdminUsersPage from "./pages/AdminUsersPage";
-import AdminLguUsersPage from "./pages/AdminLguUsersPage";
-import AdminBrandLogosPage from "./pages/AdminBrandLogosPage";
-import AdminDonationGatewaysPage from "./pages/AdminDonationGatewaysPage";
-import AdminStationDiscoveryPage from "./pages/AdminStationDiscoveryPage";
-import AdminAccessRequestsPage from "./pages/AdminAccessRequestsPage";
-import AdminAccessRequestDetailPage from "./pages/AdminAccessRequestDetailPage";
-import AdminInvitesPage from "./pages/AdminInvitesPage";
-import AdminGeoBackfillPage from "./pages/AdminGeoBackfillPage";
-import AdminPlatformControlsPage from "./pages/AdminPlatformControlsPage";
-import AdminStationExperiencesPage from "./pages/AdminStationExperiencesPage";
-import SystemPreviewPage from "./pages/SystemPreviewPage";
-import Auth from "./pages/Auth";
-import AboutUs from "./pages/AboutUs";
-import AdminAccessRequestPage from "./pages/AdminAccessRequestPage";
-import AdminInviteRegistrationPage from "./pages/AdminInviteRegistrationPage";
-import ContactUs from "./pages/ContactUs";
-import DonatePage from "./pages/DonatePage";
-import StationExperiencesPage from "./pages/StationExperiencesPage";
-import LguPage from "./pages/LguPage";
-import LguStationsPage from "./pages/LguStationsPage";
-import LguStationsSummaryPage from "./pages/LguStationsSummaryPage";
-import LguReportsPage from "./pages/LguReportsPage";
-import LguStationExperiencesPage from "./pages/LguStationExperiencesPage";
-import LguTeamPage from "./pages/LguTeamPage";
-import Profile from "./pages/Profile";
-import PrivacyPolicy from "./pages/PrivacyPolicy";
-import StationManagerDashboard from "./pages/StationManagerDashboard";
-import Terms from "./pages/Terms";
 import MaintenancePage from "./pages/MaintenancePage";
-import NotFound from "./pages/NotFound";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 import { Loader2 } from "lucide-react";
 
 const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 const clientSecret = import.meta.env.VITE_GOOGLE_CLIENT_SECRET;
 const queryClient = new QueryClient();
+const AppShellLayout = lazy(() =>
+	import("@/components/AppShellLayout").then((module) => ({
+		default: module.AppShellLayout,
+	})),
+);
+const AdminLayout = lazy(() =>
+	import("@/components/admin/AdminLayout").then((module) => ({
+		default: module.AdminLayout,
+	})),
+);
+const LguLayout = lazy(() =>
+	import("@/components/lgu/LguLayout").then((module) => ({
+		default: module.LguLayout,
+	})),
+);
+const Index = lazy(() => import("./pages/Index"));
+const MapPage = lazy(() => import("./pages/MapPage"));
+const SearchPage = lazy(() => import("./pages/SearchPage"));
+const EmbeddedStationsPage = lazy(() => import("./pages/EmbeddedStationsPage"));
+const ReportPage = lazy(() => import("./pages/ReportPage"));
+const AdminPage = lazy(() => import("./pages/AdminPage"));
+const AdminStationsPage = lazy(() => import("./pages/AdminStationsPage"));
+const AdminStationsSummaryPage = lazy(
+	() => import("./pages/AdminStationsSummaryPage"),
+);
+const AdminReportsPage = lazy(() => import("./pages/AdminReportsPage"));
+const AdminClaimsPage = lazy(() => import("./pages/AdminClaimsPage"));
+const AdminUsersPage = lazy(() => import("./pages/AdminUsersPage"));
+const AdminLguUsersPage = lazy(() => import("./pages/AdminLguUsersPage"));
+const AdminBrandLogosPage = lazy(() => import("./pages/AdminBrandLogosPage"));
+const AdminDonationGatewaysPage = lazy(
+	() => import("./pages/AdminDonationGatewaysPage"),
+);
+const AdminStationDiscoveryPage = lazy(
+	() => import("./pages/AdminStationDiscoveryPage"),
+);
+const AdminAccessRequestsPage = lazy(
+	() => import("./pages/AdminAccessRequestsPage"),
+);
+const AdminAccessRequestDetailPage = lazy(
+	() => import("./pages/AdminAccessRequestDetailPage"),
+);
+const AdminInvitesPage = lazy(() => import("./pages/AdminInvitesPage"));
+const AdminGeoBackfillPage = lazy(() => import("./pages/AdminGeoBackfillPage"));
+const AdminPlatformControlsPage = lazy(
+	() => import("./pages/AdminPlatformControlsPage"),
+);
+const AdminStationExperiencesPage = lazy(
+	() => import("./pages/AdminStationExperiencesPage"),
+);
+const SystemPreviewPage = lazy(() => import("./pages/SystemPreviewPage"));
+const Auth = lazy(() => import("./pages/Auth"));
+const AboutUs = lazy(() => import("./pages/AboutUs"));
+const AdminAccessRequestPage = lazy(
+	() => import("./pages/AdminAccessRequestPage"),
+);
+const AdminInviteRegistrationPage = lazy(
+	() => import("./pages/AdminInviteRegistrationPage"),
+);
+const ContactUs = lazy(() => import("./pages/ContactUs"));
+const DonatePage = lazy(() => import("./pages/DonatePage"));
+const StationExperiencesPage = lazy(
+	() => import("./pages/StationExperiencesPage"),
+);
+const LguPage = lazy(() => import("./pages/LguPage"));
+const LguStationsPage = lazy(() => import("./pages/LguStationsPage"));
+const LguStationsSummaryPage = lazy(
+	() => import("./pages/LguStationsSummaryPage"),
+);
+const LguReportsPage = lazy(() => import("./pages/LguReportsPage"));
+const LguStationExperiencesPage = lazy(
+	() => import("./pages/LguStationExperiencesPage"),
+);
+const LguTeamPage = lazy(() => import("./pages/LguTeamPage"));
+const Profile = lazy(() => import("./pages/Profile"));
+const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
+const StationManagerDashboard = lazy(
+	() => import("./pages/StationManagerDashboard"),
+);
+const Terms = lazy(() => import("./pages/Terms"));
+const NotFound = lazy(() => import("./pages/NotFound"));
 const MAINTENANCE_BYPASS_PREFIXES = [
 	"/admin",
 	"/lgu",
@@ -74,6 +119,18 @@ function isMaintenanceBypassed(pathname: string) {
 	return MAINTENANCE_BYPASS_PREFIXES.some(
 		(prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
 	);
+}
+
+function RouteFallback() {
+	return (
+		<div className="flex min-h-[320px] items-center justify-center bg-background">
+			<Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+		</div>
+	);
+}
+
+function withRouteSuspense(element: ReactNode) {
+	return <Suspense fallback={<RouteFallback />}>{element}</Suspense>;
 }
 
 function RouterContent() {
@@ -127,122 +184,215 @@ function RouterContent() {
 				<Routes>
 					<Route
 						path="/embed/stations"
-						element={<EmbeddedStationsPage />}
+						element={withRouteSuspense(<EmbeddedStationsPage />)}
 					/>
-					<Route element={<AppShellLayout />}>
-						<Route path="/" element={<Index />} />
-						<Route path="/map" element={<MapPage />} />
-						<Route path="/search" element={<SearchPage />} />
-						<Route path="/report" element={<ReportPage />} />
-						<Route path="/donate" element={<DonatePage />} />
+					<Route element={withRouteSuspense(<AppShellLayout />)}>
+						<Route path="/" element={withRouteSuspense(<Index />)} />
+						<Route
+							path="/map"
+							element={withRouteSuspense(<MapPage />)}
+						/>
+						<Route
+							path="/search"
+							element={withRouteSuspense(<SearchPage />)}
+						/>
+						<Route
+							path="/report"
+							element={withRouteSuspense(<ReportPage />)}
+						/>
+						<Route
+							path="/donate"
+							element={withRouteSuspense(<DonatePage />)}
+						/>
 						<Route
 							path="/manager"
-							element={<StationManagerDashboard />}
+							element={withRouteSuspense(
+								<StationManagerDashboard />,
+							)}
 						/>
 						<Route
 							path="/station-experiences"
-							element={<StationExperiencesPage />}
+							element={withRouteSuspense(
+								<StationExperiencesPage />,
+							)}
 						/>
-						<Route path="/admin" element={<AdminLayout />}>
-							<Route index element={<AdminPage />} />
+						<Route
+							path="/admin"
+							element={withRouteSuspense(<AdminLayout />)}
+						>
+							<Route
+								index
+								element={withRouteSuspense(<AdminPage />)}
+							/>
 							<Route
 								path="stations"
-								element={<AdminStationsPage />}
+								element={withRouteSuspense(
+									<AdminStationsPage />,
+								)}
 							/>
 							<Route
 								path="stations-summary"
-								element={<AdminStationsSummaryPage />}
+								element={withRouteSuspense(
+									<AdminStationsSummaryPage />,
+								)}
 							/>
 							<Route
 								path="reports"
-								element={<AdminReportsPage />}
+								element={withRouteSuspense(
+									<AdminReportsPage />,
+								)}
 							/>
 							<Route
 								path="station-experiences"
-								element={<AdminStationExperiencesPage />}
+								element={withRouteSuspense(
+									<AdminStationExperiencesPage />,
+								)}
 							/>
 							<Route
 								path="claims"
-								element={<AdminClaimsPage />}
+								element={withRouteSuspense(
+									<AdminClaimsPage />,
+								)}
 							/>
-							<Route path="users" element={<AdminUsersPage />} />
+							<Route
+								path="users"
+								element={withRouteSuspense(<AdminUsersPage />)}
+							/>
 							<Route
 								path="station-discovery"
-								element={<AdminStationDiscoveryPage />}
+								element={withRouteSuspense(
+									<AdminStationDiscoveryPage />,
+								)}
 							/>
 							<Route
 								path="brand-logos"
-								element={<AdminBrandLogosPage />}
+								element={withRouteSuspense(
+									<AdminBrandLogosPage />,
+								)}
 							/>
 							<Route
 								path="donation-gateways"
-								element={<AdminDonationGatewaysPage />}
+								element={withRouteSuspense(
+									<AdminDonationGatewaysPage />,
+								)}
 							/>
 							<Route
 								path="lgu-users"
-								element={<AdminLguUsersPage />}
+								element={withRouteSuspense(
+									<AdminLguUsersPage />,
+								)}
 							/>
 							<Route
 								path="access-requests"
-								element={<AdminAccessRequestsPage />}
+								element={withRouteSuspense(
+									<AdminAccessRequestsPage />,
+								)}
 							/>
 							<Route
 								path="access-requests/:requestId"
-								element={<AdminAccessRequestDetailPage />}
+								element={withRouteSuspense(
+									<AdminAccessRequestDetailPage />,
+								)}
 							/>
 							<Route
 								path="invites"
-								element={<AdminInvitesPage />}
+								element={withRouteSuspense(
+									<AdminInvitesPage />,
+								)}
 							/>
 							<Route
 								path="geo-backfill"
-								element={<AdminGeoBackfillPage />}
+								element={withRouteSuspense(
+									<AdminGeoBackfillPage />,
+								)}
 							/>
 							<Route
 								path="platform-controls"
-								element={<AdminPlatformControlsPage />}
+								element={withRouteSuspense(
+									<AdminPlatformControlsPage />,
+								)}
 							/>
 							<Route
 								path="system-preview"
-								element={<SystemPreviewPage />}
+								element={withRouteSuspense(
+									<SystemPreviewPage />,
+								)}
 							/>
 						</Route>
-						<Route path="/lgu" element={<LguLayout />}>
-							<Route index element={<LguPage />} />
+						<Route
+							path="/lgu"
+							element={withRouteSuspense(<LguLayout />)}
+						>
+							<Route
+								index
+								element={withRouteSuspense(<LguPage />)}
+							/>
 							<Route
 								path="stations"
-								element={<LguStationsPage />}
+								element={withRouteSuspense(
+									<LguStationsPage />,
+								)}
 							/>
 							<Route
 								path="stations-summary"
-								element={<LguStationsSummaryPage />}
+								element={withRouteSuspense(
+									<LguStationsSummaryPage />,
+								)}
 							/>
 							<Route
 								path="reports"
-								element={<LguReportsPage />}
+								element={withRouteSuspense(<LguReportsPage />)}
 							/>
 							<Route
 								path="station-experiences"
-								element={<LguStationExperiencesPage />}
+								element={withRouteSuspense(
+									<LguStationExperiencesPage />,
+								)}
 							/>
-							<Route path="team" element={<LguTeamPage />} />
+							<Route
+								path="team"
+								element={withRouteSuspense(<LguTeamPage />)}
+							/>
 						</Route>
 					</Route>
-					<Route path="/auth" element={<Auth />} />
+					<Route
+						path="/auth"
+						element={withRouteSuspense(<Auth />)}
+					/>
 					<Route
 						path="/admin-access-request"
-						element={<AdminAccessRequestPage />}
+						element={withRouteSuspense(<AdminAccessRequestPage />)}
 					/>
 					<Route
 						path="/admin-invite/:token"
-						element={<AdminInviteRegistrationPage />}
+						element={withRouteSuspense(
+							<AdminInviteRegistrationPage />,
+						)}
 					/>
-					<Route path="/about-us" element={<AboutUs />} />
-					<Route path="/contact-us" element={<ContactUs />} />
-					<Route path="/profile" element={<Profile />} />
-					<Route path="/privacy-policy" element={<PrivacyPolicy />} />
-					<Route path="/terms" element={<Terms />} />
-					<Route path="*" element={<NotFound />} />
+					<Route
+						path="/about-us"
+						element={withRouteSuspense(<AboutUs />)}
+					/>
+					<Route
+						path="/contact-us"
+						element={withRouteSuspense(<ContactUs />)}
+					/>
+					<Route
+						path="/profile"
+						element={withRouteSuspense(<Profile />)}
+					/>
+					<Route
+						path="/privacy-policy"
+						element={withRouteSuspense(<PrivacyPolicy />)}
+					/>
+					<Route
+						path="/terms"
+						element={withRouteSuspense(<Terms />)}
+					/>
+					<Route
+						path="*"
+						element={withRouteSuspense(<NotFound />)}
+					/>
 				</Routes>
 			</div>
 			{isEmbedRoute ? null : <SiteFooter />}
