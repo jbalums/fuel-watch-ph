@@ -1,13 +1,36 @@
 import { motion } from "framer-motion";
 import { Loader2, ShieldAlert } from "lucide-react";
 import { NavLink, Outlet } from "react-router-dom";
+import { useAdminAccessRequests } from "@/hooks/useAdminOnboarding";
+import { useAdminStationExperiences } from "@/hooks/useStationExperiences";
+import { useAdminStationClaims } from "@/hooks/useStationClaims";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
+import { useAdminReports } from "@/components/admin/admin-shared";
+import { PendingCountBadge } from "@/components/admin/PendingCountBadge";
 import { useAdminRole } from "@/hooks/useAdminRole";
 
 export function AdminLayout() {
 	const { user } = useAuth();
 	const { isAdmin, isSuperAdmin, isLoading: roleLoading } = useAdminRole();
+	const { data: reports = [] } = useAdminReports(isAdmin);
+	const { data: experiences = [] } = useAdminStationExperiences("pending");
+	const { data: claims = [] } = useAdminStationClaims(isAdmin);
+	const { data: accessRequests = [] } = useAdminAccessRequests(
+		isAdmin && isSuperAdmin,
+	);
+	const pendingReports = reports.filter(
+		(report) => report.reviewStatus === "pending",
+	).length;
+	const pendingClaims = claims.filter(
+		(claim) => claim.reviewStatus === "pending",
+	).length;
+	const pendingExperiences = experiences.filter(
+		(experience) => experience.reviewStatus === "pending",
+	).length;
+	const pendingAccessRequests = accessRequests.filter(
+		(request) => request.status === "pending",
+	).length;
 	const adminNavItems = [
 		{ label: "Overview", to: "/admin", end: true },
 		{ label: "Stations", to: "/admin/stations" },
@@ -15,9 +38,21 @@ export function AdminLayout() {
 		{ label: "Station Discovery", to: "/admin/station-discovery" },
 		{ label: "Brand Logos", to: "/admin/brand-logos" },
 		{ label: "Donation Gateways", to: "/admin/donation-gateways" },
-		{ label: "Reports", to: "/admin/reports" },
-		{ label: "Experiences", to: "/admin/station-experiences" },
-		{ label: "Claims", to: "/admin/claims" },
+		{
+			label: "Reports",
+			to: "/admin/reports",
+			pendingCount: pendingReports,
+		},
+		{
+			label: "Experiences",
+			to: "/admin/station-experiences",
+			pendingCount: pendingExperiences,
+		},
+		{
+			label: "Claims",
+			to: "/admin/claims",
+			pendingCount: pendingClaims,
+		},
 		...(isSuperAdmin
 			? [
 					{ label: "Users", to: "/admin/users" },
@@ -29,6 +64,7 @@ export function AdminLayout() {
 					{
 						label: "Access Requests",
 						to: "/admin/access-requests",
+						pendingCount: pendingAccessRequests,
 					},
 					{ label: "Invites", to: "/admin/invites" },
 					{ label: "Geo Backfill", to: "/admin/geo-backfill" },
@@ -90,14 +126,18 @@ export function AdminLayout() {
 							end={item.end}
 							className={({ isActive }) =>
 								cn(
-									"rounded-full px-4 py-2 text-sm font-medium sovereign-ease transition-colors",
+									"inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium sovereign-ease transition-colors",
 									isActive
 										? "bg-primary text-primary-foreground"
 										: "bg-secondary text-muted-foreground hover:text-foreground",
 								)
 							}
 						>
-							{item.label}
+							<span>{item.label}</span>
+							<PendingCountBadge
+								count={item.pendingCount ?? 0}
+								className="border-transparent px-2 py-0 text-[10px] leading-5"
+							/>
 						</NavLink>
 					))}
 				</div>

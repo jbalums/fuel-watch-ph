@@ -15,6 +15,8 @@ import {
 	type LucideIcon,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { PendingCountBadge } from "@/components/admin/PendingCountBadge";
+import { useAdminStationExperiences } from "@/hooks/useStationExperiences";
 import { useAdminStationClaims } from "@/hooks/useStationClaims";
 import { useAdminAccessRequests, useAdminInvites } from "@/hooks/useAdminOnboarding";
 import { useUserAccess } from "@/hooks/useUserAccess";
@@ -28,6 +30,7 @@ type AdminSection = {
 	description: string;
 	path: string;
 	icon: LucideIcon;
+	pendingCount?: number;
 };
 
 export default function AdminPage() {
@@ -42,10 +45,13 @@ export default function AdminPage() {
 		useAdminInvites(isSuperAdmin);
 	const { data: claimRequests = [], isLoading: claimsLoading } =
 		useAdminStationClaims(true);
+	const { data: experiences = [], isLoading: experiencesLoading } =
+		useAdminStationExperiences("pending");
 
 	if (
 		stationsLoading ||
 		reportsLoading ||
+		experiencesLoading ||
 		claimsLoading ||
 		(isSuperAdmin && (requestsLoading || invitesLoading))
 	) {
@@ -61,6 +67,9 @@ export default function AdminPage() {
 	).length;
 	const pendingClaims = claimRequests.filter(
 		(claim) => claim.reviewStatus === "pending",
+	).length;
+	const pendingExperiences = experiences.filter(
+		(experience) => experience.reviewStatus === "pending",
 	).length;
 	const reviewedReports = reports.filter(
 		(report) => report.reviewStatus !== "pending",
@@ -145,12 +154,22 @@ export default function AdminPage() {
 			description: "Review submitted fuel updates and verification photos.",
 			path: "/admin/reports",
 			icon: FileText,
+			pendingCount: pendingReports,
+		},
+		{
+			label: "Experiences",
+			description:
+				"Review community station experience posts before they become public.",
+			path: "/admin/station-experiences",
+			icon: FileText,
+			pendingCount: pendingExperiences,
 		},
 		{
 			label: "Claims",
 			description: "Approve or reject station ownership requests.",
 			path: "/admin/claims",
 			icon: BadgeCheck,
+			pendingCount: pendingClaims,
 		},
 		...(isSuperAdmin
 			? [
@@ -181,6 +200,7 @@ export default function AdminPage() {
 							"Review official LGU access requests and generate invite links.",
 						path: "/admin/access-requests",
 						icon: ShieldAlert,
+						pendingCount: pendingAccessRequests,
 					},
 					{
 						label: "Invites",
@@ -244,9 +264,12 @@ export default function AdminPage() {
 							<div className="mb-3 inline-flex h-10 w-10 items-center justify-center rounded-xl bg-accent/10 text-accent">
 								<section.icon className="h-5 w-5" />
 							</div>
-							<p className="font-semibold text-foreground">
-								{section.label}
-							</p>
+							<div className="flex items-center justify-between gap-3">
+								<p className="font-semibold text-foreground">
+									{section.label}
+								</p>
+								<PendingCountBadge count={section.pendingCount ?? 0} />
+							</div>
 							<p className="mt-1 text-sm text-muted-foreground">
 								{section.description}
 							</p>

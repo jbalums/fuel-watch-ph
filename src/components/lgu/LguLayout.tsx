@@ -1,8 +1,11 @@
 import { motion } from "framer-motion";
 import { Loader2, ShieldAlert } from "lucide-react";
 import { NavLink, Outlet } from "react-router-dom";
+import { useScopedDashboardStats } from "@/components/admin/admin-shared";
+import { PendingCountBadge } from "@/components/admin/PendingCountBadge";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCurrentUserScope } from "@/hooks/useCurrentUserScope";
+import { useScopedStationExperiences } from "@/hooks/useStationExperiences";
 import { useUserAccess } from "@/hooks/useUserAccess";
 import { cn } from "@/lib/utils";
 
@@ -31,6 +34,11 @@ export function LguLayout() {
 	const { data: scope, isLoading: scopeLoading } = useCurrentUserScope(
 		isLguAdmin,
 	);
+	const { data: dashboardStats } = useScopedDashboardStats(isLguAdmin);
+	const { data: experiences = [] } = useScopedStationExperiences("pending");
+	const pendingExperiences = experiences.filter(
+		(experience) => experience.reviewStatus === "pending",
+	).length;
 
 	if (accessLoading || (isLguAdmin && scopeLoading)) {
 		return (
@@ -63,8 +71,16 @@ export function LguLayout() {
 		{ label: "Overview", to: "/lgu", end: true },
 		{ label: "Stations", to: "/lgu/stations" },
 		{ label: "Stations Summary", to: "/lgu/stations-summary" },
-		{ label: "Reports", to: "/lgu/reports" },
-		{ label: "Experiences", to: "/lgu/station-experiences" },
+		{
+			label: "Reports",
+			to: "/lgu/reports",
+			pendingCount: Number(dashboardStats?.pending_reports ?? 0),
+		},
+		{
+			label: "Experiences",
+			to: "/lgu/station-experiences",
+			pendingCount: pendingExperiences,
+		},
 		...((isProvinceAdmin || isCityAdmin)
 			? [{ label: "Team", to: "/lgu/team" }]
 			: []),
@@ -108,14 +124,18 @@ export function LguLayout() {
 							end={item.end}
 							className={({ isActive }) =>
 								cn(
-									"rounded-full px-4 py-2 text-sm font-medium sovereign-ease transition-colors",
+									"inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium sovereign-ease transition-colors",
 									isActive
 										? "bg-primary text-primary-foreground"
 										: "bg-secondary text-muted-foreground hover:text-foreground",
 								)
 							}
 						>
-							{item.label}
+							<span>{item.label}</span>
+							<PendingCountBadge
+								count={item.pendingCount ?? 0}
+								className="border-transparent px-2 py-0 text-[10px] leading-5"
+							/>
 						</NavLink>
 					))}
 				</div>

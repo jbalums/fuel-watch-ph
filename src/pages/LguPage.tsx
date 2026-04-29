@@ -12,6 +12,8 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useScopedDashboardStats } from "@/components/admin/admin-shared";
+import { PendingCountBadge } from "@/components/admin/PendingCountBadge";
+import { useScopedStationExperiences } from "@/hooks/useStationExperiences";
 import {
 	useCurrentUserScope,
 	type CurrentUserScope,
@@ -89,6 +91,7 @@ type LguSection = {
 	description: string;
 	path: string;
 	icon: LucideIcon;
+	pendingCount?: number;
 };
 
 export default function LguPage() {
@@ -96,8 +99,10 @@ export default function LguPage() {
 	const { isProvinceAdmin, isCityAdmin } = useUserAccess();
 	const { data: stats, isLoading: statsLoading } = useScopedDashboardStats();
 	const { data: scope, isLoading: scopeLoading } = useCurrentUserScope();
+	const { data: experiences = [], isLoading: experiencesLoading } =
+		useScopedStationExperiences("pending");
 
-	if (statsLoading || scopeLoading || !stats || !scope) {
+	if (statsLoading || scopeLoading || experiencesLoading || !stats || !scope) {
 		return (
 			<div className="flex items-center justify-center rounded-2xl bg-card p-10 shadow-sovereign">
 				<Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -113,6 +118,9 @@ export default function LguPage() {
 	const embedDirectUrl = buildEmbedDirectUrl(scope);
 	const embedScriptSnippet = buildEmbedScriptSnippet(scope);
 	const embedIframeSnippet = buildEmbedIframeSnippet(scope);
+	const pendingExperiences = experiences.filter(
+		(experience) => experience.reviewStatus === "pending",
+	).length;
 	const statCards = [
 		{ label: "Stations", value: Number(stats.total_stations), icon: Fuel },
 		{
@@ -147,11 +155,20 @@ export default function LguPage() {
 			icon: Fuel,
 		},
 		{
+			label: "Experiences",
+			description:
+				"Review station experience posts submitted inside your assigned area.",
+			path: "/lgu/station-experiences",
+			icon: FileText,
+			pendingCount: pendingExperiences,
+		},
+		{
 			label: "Scoped Reports",
 			description:
 				"Approve or reject community fuel reports inside your assigned area.",
 			path: "/lgu/reports",
 			icon: FileText,
+			pendingCount: Number(stats.pending_reports),
 		},
 		...((isProvinceAdmin || isCityAdmin)
 			? [
@@ -226,9 +243,12 @@ export default function LguPage() {
 							<div className="mb-3 inline-flex h-10 w-10 items-center justify-center rounded-xl bg-accent/10 text-accent">
 								<section.icon className="h-5 w-5" />
 							</div>
-							<p className="font-semibold text-foreground">
-								{section.label}
-							</p>
+							<div className="flex items-center justify-between gap-3">
+								<p className="font-semibold text-foreground">
+									{section.label}
+								</p>
+								<PendingCountBadge count={section.pendingCount ?? 0} />
+							</div>
 							<p className="mt-1 text-sm text-muted-foreground">
 								{section.description}
 							</p>
