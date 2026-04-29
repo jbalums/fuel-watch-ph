@@ -126,7 +126,7 @@ export function AdminLayout() {
 							end={item.end}
 							className={({ isActive }) =>
 								cn(
-									"inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium sovereign-ease transition-colors",
+									"inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium sovereign-ease transition-colors relative",
 									isActive
 										? "bg-primary text-primary-foreground"
 										: "bg-secondary text-muted-foreground hover:text-foreground",
@@ -136,7 +136,7 @@ export function AdminLayout() {
 							<span>{item.label}</span>
 							<PendingCountBadge
 								count={item.pendingCount ?? 0}
-								className="border-transparent px-2 py-0 text-[10px] leading-5"
+								className="border-transparent px-2 py-0 text-[10px] leading-5 absolute -right-1 -top-1"
 							/>
 						</NavLink>
 					))}
