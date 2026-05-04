@@ -966,6 +966,20 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: Database["public"]["Tables"]["gas_stations"]["Row"][]
       }
+      list_station_summary_prices_as_of: {
+        Args: {
+          _as_of: string
+          _city_municipality_code?: string | null
+          _province_code?: string | null
+        }
+        Returns: Database["public"]["Tables"]["gas_stations"]["Row"][]
+      }
+      list_scoped_station_summary_prices_as_of: {
+        Args: {
+          _as_of: string
+        }
+        Returns: Database["public"]["Tables"]["gas_stations"]["Row"][]
+      }
       list_manageable_users: {
         Args: Record<PropertyKey, never>
         Returns: {

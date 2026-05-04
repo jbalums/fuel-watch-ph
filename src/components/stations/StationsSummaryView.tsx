@@ -59,12 +59,14 @@ export function StationsSummaryView({
 	stations,
 	searchPlaceholder,
 	headerFilters,
+	asOfDateLabel,
 }: {
 	title: string;
 	description: string;
 	stations: GasStationRow[];
 	searchPlaceholder: string;
 	headerFilters?: ReactNode;
+	asOfDateLabel?: string | null;
 }) {
 	const [searchQuery, setSearchQuery] = useState("");
 	const [sortKey, setSortKey] = useState<SortKey>("name");
@@ -197,8 +199,9 @@ export function StationsSummaryView({
 				</div>
 				<div className="rounded-2xl border border-border bg-secondary/20 p-4">
 					<p className="text-sm font-medium text-foreground">
-						Average fuel prices based on [{filteredStations.length}]{" "}
-						stations
+						{asOfDateLabel
+							? `Average fuel prices as of ${asOfDateLabel} based on [${filteredStations.length}] stations`
+							: `Average fuel prices based on [${filteredStations.length}] stations`}
 					</p>
 					<div className="mt-4 overflow-x-auto">
 						<div className="grid min-w-[720px] grid-cols-5 gap-3">

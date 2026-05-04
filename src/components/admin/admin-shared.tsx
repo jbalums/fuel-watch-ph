@@ -288,6 +288,45 @@ export function useAdminStations(enabled = true) {
 	});
 }
 
+export function useAdminStationSummaryPricesAsOf({
+	asOf,
+	provinceCode = "",
+	cityMunicipalityCode = "",
+	enabled = true,
+}: {
+	asOf: string | null;
+	provinceCode?: string;
+	cityMunicipalityCode?: string;
+	enabled?: boolean;
+}) {
+	return useQuery({
+		queryKey: [
+			"admin",
+			"station_summary_prices_as_of",
+			asOf,
+			provinceCode,
+			cityMunicipalityCode,
+		],
+		enabled: enabled && !!asOf,
+		queryFn: async () => {
+			const { data, error } = await supabase.rpc(
+				"list_station_summary_prices_as_of",
+				{
+					_as_of: asOf!,
+					_province_code: provinceCode || null,
+					_city_municipality_code: cityMunicipalityCode || null,
+				},
+			);
+
+			if (error) {
+				throw error;
+			}
+
+			return data ?? [];
+		},
+	});
+}
+
 export function useAdminReports(enabled = true) {
 	return useQuery({
 		queryKey: ["admin", "fuel_reports"],
@@ -319,6 +358,33 @@ export function useScopedAdminStations(enabled = true) {
 		queryFn: async () => {
 			const { data, error } = await supabase.rpc(
 				"list_scoped_gas_stations",
+			);
+
+			if (error) {
+				throw error;
+			}
+
+			return data ?? [];
+		},
+	});
+}
+
+export function useScopedStationSummaryPricesAsOf({
+	asOf,
+	enabled = true,
+}: {
+	asOf: string | null;
+	enabled?: boolean;
+}) {
+	return useQuery({
+		queryKey: ["lgu", "station_summary_prices_as_of", asOf],
+		enabled: enabled && !!asOf,
+		queryFn: async () => {
+			const { data, error } = await supabase.rpc(
+				"list_scoped_station_summary_prices_as_of",
+				{
+					_as_of: asOf!,
+				},
 			);
 
 			if (error) {
