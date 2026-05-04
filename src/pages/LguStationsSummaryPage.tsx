@@ -67,6 +67,11 @@ export default function LguStationsSummaryPage() {
 			stations={stations}
 			searchPlaceholder="Search scoped stations"
 			asOfDateLabel={asOfDateLabel}
+			exportFileName={
+				asOfDate
+					? `stations-summary-as-of-${asOfDate}.xlsx`
+					: "stations-summary-current.xlsx"
+			}
 			headerFilters={
 				<div className="rounded-2xl border border-border bg-secondary/20 p-4">
 					<div className="mb-3">

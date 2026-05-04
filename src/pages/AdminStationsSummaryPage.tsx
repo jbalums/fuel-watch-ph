@@ -104,6 +104,11 @@ export default function AdminStationsSummaryPage() {
 			stations={filteredStations}
 			searchPlaceholder="Search stations"
 			asOfDateLabel={asOfDateLabel}
+			exportFileName={
+				asOfDate
+					? `stations-summary-as-of-${asOfDate}.xlsx`
+					: "stations-summary-current.xlsx"
+			}
 			headerFilters={
 				<div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_260px]">
 					<div className="rounded-2xl border border-border bg-secondary/20 p-4">

@@ -3,9 +3,12 @@ import {
 	ArrowUpDown,
 	ChevronDown,
 	ChevronUp,
+	Download,
+	Loader2,
 	Search,
 } from "lucide-react";
 import { AdminListPagination } from "@/components/admin/AdminListPagination";
+import { toast } from "@/lib/app-toast";
 import {
 	Table,
 	TableBody,
@@ -20,6 +23,7 @@ import {
 	normalizeFuelPrices,
 	type FuelType,
 } from "@/lib/fuel-prices";
+import { exportStationsSummaryToExcel } from "@/lib/stations-summary-export";
 import type { GasStationRow } from "@/components/admin/admin-shared";
 
 type SortKey = "name" | FuelType;
@@ -60,6 +64,7 @@ export function StationsSummaryView({
 	searchPlaceholder,
 	headerFilters,
 	asOfDateLabel,
+	exportFileName,
 }: {
 	title: string;
 	description: string;
@@ -67,10 +72,12 @@ export function StationsSummaryView({
 	searchPlaceholder: string;
 	headerFilters?: ReactNode;
 	asOfDateLabel?: string | null;
+	exportFileName?: string;
 }) {
 	const [searchQuery, setSearchQuery] = useState("");
 	const [sortKey, setSortKey] = useState<SortKey>("name");
 	const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
+	const [isExporting, setIsExporting] = useState(false);
 
 	const filteredStations = useMemo(() => {
 		const normalizedQuery = searchQuery.trim().toLowerCase();
@@ -186,6 +193,58 @@ export function StationsSummaryView({
 		);
 	};
 
+	const averageSummaryLabel = asOfDateLabel
+		? `Average fuel prices as of ${asOfDateLabel} based on [${filteredStations.length}] stations`
+		: `Average fuel prices based on [${filteredStations.length}] stations`;
+
+	const handleExportExcel = async () => {
+		setIsExporting(true);
+
+		try {
+			const formattedAveragePrices = fuelTypes.reduce<
+				Record<FuelType, string>
+			>((accumulator, fuelType) => {
+				accumulator[fuelType] = formatFuelPrice(
+					averagePrices[fuelType],
+				);
+				return accumulator;
+			}, {} as Record<FuelType, string>);
+
+			await exportStationsSummaryToExcel({
+				title,
+				modeLabel: asOfDateLabel
+					? `As of ${asOfDateLabel}`
+					: "Current station prices",
+				summaryLabel: averageSummaryLabel,
+				averagePrices: formattedAveragePrices,
+				rows: sortedStations.map((station) => ({
+					name: station.name,
+					address: station.address,
+					prices: fuelTypes.reduce<Record<FuelType, string>>(
+						(accumulator, fuelType) => {
+							accumulator[fuelType] = formatFuelPrice(
+								getStationFuelPrice(station, fuelType),
+							);
+							return accumulator;
+						},
+						{} as Record<FuelType, string>,
+					),
+				})),
+				fileName:
+					exportFileName ??
+					(asOfDateLabel
+						? "stations-summary-as-of.xlsx"
+						: "stations-summary-current.xlsx"),
+			});
+			toast.success("Stations summary exported");
+		} catch (error) {
+			console.error("Failed to export stations summary", error);
+			toast.error("Could not export stations summary");
+		} finally {
+			setIsExporting(false);
+		}
+	};
+
 	return (
 		<div className="rounded-2xl bg-card p-5 shadow-sovereign">
 			<div className="mb-5 flex flex-col gap-3 border-b-2 pb-5">
@@ -199,9 +258,7 @@ export function StationsSummaryView({
 				</div>
 				<div className="rounded-2xl border border-border bg-secondary/20 p-4">
 					<p className="text-sm font-medium text-foreground">
-						{asOfDateLabel
-							? `Average fuel prices as of ${asOfDateLabel} based on [${filteredStations.length}] stations`
-							: `Average fuel prices based on [${filteredStations.length}] stations`}
+						{averageSummaryLabel}
 					</p>
 					<div className="mt-4 overflow-x-auto">
 						<div className="grid min-w-[720px] grid-cols-5 gap-3">
@@ -225,15 +282,32 @@ export function StationsSummaryView({
 					</div>
 				</div>
 				{headerFilters ? headerFilters : null}
-				<div className="relative flex-1">
-					<Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-					<input
-						type="text"
-						placeholder={searchPlaceholder}
-						value={searchQuery}
-						onChange={(event) => setSearchQuery(event.target.value)}
-						className="w-full rounded-xl bg-surface-alt py-2.5 pl-9 pr-3 text-sm text-foreground outline-none focus:ring-2 focus:ring-primary/20"
-					/>
+				<div className="flex flex-col gap-3 sm:flex-row">
+					<div className="relative flex-1">
+						<Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+						<input
+							type="text"
+							placeholder={searchPlaceholder}
+							value={searchQuery}
+							onChange={(event) =>
+								setSearchQuery(event.target.value)
+							}
+							className="w-full rounded-xl bg-surface-alt py-2.5 pl-9 pr-3 text-sm text-foreground outline-none focus:ring-2 focus:ring-primary/20"
+						/>
+					</div>
+					<button
+						type="button"
+						onClick={handleExportExcel}
+						disabled={isExporting}
+						className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-border bg-card px-4 text-sm font-semibold text-foreground transition-colors hover:bg-secondary/50 disabled:cursor-not-allowed disabled:opacity-60"
+					>
+						{isExporting ? (
+							<Loader2 className="h-4 w-4 animate-spin" />
+						) : (
+							<Download className="h-4 w-4" />
+						)}
+						Export Excel
+					</button>
 				</div>
 			</div>
 
