@@ -775,6 +775,32 @@ export type Database = {
           scope_type: string
         }[]
       }
+      get_current_user_mission_summary: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          approved_report_count: number
+          badges: string[]
+          current_streak_days: number
+          level: number
+          longest_streak_days: number
+          total_points: number
+          weekly_approved_report_count: number
+          weekly_completed: boolean
+          weekly_goal: number
+          weekly_points: number
+        }[]
+      }
+      get_public_weekly_mission_leaderboard: {
+        Args: {
+          _limit?: number
+        }
+        Returns: {
+          display_name: string
+          level: number
+          weekly_approved_report_count: number
+          weekly_points: number
+        }[]
+      }
       get_public_station_summary: {
         Args: Record<PropertyKey, never>
         Returns: {
@@ -794,6 +820,15 @@ export type Database = {
           reviewed_reports: number
           total_reports: number
           total_stations: number
+        }[]
+      }
+      get_report_mission_reward_summary: {
+        Args: {
+          _report_id: string
+        }
+        Returns: {
+          rewarded_user_label: string | null
+          total_points: number
         }[]
       }
       get_user_scope: {
@@ -979,6 +1014,36 @@ export type Database = {
           _as_of: string
         }
         Returns: Database["public"]["Tables"]["gas_stations"]["Row"][]
+      }
+      list_station_price_history: {
+        Args: {
+          _station_id: string
+        }
+        Returns: {
+          report_id: string
+          effective_at: string
+          submission_mode: string
+          reported_address: string | null
+          prices: Json | null
+          fuel_availability: Json | null
+          reviewed_at: string | null
+          created_at: string
+        }[]
+      }
+      list_scoped_station_price_history: {
+        Args: {
+          _station_id: string
+        }
+        Returns: {
+          report_id: string
+          effective_at: string
+          submission_mode: string
+          reported_address: string | null
+          prices: Json | null
+          fuel_availability: Json | null
+          reviewed_at: string | null
+          created_at: string
+        }[]
       }
       list_manageable_users: {
         Args: Record<PropertyKey, never>

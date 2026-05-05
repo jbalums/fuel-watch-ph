@@ -67,6 +67,7 @@ export default function LguStationsSummaryPage() {
 			stations={stations}
 			searchPlaceholder="Search scoped stations"
 			asOfDateLabel={asOfDateLabel}
+			historyScope="lgu"
 			exportFileName={
 				asOfDate
 					? `stations-summary-as-of-${asOfDate}.xlsx`

@@ -26,10 +26,13 @@ import {
 import { cn } from "@/lib/utils";
 import { Check, ChevronsUpDown, Loader2, Map, MapPin } from "lucide-react";
 import { HeroStatus } from "@/components/HeroStatus";
+import { FuelWatchMissionCard } from "@/components/FuelWatchMissionCard";
 import { SearchFilter } from "@/components/SearchFilter";
 import { StationResultsList } from "@/components/StationResultsList";
+import { useAuth } from "@/contexts/AuthContext";
 import { useCurrentLocation } from "@/hooks/useCurrentLocation";
 import { useGeoReferences } from "@/hooks/useGeoReferences";
+import { useCurrentUserMissionSummary } from "@/hooks/useMissions";
 import { usePublicStationSummary } from "@/hooks/usePublicStationSummary";
 import { useStations } from "@/hooks/useStations";
 import { useCurrentUserScope } from "@/hooks/useCurrentUserScope";
@@ -51,6 +54,7 @@ const HOMEPAGE_PROVINCE_PROMPT_DISMISSED_KEY =
 export default function Index() {
 	const navigate = useNavigate();
 	const location = useLocation();
+	const { user } = useAuth();
 	const [selectedProvinceCode, setSelectedProvinceCode] = useState(() =>
 		getStoredCurrentProvinceCode(),
 	);
@@ -106,6 +110,7 @@ export default function Index() {
 		provinceCode: selectedProvinceCode,
 	});
 	const { data: stationSummary } = usePublicStationSummary();
+	const { data: missionSummary } = useCurrentUserMissionSummary();
 	const { data: allStations = [] } = useStations();
 	const [currentPage, setCurrentPage] = useState(1);
 	const hasInitializedScopeFilters = useRef(false);
@@ -429,6 +434,9 @@ export default function Index() {
 	return (
 		<>
 			<HeroStatus summary={stationSummary ?? null} />
+			{user && missionSummary ? (
+				<FuelWatchMissionCard summary={missionSummary} compact />
+			) : null}
 			<SearchFilter
 				searchQuery={searchQuery}
 				onSearchChange={setSearchQuery}

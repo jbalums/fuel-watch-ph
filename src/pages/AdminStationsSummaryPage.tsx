@@ -104,6 +104,7 @@ export default function AdminStationsSummaryPage() {
 			stations={filteredStations}
 			searchPlaceholder="Search stations"
 			asOfDateLabel={asOfDateLabel}
+			historyScope="admin"
 			exportFileName={
 				asOfDate
 					? `stations-summary-as-of-${asOfDate}.xlsx`

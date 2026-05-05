@@ -1,6 +1,6 @@
 import { useQuery, type QueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import type { Tables } from "@/integrations/supabase/types";
+import type { Database, Tables } from "@/integrations/supabase/types";
 import {
 	createEmptyFuelAvailabilityFormMap,
 	createEmptyFuelPriceFormMap,
@@ -30,6 +30,8 @@ import type { ManagedAccessLevel } from "@/lib/access-control";
 
 export type GasStationRow = Tables<"gas_stations">;
 type FuelReportRow = Tables<"fuel_reports">;
+export type StationPriceHistoryRow =
+	Database["public"]["Functions"]["list_station_price_history"]["Returns"][number];
 type ProfileRow = Pick<
 	Tables<"profiles">,
 	"user_id" | "display_name" | "username"
@@ -327,6 +329,33 @@ export function useAdminStationSummaryPricesAsOf({
 	});
 }
 
+export function useAdminStationPriceHistory({
+	stationId,
+	enabled = true,
+}: {
+	stationId: string | null;
+	enabled?: boolean;
+}) {
+	return useQuery({
+		queryKey: ["admin", "station_price_history", stationId],
+		enabled: enabled && !!stationId,
+		queryFn: async () => {
+			const { data, error } = await supabase.rpc(
+				"list_station_price_history",
+				{
+					_station_id: stationId!,
+				},
+			);
+
+			if (error) {
+				throw error;
+			}
+
+			return data ?? [];
+		},
+	});
+}
+
 export function useAdminReports(enabled = true) {
 	return useQuery({
 		queryKey: ["admin", "fuel_reports"],
@@ -384,6 +413,33 @@ export function useScopedStationSummaryPricesAsOf({
 				"list_scoped_station_summary_prices_as_of",
 				{
 					_as_of: asOf!,
+				},
+			);
+
+			if (error) {
+				throw error;
+			}
+
+			return data ?? [];
+		},
+	});
+}
+
+export function useScopedStationPriceHistory({
+	stationId,
+	enabled = true,
+}: {
+	stationId: string | null;
+	enabled?: boolean;
+}) {
+	return useQuery({
+		queryKey: ["lgu", "station_price_history", stationId],
+		enabled: enabled && !!stationId,
+		queryFn: async () => {
+			const { data, error } = await supabase.rpc(
+				"list_scoped_station_price_history",
+				{
+					_station_id: stationId!,
 				},
 			);
 
@@ -479,6 +535,9 @@ export async function refreshAdminData(queryClient: QueryClient) {
 		}),
 		queryClient.invalidateQueries({
 			queryKey: ["station_experiences"],
+		}),
+		queryClient.invalidateQueries({
+			queryKey: ["missions"],
 		}),
 	]);
 }

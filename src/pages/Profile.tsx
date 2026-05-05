@@ -16,8 +16,13 @@ import {
 	UserRound,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { FuelWatchMissionCard } from "@/components/FuelWatchMissionCard";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useManagedStation } from "@/hooks/useManagedStation";
+import {
+	useCurrentUserMissionSummary,
+	useWeeklyMissionLeaderboard,
+} from "@/hooks/useMissions";
 import { useProfile } from "@/hooks/useProfile";
 import { termsDisclaimerParagraphs } from "@/lib/legal";
 import logo from "@/assets/images/Icon.png";
@@ -30,6 +35,8 @@ export default function Profile() {
 	const fileInputRef = useRef<HTMLInputElement>(null);
 	const { data: managedStation } = useManagedStation();
 	const { data: profile, isLoading: profileLoading } = useProfile();
+	const { data: missionSummary } = useCurrentUserMissionSummary();
+	const { data: weeklyLeaderboard = [] } = useWeeklyMissionLeaderboard(5);
 
 	const [displayName, setDisplayName] = useState("");
 	const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
@@ -362,6 +369,81 @@ export default function Profile() {
 								</motion.button>
 							</div>
 						</section>
+
+						{missionSummary ? (
+							<section>
+								<h3 className="text-lg font-semibold text-primary dark:text-blue-500">
+									FuelWatch Missions
+								</h3>
+								<div className="mt-4 space-y-4">
+									<FuelWatchMissionCard
+										summary={missionSummary}
+									/>
+									<div className="rounded-2xl border border-border bg-secondary/40 p-5">
+										<div className="flex items-center justify-between gap-4">
+											<div>
+												<h4 className="text-sm font-semibold text-foreground">
+													Weekly Scouts
+												</h4>
+												<p className="mt-1 text-sm text-muted-foreground">
+													Top contributors this week,
+													ranked by mission points.
+												</p>
+											</div>
+										</div>
+										{weeklyLeaderboard.length === 0 ? (
+											<p className="mt-4 rounded-xl border border-dashed border-border bg-background/60 p-4 text-sm text-muted-foreground">
+												No weekly scouts yet. Be the
+												first to get an approved report
+												this week.
+											</p>
+										) : (
+											<div className="mt-4 space-y-2">
+												{weeklyLeaderboard.map(
+													(entry, index) => (
+														<div
+															key={`${entry.display_name}-${index}`}
+															className="flex items-center justify-between gap-3 rounded-xl border border-border bg-background/60 px-4 py-3"
+														>
+															<div className="min-w-0">
+																<p className="truncate text-sm font-semibold text-foreground">
+																	{index + 1}
+																	.{" "}
+																	{
+																		entry.display_name
+																	}
+																</p>
+																<p className="text-xs text-muted-foreground">
+																	Lv.{" "}
+																	{
+																		entry.level
+																	}{" "}
+																	Scout
+																</p>
+															</div>
+															<div className="text-right">
+																<p className="text-sm font-bold tabular-nums text-foreground">
+																	{
+																		entry.weekly_points
+																	}{" "}
+																	pts
+																</p>
+																<p className="text-xs text-muted-foreground">
+																	{
+																		entry.weekly_approved_report_count
+																	}{" "}
+																	reports
+																</p>
+															</div>
+														</div>
+													),
+												)}
+											</div>
+										)}
+									</div>
+								</div>
+							</section>
+						) : null}
 
 						{managedStation && (
 							<section>

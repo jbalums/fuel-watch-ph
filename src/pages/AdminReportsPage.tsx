@@ -43,6 +43,7 @@ import {
 	parseFuelPriceForm,
 	validateFuelPriceAvailability,
 } from "@/lib/fuel-prices";
+import { getReportMissionRewardSummary } from "@/hooks/useMissions";
 
 export default function AdminReportsPage() {
 	const queryClient = useQueryClient();
@@ -238,13 +239,21 @@ export default function AdminReportsPage() {
 				{
 					onSuccess: async (stationId) => {
 						await refreshAdminData(queryClient);
+						const rewardSummary =
+							await getReportMissionRewardSummary(
+								reportToApprove.id,
+							).catch(() => null);
 						const matchedStation = stationId
 							? stationLookup.get(stationId)
 							: null;
+						const rewardSuffix =
+							rewardSummary && rewardSummary.total_points > 0
+								? ` • +${rewardSummary.total_points} mission points for ${rewardSummary.rewarded_user_label}`
+								: "";
 						toast.success(
-							matchedStation
+							(matchedStation
 								? `Easy report approved and applied to ${matchedStation.name}`
-								: "Easy report approved",
+								: "Easy report approved") + rewardSuffix,
 						);
 						setReportToApprove(null);
 					},
@@ -261,13 +270,20 @@ export default function AdminReportsPage() {
 		approveReport.mutate(reportToApprove.id, {
 			onSuccess: async (stationId) => {
 				await refreshAdminData(queryClient);
+				const rewardSummary = await getReportMissionRewardSummary(
+					reportToApprove.id,
+				).catch(() => null);
 				const matchedStation = stationId
 					? stationLookup.get(stationId)
 					: null;
+				const rewardSuffix =
+					rewardSummary && rewardSummary.total_points > 0
+						? ` • +${rewardSummary.total_points} mission points for ${rewardSummary.rewarded_user_label}`
+						: "";
 				toast.success(
-					matchedStation
+					(matchedStation
 						? `Report approved and applied to ${matchedStation.name}`
-						: "Report approved",
+						: "Report approved") + rewardSuffix,
 				);
 				setReportToApprove(null);
 			},

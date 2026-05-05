@@ -1,4 +1,4 @@
-import { useMemo, useState, type ReactNode } from "react";
+import { useMemo, useState, type KeyboardEvent, type ReactNode } from "react";
 import {
 	ArrowUpDown,
 	ChevronDown,
@@ -8,6 +8,18 @@ import {
 	Search,
 } from "lucide-react";
 import { AdminListPagination } from "@/components/admin/AdminListPagination";
+import {
+	useAdminStationPriceHistory,
+	useScopedStationPriceHistory,
+	type GasStationRow,
+} from "@/components/admin/admin-shared";
+import {
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogHeader,
+	DialogTitle,
+} from "@/components/ui/dialog";
 import { toast } from "@/lib/app-toast";
 import {
 	Table,
@@ -24,10 +36,10 @@ import {
 	type FuelType,
 } from "@/lib/fuel-prices";
 import { exportStationsSummaryToExcel } from "@/lib/stations-summary-export";
-import type { GasStationRow } from "@/components/admin/admin-shared";
 
 type SortKey = "name" | FuelType;
 type SortDirection = "asc" | "desc";
+type HistoryScope = "admin" | "lgu";
 
 function isFuelType(value: string | null | undefined): value is FuelType {
 	return Boolean(value && fuelTypes.includes(value as FuelType));
@@ -57,6 +69,21 @@ function compareTextValues(a: string, b: string, direction: SortDirection) {
 	return direction === "asc" ? result : -result;
 }
 
+function formatEffectiveDate(value: string) {
+	return new Intl.DateTimeFormat("en-US", {
+		month: "short",
+		day: "numeric",
+		year: "numeric",
+		hour: "numeric",
+		minute: "2-digit",
+		timeZone: "Asia/Manila",
+	}).format(new Date(value));
+}
+
+function formatReportType(value: string | null | undefined) {
+	return value === "easy" ? "Easy Report" : "Standard Report";
+}
+
 export function StationsSummaryView({
 	title,
 	description,
@@ -65,6 +92,7 @@ export function StationsSummaryView({
 	headerFilters,
 	asOfDateLabel,
 	exportFileName,
+	historyScope,
 }: {
 	title: string;
 	description: string;
@@ -73,11 +101,28 @@ export function StationsSummaryView({
 	headerFilters?: ReactNode;
 	asOfDateLabel?: string | null;
 	exportFileName?: string;
+	historyScope?: HistoryScope;
 }) {
 	const [searchQuery, setSearchQuery] = useState("");
 	const [sortKey, setSortKey] = useState<SortKey>("name");
 	const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
 	const [isExporting, setIsExporting] = useState(false);
+	const [selectedHistoryStation, setSelectedHistoryStation] =
+		useState<GasStationRow | null>(null);
+	const [historyDialogOpen, setHistoryDialogOpen] = useState(false);
+	const selectedHistoryStationId = selectedHistoryStation?.id ?? null;
+	const adminHistoryQuery = useAdminStationPriceHistory({
+		stationId: selectedHistoryStationId,
+		enabled: historyScope === "admin" && historyDialogOpen,
+	});
+	const scopedHistoryQuery = useScopedStationPriceHistory({
+		stationId: selectedHistoryStationId,
+		enabled: historyScope === "lgu" && historyDialogOpen,
+	});
+	const historyQuery =
+		historyScope === "lgu" ? scopedHistoryQuery : adminHistoryQuery;
+	const historyRows = historyScope ? (historyQuery.data ?? []) : [];
+	const isHistoryLoading = historyScope ? historyQuery.isLoading : false;
 
 	const filteredStations = useMemo(() => {
 		const normalizedQuery = searchQuery.trim().toLowerCase();
@@ -245,6 +290,27 @@ export function StationsSummaryView({
 		}
 	};
 
+	const openHistoryDialog = (station: GasStationRow) => {
+		if (!historyScope) {
+			return;
+		}
+
+		setSelectedHistoryStation(station);
+		setHistoryDialogOpen(true);
+	};
+
+	const handleHistoryRowKeyDown = (
+		event: KeyboardEvent<HTMLTableRowElement>,
+		station: GasStationRow,
+	) => {
+		if (event.key !== "Enter" && event.key !== " ") {
+			return;
+		}
+
+		event.preventDefault();
+		openHistoryDialog(station);
+	};
+
 	return (
 		<div className="rounded-2xl bg-card p-5 shadow-sovereign">
 			<div className="mb-5 flex flex-col gap-3 border-b-2 pb-5">
@@ -352,7 +418,29 @@ export function StationsSummaryView({
 							</TableHeader>
 							<TableBody>
 								{paginatedStations.map((station) => (
-									<TableRow key={station.id}>
+									<TableRow
+										key={station.id}
+										role={
+											historyScope
+												? "button"
+												: undefined
+										}
+										tabIndex={historyScope ? 0 : undefined}
+										onClick={() =>
+											openHistoryDialog(station)
+										}
+										onKeyDown={(event) =>
+											handleHistoryRowKeyDown(
+												event,
+												station,
+											)
+										}
+										className={
+											historyScope
+												? "cursor-pointer transition-colors hover:bg-secondary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+												: undefined
+										}
+									>
 										<TableCell>
 											<div className="min-w-[220px]">
 												<p className="font-semibold text-foreground">
@@ -389,6 +477,109 @@ export function StationsSummaryView({
 					/>
 				</div>
 			)}
+			<Dialog
+				open={historyDialogOpen}
+				onOpenChange={setHistoryDialogOpen}
+			>
+				<DialogContent className="max-h-[88vh] max-w-5xl overflow-hidden p-0">
+					<DialogHeader className="border-b border-border px-6 py-5">
+						<DialogTitle>
+							{selectedHistoryStation?.name ?? "Station"} Price
+							History
+						</DialogTitle>
+						<DialogDescription>
+							{selectedHistoryStation?.address ??
+								"Approved fuel price report history for this station."}
+						</DialogDescription>
+					</DialogHeader>
+					<div className="max-h-[68vh] overflow-y-auto px-6 pb-6">
+						{isHistoryLoading ? (
+							<div className="flex items-center justify-center rounded-xl border border-dashed border-border bg-secondary/20 p-10 text-sm text-muted-foreground">
+								<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+								Loading price history...
+							</div>
+						) : historyRows.length === 0 ? (
+							<div className="rounded-xl border border-dashed border-border bg-secondary/20 p-10 text-center text-sm text-muted-foreground">
+								No approved price history found for this
+								station.
+							</div>
+						) : (
+							<div className="overflow-x-auto rounded-xl border border-border">
+								<Table>
+									<TableHeader>
+										<TableRow>
+											<TableHead className="min-w-[180px]">
+												Effective Date
+											</TableHead>
+											{fuelTypes.map((fuelType) => (
+												<TableHead
+													key={`${fuelType}-history-header`}
+													className="min-w-[130px] text-right"
+												>
+													{fuelType}
+												</TableHead>
+											))}
+											<TableHead className="min-w-[130px] text-right">
+												Report Type
+											</TableHead>
+										</TableRow>
+									</TableHeader>
+									<TableBody>
+										{historyRows.map((row) => {
+											const rowPrices =
+												normalizeFuelPrices(
+													row.prices,
+													undefined,
+													undefined,
+												);
+
+											return (
+												<TableRow key={row.report_id}>
+													<TableCell>
+														<div>
+															<p className="font-medium text-foreground">
+																{formatEffectiveDate(
+																	row.effective_at,
+																)}
+															</p>
+															{row.reported_address ? (
+																<p className="mt-1 max-w-[260px] truncate text-xs text-muted-foreground">
+																	{
+																		row.reported_address
+																	}
+																</p>
+															) : null}
+														</div>
+													</TableCell>
+													{fuelTypes.map(
+														(fuelType) => (
+															<TableCell
+																key={`${row.report_id}-${fuelType}`}
+																className="text-right font-medium tabular-nums text-foreground"
+															>
+																{formatFuelPrice(
+																	rowPrices[
+																		fuelType
+																	],
+																)}
+															</TableCell>
+														),
+													)}
+													<TableCell className="text-right text-sm text-muted-foreground">
+														{formatReportType(
+															row.submission_mode,
+														)}
+													</TableCell>
+												</TableRow>
+											);
+										})}
+									</TableBody>
+								</Table>
+							</div>
+						)}
+					</div>
+				</DialogContent>
+			</Dialog>
 		</div>
 	);
 }
