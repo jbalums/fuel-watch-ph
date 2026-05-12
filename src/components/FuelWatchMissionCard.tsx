@@ -62,11 +62,11 @@ export function FuelWatchMissionCard({
 						<p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">
 							FuelWatch Missions
 						</p>
+						<h3 className="mt-1 text-xl font-bold text-foreground">
+							Fuel Scout Lv. {summary.level}
+						</h3>
 						{isCollapsed ? null : (
 							<>
-								<h3 className="mt-1 text-xl font-bold text-foreground">
-									Fuel Scout Lv. {summary.level}
-								</h3>
 								<p className="mt-1 text-sm text-muted-foreground">
 									Earn points when your fuel price reports are
 									approved.
@@ -115,8 +115,8 @@ export function FuelWatchMissionCard({
 							Weekly mission
 						</span>
 						<span className="text-muted-foreground">
-							{summary.weekly_approved_report_count}/
-							{weeklyGoal} approved reports
+							{summary.weekly_approved_report_count}/{weeklyGoal}{" "}
+							approved reports
 						</span>
 					</div>
 					<Progress
