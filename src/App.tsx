@@ -22,7 +22,6 @@ import { GoogleOAuthProvider } from "@react-oauth/google";
 import { Loader2 } from "lucide-react";
 
 const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
-const clientSecret = import.meta.env.VITE_GOOGLE_CLIENT_SECRET;
 const queryClient = new QueryClient();
 const AppShellLayout = lazy(() =>
 	import("@/components/AppShellLayout").then((module) => ({
