@@ -671,7 +671,35 @@ export type Database = {
         }
         Returns: string
       }
+      apply_ai_fuel_prices: {
+        Args: {
+          _updates: Json
+        }
+        Returns: number
+      }
+      get_manual_average_fuel_prices: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          fuel_type: string
+          avg_price: number | null
+          min_price: number | null
+          max_price: number | null
+          updated_at: string
+        }[]
+      }
+      set_manual_average_fuel_prices: {
+        Args: {
+          _prices: Json
+        }
+        Returns: number
+      }
       approve_fuel_report: {
+        Args: {
+          _report_id: string
+        }
+        Returns: string
+      }
+      undo_approved_fuel_price: {
         Args: {
           _report_id: string
         }
@@ -809,6 +837,16 @@ export type Database = {
           average_premium_diesel: number | null
           average_premium: number | null
           average_unleaded: number | null
+          min_diesel: number | null
+          min_kerosene: number | null
+          min_premium_diesel: number | null
+          min_premium: number | null
+          min_unleaded: number | null
+          max_diesel: number | null
+          max_kerosene: number | null
+          max_premium_diesel: number | null
+          max_premium: number | null
+          max_unleaded: number | null
           sample_report_count: number | null
           window_days: number | null
         }[]
