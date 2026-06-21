@@ -160,8 +160,13 @@ function GoogleReportLocationPicker({
 			return;
 		}
 
+		let isMounted = true;
+
 		navigator.geolocation.getCurrentPosition(
 			(position) => {
+				if (!isMounted) {
+					return;
+				}
 				const currentLocation = {
 					lat: position.coords.latitude,
 					lng: position.coords.longitude,
@@ -173,6 +178,9 @@ function GoogleReportLocationPicker({
 				);
 			},
 			() => {
+				if (!isMounted) {
+					return;
+				}
 				setViewportCenter((current) => {
 					const fallbackCenter = existingCenter ?? MANILA_CENTER;
 					return coordinatesMatch(current, fallbackCenter)
@@ -181,6 +189,10 @@ function GoogleReportLocationPicker({
 				});
 			},
 		);
+
+		return () => {
+			isMounted = false;
+		};
 	}, [activePosition, existingCenter]);
 
 	useEffect(() => {

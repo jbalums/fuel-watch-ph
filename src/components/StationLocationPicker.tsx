@@ -93,17 +93,29 @@ function GoogleStationLocationPicker({
 			return;
 		}
 
+		let isMounted = true;
+
 		navigator.geolocation.getCurrentPosition(
 			(position) => {
+				if (!isMounted) {
+					return;
+				}
 				setViewportCenter({
 					lat: position.coords.latitude,
 					lng: position.coords.longitude,
 				});
 			},
 			() => {
+				if (!isMounted) {
+					return;
+				}
 				setViewportCenter(existingCenter ?? MANILA_CENTER);
 			},
 		);
+
+		return () => {
+			isMounted = false;
+		};
 	}, [existingCenter, selectedPosition]);
 
 	useEffect(() => {
