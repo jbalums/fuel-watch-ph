@@ -1,10 +1,15 @@
 import { motion } from "framer-motion";
 import { Loader2, ShieldAlert } from "lucide-react";
 import { NavLink, Outlet } from "react-router-dom";
-import { useAdminAccessRequests } from "@/hooks/useAdminOnboarding";
+import {
+	useAdminAccessRequests,
+	useAdminInvites,
+	useAdminLguUsers,
+} from "@/hooks/useAdminOnboarding";
 import { useAdminStationExperiences } from "@/hooks/useStationExperiences";
 import { useAdminStationClaims } from "@/hooks/useStationClaims";
-import { cn } from "@/lib/utils";
+import { useManageableUsers } from "@/hooks/useManageableUsers";
+import { cn, countNewSince } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAdminReports } from "@/components/admin/admin-shared";
 import { PendingCountBadge } from "@/components/admin/PendingCountBadge";
@@ -16,9 +21,11 @@ export function AdminLayout() {
 	const { data: reports = [] } = useAdminReports(isAdmin);
 	const { data: experiences = [] } = useAdminStationExperiences("pending");
 	const { data: claims = [] } = useAdminStationClaims(isAdmin);
-	const { data: accessRequests = [] } = useAdminAccessRequests(
-		isAdmin && isSuperAdmin,
-	);
+	const superAdmin = isAdmin && isSuperAdmin;
+	const { data: accessRequests = [] } = useAdminAccessRequests(superAdmin);
+	const { data: invites = [] } = useAdminInvites(superAdmin);
+	const { data: manageableUsers = [] } = useManageableUsers(superAdmin);
+	const { data: lguUsers = [] } = useAdminLguUsers(superAdmin);
 	const pendingReports = reports.filter(
 		(report) => report.reviewStatus === "pending",
 	).length;
@@ -31,6 +38,11 @@ export function AdminLayout() {
 	const pendingAccessRequests = accessRequests.filter(
 		(request) => request.status === "pending",
 	).length;
+	const pendingInvites = invites.filter(
+		(invite) => invite.usedAt === null,
+	).length;
+	const newUsers = countNewSince(manageableUsers.map((user) => user.createdAt));
+	const newLguUsers = countNewSince(lguUsers.map((user) => user.createdAt));
 	const adminNavItems = [
 		{ label: "Overview", to: "/admin", end: true },
 		{ label: "Stations", to: "/admin/stations" },
@@ -55,8 +67,16 @@ export function AdminLayout() {
 		},
 		...(isSuperAdmin
 			? [
-					{ label: "Users", to: "/admin/users" },
-					{ label: "LGU Users", to: "/admin/lgu-users" },
+					{
+						label: "Users",
+						to: "/admin/users",
+						pendingCount: newUsers,
+					},
+					{
+						label: "LGU Users",
+						to: "/admin/lgu-users",
+						pendingCount: newLguUsers,
+					},
 					{
 						label: "Platform Controls",
 						to: "/admin/platform-controls",
@@ -66,7 +86,11 @@ export function AdminLayout() {
 						to: "/admin/access-requests",
 						pendingCount: pendingAccessRequests,
 					},
-					{ label: "Invites", to: "/admin/invites" },
+					{
+						label: "Invites",
+						to: "/admin/invites",
+						pendingCount: pendingInvites,
+					},
 					{ label: "Geo Backfill", to: "/admin/geo-backfill" },
 					{ label: "AI Price Fill", to: "/admin/ai-price-fill" },
 					{

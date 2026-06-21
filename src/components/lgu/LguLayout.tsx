@@ -3,6 +3,7 @@ import { Loader2, ShieldAlert } from "lucide-react";
 import { NavLink, Outlet } from "react-router-dom";
 import { useScopedDashboardStats } from "@/components/admin/admin-shared";
 import { PendingCountBadge } from "@/components/admin/PendingCountBadge";
+import { useLguStaffInvites } from "@/hooks/useAdminOnboarding";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCurrentUserScope } from "@/hooks/useCurrentUserScope";
 import { useScopedStationExperiences } from "@/hooks/useStationExperiences";
@@ -36,8 +37,13 @@ export function LguLayout() {
 	);
 	const { data: dashboardStats } = useScopedDashboardStats(isLguAdmin);
 	const { data: experiences = [] } = useScopedStationExperiences("pending");
+	const canManageTeam = isProvinceAdmin || isCityAdmin;
+	const { data: staffInvites = [] } = useLguStaffInvites(canManageTeam);
 	const pendingExperiences = experiences.filter(
 		(experience) => experience.reviewStatus === "pending",
+	).length;
+	const pendingTeamInvites = staffInvites.filter(
+		(invite) => invite.usedAt === null,
 	).length;
 
 	if (accessLoading || (isLguAdmin && scopeLoading)) {
@@ -81,8 +87,14 @@ export function LguLayout() {
 			to: "/lgu/station-experiences",
 			pendingCount: pendingExperiences,
 		},
-		...((isProvinceAdmin || isCityAdmin)
-			? [{ label: "Team", to: "/lgu/team" }]
+		...(canManageTeam
+			? [
+					{
+						label: "Team",
+						to: "/lgu/team",
+						pendingCount: pendingTeamInvites,
+					},
+				]
 			: []),
 	];
 	const scopeLabel = formatScopeLabel(

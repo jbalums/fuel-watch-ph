@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
 	ArrowUpDown,
 	ChevronDown,
@@ -24,17 +24,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePaginatedList } from "@/hooks/usePaginatedList";
 import { useUserAccess } from "@/hooks/useUserAccess";
+import {
+	useManageableUsers,
+	type ManageableUser,
+} from "@/hooks/useManageableUsers";
 import { type ManagedAccessLevel } from "@/lib/access-control";
-
-type ManageableUser = {
-	userId: string;
-	email: string;
-	displayName: string | null;
-	avatarUrl: string | null;
-	accessLevel: ManagedAccessLevel;
-	createdAt: string | null;
-	lastLoginAt: string | null;
-};
 
 type UserSortKey =
 	| "user"
@@ -139,27 +133,7 @@ export default function AdminUsersPage() {
 		data: users = [],
 		isLoading: usersLoading,
 		error: usersError,
-	} = useQuery({
-		queryKey: ["admin", "manageable_users"],
-		enabled: isSuperAdmin,
-		queryFn: async (): Promise<ManageableUser[]> => {
-			const { data, error } = await supabase.rpc("list_manageable_users");
-
-			if (error) {
-				throw error;
-			}
-
-			return (data ?? []).map((userRow) => ({
-				userId: userRow.user_id,
-				email: userRow.email ?? "",
-				displayName: userRow.display_name,
-				avatarUrl: userRow.avatar_url,
-				accessLevel: userRow.access_level as ManagedAccessLevel,
-				createdAt: userRow.created_at,
-				lastLoginAt: userRow.last_login_at,
-			}));
-		},
-	});
+	} = useManageableUsers(isSuperAdmin);
 	const [updatingUserId, setUpdatingUserId] = useState<string | null>(null);
 
 	const filteredUsers = useMemo(() => {

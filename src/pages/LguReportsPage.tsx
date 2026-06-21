@@ -115,7 +115,6 @@ export default function LguReportsPage() {
 			if (error) throw error;
 			return data;
 		},
-		onError: (error) => toast.error(error.message),
 	});
 
 	const approveEasyReport = useMutation({
@@ -175,9 +174,6 @@ export default function LguReportsPage() {
 			if (error) throw error;
 			return data;
 		},
-		onError: (error) => {
-			setEasyApprovalError(error.message);
-		},
 	});
 
 	useEffect(() => {
@@ -199,11 +195,6 @@ export default function LguReportsPage() {
 
 			if (error) throw error;
 		},
-		onSuccess: async () => {
-			await refreshAdminData(queryClient);
-			toast.destructive("Report rejected");
-		},
-		onError: (error) => toast.error(error.message),
 	});
 
 	const confirmRejectReport = () => {

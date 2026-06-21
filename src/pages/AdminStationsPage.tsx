@@ -138,11 +138,6 @@ export default function AdminStationsPage() {
 				.eq("id", stationId);
 			if (error) throw error;
 		},
-		onSuccess: async () => {
-			await refreshAdminData(queryClient);
-			toast.deleted("Station deleted");
-		},
-		onError: (error) => toast.error(error.message),
 	});
 
 	const runWithUnsavedGuard = (action: () => void) => {
