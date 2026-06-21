@@ -1,1 +1,4 @@
 project_id = "puckrqnshaxjfwhkufmw"
+
+[functions.ai-fuel-prices]
+verify_jwt = true
