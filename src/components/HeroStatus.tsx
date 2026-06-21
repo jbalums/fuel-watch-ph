@@ -19,6 +19,22 @@ function formatAveragePrice(
 	return `₱${price.toFixed(2)}`;
 }
 
+function formatMinMax(
+	summary: PublicStationSummary | null,
+	fuelType: FuelType,
+) {
+	const min = summary?.minPrices?.[fuelType] ?? null;
+	const max = summary?.maxPrices?.[fuelType] ?? null;
+
+	if (min === null && max === null) {
+		return null;
+	}
+
+	const minLabel = min === null ? "—" : `₱${min.toFixed(2)}`;
+	const maxLabel = max === null ? "—" : `₱${max.toFixed(2)}`;
+	return `${minLabel} – ${maxLabel}`;
+}
+
 export function HeroStatus({ summary }: HeroStatusProps) {
 	const sampleReportCount = summary?.sampleReportCount ?? 0;
 	const windowDays = summary?.windowDays ?? 10;
@@ -55,9 +71,14 @@ export function HeroStatus({ summary }: HeroStatusProps) {
 								fuelType
 							)}
 						</p>
-						<p className="mt-1 text-xl font-semibold tabular-nums text-foreground">
+						<p className="mt-1 text-2xl font-bold tabular-nums text-foreground">
 							{formatAveragePrice(summary, fuelType)}
 						</p>
+						{formatMinMax(summary, fuelType) && (
+							<p className="mt-0.5 text-xs tabular-nums text-muted-foreground">
+								{formatMinMax(summary, fuelType)}
+							</p>
+						)}
 					</div>
 				))}
 			</div>

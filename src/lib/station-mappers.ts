@@ -130,6 +130,16 @@ export function mapPublicStationSummaryRow(summaryRow: {
 	average_diesel: number | null;
 	average_premium_diesel: number | null;
 	average_kerosene: number | null;
+	min_unleaded?: number | null;
+	min_premium?: number | null;
+	min_diesel?: number | null;
+	min_premium_diesel?: number | null;
+	min_kerosene?: number | null;
+	max_unleaded?: number | null;
+	max_premium?: number | null;
+	max_diesel?: number | null;
+	max_premium_diesel?: number | null;
+	max_kerosene?: number | null;
 }): PublicStationSummary {
 	return {
 		sampleReportCount: Number(summaryRow.sample_report_count ?? 0),
@@ -140,6 +150,20 @@ export function mapPublicStationSummaryRow(summaryRow: {
 			Diesel: safeNumber(summaryRow.average_diesel),
 			"Premium Diesel": safeNumber(summaryRow.average_premium_diesel),
 			Kerosene: safeNumber(summaryRow.average_kerosene),
+		},
+		minPrices: {
+			Unleaded: safeNumber(summaryRow.min_unleaded ?? null),
+			Premium: safeNumber(summaryRow.min_premium ?? null),
+			Diesel: safeNumber(summaryRow.min_diesel ?? null),
+			"Premium Diesel": safeNumber(summaryRow.min_premium_diesel ?? null),
+			Kerosene: safeNumber(summaryRow.min_kerosene ?? null),
+		},
+		maxPrices: {
+			Unleaded: safeNumber(summaryRow.max_unleaded ?? null),
+			Premium: safeNumber(summaryRow.max_premium ?? null),
+			Diesel: safeNumber(summaryRow.max_diesel ?? null),
+			"Premium Diesel": safeNumber(summaryRow.max_premium_diesel ?? null),
+			Kerosene: safeNumber(summaryRow.max_kerosene ?? null),
 		},
 	};
 }

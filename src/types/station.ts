@@ -99,6 +99,8 @@ export interface PublicStationSummary {
   sampleReportCount: number;
   windowDays: number;
   averagePrices: Record<FuelType, number | null>;
+  minPrices: Record<FuelType, number | null>;
+  maxPrices: Record<FuelType, number | null>;
 }
 
 export interface StationClaimRequest {
