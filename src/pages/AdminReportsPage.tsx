@@ -10,9 +10,10 @@ import {
 	AlertDialogHeader,
 	AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { CheckCircle2, Loader2, Search, XCircle } from "lucide-react";
+import { CheckCircle2, Loader2, Search, Undo2, XCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "@/lib/app-toast";
+import { useUserAccess } from "@/hooks/useUserAccess";
 import { supabase } from "@/integrations/supabase/client";
 import { AdminListPagination } from "@/components/admin/AdminListPagination";
 import { usePaginatedList } from "@/hooks/usePaginatedList";
@@ -39,15 +40,89 @@ import { ReportPhotoPreviewDialog } from "@/components/admin/ReportPhotoPreviewD
 import {
 	createEmptyFuelAvailabilityMap,
 	deriveFuelAvailabilityFromPrices,
+	fuelTypes,
+	fuelTypeBorderColorClassNames,
+	fuelTypeTextColorClassNames,
 	hasAnyFuelAvailability,
 	parseFuelPriceForm,
 	validateFuelPriceAvailability,
 } from "@/lib/fuel-prices";
+import { cn } from "@/lib/utils";
+import type { FuelType, StationStatus } from "@/types/station";
 import { getReportMissionRewardSummary } from "@/hooks/useMissions";
+
+function ReportedPriceChips({
+	prices,
+	fuelAvailability,
+}: {
+	prices: Record<FuelType, number | null>;
+	fuelAvailability?: Record<FuelType, StationStatus | null>;
+}) {
+	const chips = fuelTypes
+		.map((fuelType) => {
+			const price = prices[fuelType];
+			const status = fuelAvailability?.[fuelType] ?? null;
+			const hasPrice =
+				typeof price === "number" &&
+				Number.isFinite(price) &&
+				price > 0;
+
+			if (!hasPrice && status !== "Out") {
+				return null;
+			}
+
+			return { fuelType, price, status, hasPrice };
+		})
+		.filter(
+			(chip): chip is NonNullable<typeof chip> => chip !== null,
+		);
+
+	if (chips.length === 0) {
+		return null;
+	}
+
+	return (
+		<div className="mt-2 flex flex-wrap gap-1.5">
+			{chips.map(({ fuelType, price, status, hasPrice }) => (
+				<div
+					key={fuelType}
+					className={cn(
+						"flex items-center gap-1.5 rounded-lg border-l-4 bg-surface-alt px-2.5 py-1",
+						fuelTypeBorderColorClassNames[fuelType],
+					)}
+				>
+					<span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+						{fuelType}
+					</span>
+					{hasPrice ? (
+						<span
+							className={cn(
+								"text-sm font-bold tabular-nums",
+								fuelTypeTextColorClassNames[fuelType],
+							)}
+						>
+							₱{price!.toFixed(2)}
+						</span>
+					) : (
+						<span className="text-xs font-semibold text-destructive">
+							Out
+						</span>
+					)}
+					{hasPrice && status === "Low" && (
+						<span className="rounded bg-warning/15 px-1 text-[10px] font-semibold uppercase text-warning">
+							Low
+						</span>
+					)}
+				</div>
+			))}
+		</div>
+	);
+}
 
 export default function AdminReportsPage() {
 	const queryClient = useQueryClient();
 	const navigate = useNavigate();
+	const { isSuperAdmin } = useUserAccess();
 	const { data: stations = [] } = useAdminStations();
 	const { data: reports = [], isLoading: reportsLoading } = useAdminReports();
 	const [easyApprovalForm, setEasyApprovalForm] =
@@ -69,6 +144,9 @@ export default function AdminReportsPage() {
 		null,
 	);
 	const [reportToReject, setReportToReject] = useState<
+		(typeof reports)[number] | null
+	>(null);
+	const [reportToUndo, setReportToUndo] = useState<
 		(typeof reports)[number] | null
 	>(null);
 
@@ -205,6 +283,46 @@ export default function AdminReportsPage() {
 		},
 		onError: (error) => toast.error(error.message),
 	});
+
+	const undoApprovedPrice = useMutation({
+		mutationFn: async (reportId: string) => {
+			const { data, error } = await supabase.rpc(
+				"undo_approved_fuel_price",
+				{ _report_id: reportId },
+			);
+
+			if (error) throw error;
+			return data;
+		},
+		onError: (error) => toast.error(error.message),
+	});
+
+	const confirmUndoApprovedPrice = () => {
+		if (!reportToUndo || undoApprovedPrice.isPending) {
+			return;
+		}
+
+		undoApprovedPrice.mutate(reportToUndo.id, {
+			onSuccess: async (stationId) => {
+				await refreshAdminData(queryClient);
+				if (!stationId) {
+					toast.success(
+						"Removed the new station and returned the report to pending",
+					);
+					setReportToUndo(null);
+					return;
+				}
+				const revertedStation = stationLookup.get(stationId);
+				toast.success(
+					revertedStation
+						? `Reverted ${revertedStation.name} to its previous price`
+						: "Reverted station to its previous price",
+				);
+				setReportToUndo(null);
+			},
+			onError: (error) => toast.error(error.message),
+		});
+	};
 
 	const confirmRejectReport = () => {
 		if (!reportToReject || rejectReport.isPending) {
@@ -387,16 +505,24 @@ export default function AdminReportsPage() {
 											) : null}
 										</div>
 
-										<p className="mt-1 text-sm text-muted-foreground">
-											{formatReportedPrices(
-												report.prices,
-												report.fuelAvailability,
-											) ||
-												(report.submissionMode ===
-												"easy"
+										{formatReportedPrices(
+											report.prices,
+											report.fuelAvailability,
+										) ? (
+											<ReportedPriceChips
+												prices={report.prices}
+												fuelAvailability={
+													report.fuelAvailability
+												}
+											/>
+										) : (
+											<p className="mt-2 inline-flex rounded-lg bg-surface-alt px-2.5 py-1 text-xs font-medium text-muted-foreground">
+												{report.submissionMode === "easy"
 													? "Awaiting manual price entry"
-													: "No valid prices")}{" "}
-											•{" "}
+													: "No valid prices"}
+											</p>
+										)}
+										<p className="mt-1.5 text-xs text-muted-foreground">
 											{new Date(
 												report.reportedAt,
 											).toLocaleString()}
@@ -529,12 +655,33 @@ export default function AdminReportsPage() {
 												</button>
 											</>
 										) : (
-											<p className="text-sm text-muted-foreground">
-												{formatReviewStatusLabel(
-													report.reviewStatus,
-												)}{" "}
-												report
-											</p>
+											<div className="flex flex-col items-end gap-2">
+												<p className="text-sm text-muted-foreground">
+													{formatReviewStatusLabel(
+														report.reviewStatus,
+													)}{" "}
+													report
+												</p>
+												{isSuperAdmin &&
+													report.reviewStatus ===
+														"approved" &&
+													report.appliedStationId && (
+														<button
+															onClick={() =>
+																setReportToUndo(
+																	report,
+																)
+															}
+															disabled={
+																undoApprovedPrice.isPending
+															}
+															className="flex items-center gap-1.5 rounded-lg bg-warning/10 px-3 py-2 text-sm font-medium text-warning transition-colors hover:bg-warning/15 disabled:opacity-50"
+														>
+															<Undo2 className="h-4 w-4" />
+															Undo price
+														</button>
+													)}
+											</div>
 										)}
 									</div>
 								</div>
@@ -715,6 +862,66 @@ export default function AdminReportsPage() {
 							{rejectReport.isPending
 								? "Rejecting..."
 								: "Reject report"}
+						</AlertDialogAction>
+					</AlertDialogFooter>
+				</AlertDialogContent>
+			</AlertDialog>
+
+			<AlertDialog
+				open={!!reportToUndo}
+				onOpenChange={(open) => {
+					if (!open && !undoApprovedPrice.isPending) {
+						setReportToUndo(null);
+					}
+				}}
+			>
+				<AlertDialogContent>
+					<AlertDialogHeader>
+						<AlertDialogTitle>
+							Undo approved price?
+						</AlertDialogTitle>
+						<AlertDialogDescription>
+							Restores each fuel to its previous price; fuels with no
+							prior price are removed. If this report created a new
+							station and nothing else has updated it, the station is
+							deleted and the report returns to pending.
+						</AlertDialogDescription>
+					</AlertDialogHeader>
+					{reportToUndo && (
+						<div className="rounded-xl border border-warning/20 bg-warning/5 p-4 text-sm">
+							<p className="font-semibold text-foreground">
+								{getFuelReportDisplayName(reportToUndo)}
+							</p>
+							{reportToUndo.appliedStationId && (
+								<p className="mt-1 text-muted-foreground">
+									Station:{" "}
+									{stationLookup.get(
+										reportToUndo.appliedStationId,
+									)?.name ?? "—"}
+								</p>
+							)}
+							<CurrentStationPricesSummary
+								station={
+									reportToUndo.appliedStationId
+										? stationLookup.get(
+												reportToUndo.appliedStationId,
+											)
+										: null
+								}
+							/>
+						</div>
+					)}
+					<AlertDialogFooter>
+						<AlertDialogCancel disabled={undoApprovedPrice.isPending}>
+							Cancel
+						</AlertDialogCancel>
+						<AlertDialogAction
+							onClick={confirmUndoApprovedPrice}
+							disabled={undoApprovedPrice.isPending}
+						>
+							{undoApprovedPrice.isPending
+								? "Reverting..."
+								: "Undo price"}
 						</AlertDialogAction>
 					</AlertDialogFooter>
 				</AlertDialogContent>

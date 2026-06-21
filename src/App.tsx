@@ -74,6 +74,15 @@ const AdminStationExperiencesPage = lazy(
 	() => import("./pages/AdminStationExperiencesPage"),
 );
 const SystemPreviewPage = lazy(() => import("./pages/SystemPreviewPage"));
+const AdminAiPriceFillPage = lazy(
+	() => import("./pages/AdminAiPriceFillPage"),
+);
+const AdminAiPriceAnalyzerPage = lazy(
+	() => import("./pages/AdminAiPriceAnalyzerPage"),
+);
+const AdminAverageFuelPricePage = lazy(
+	() => import("./pages/AdminAverageFuelPricePage"),
+);
 const Auth = lazy(() => import("./pages/Auth"));
 const AboutUs = lazy(() => import("./pages/AboutUs"));
 const AdminAccessRequestPage = lazy(
@@ -315,6 +324,24 @@ function RouterContent() {
 								path="system-preview"
 								element={withRouteSuspense(
 									<SystemPreviewPage />,
+								)}
+							/>
+							<Route
+								path="ai-price-fill"
+								element={withRouteSuspense(
+									<AdminAiPriceFillPage />,
+								)}
+							/>
+							<Route
+								path="ai-price-analyzer"
+								element={withRouteSuspense(
+									<AdminAiPriceAnalyzerPage />,
+								)}
+							/>
+							<Route
+								path="average-fuel-price"
+								element={withRouteSuspense(
+									<AdminAverageFuelPricePage />,
 								)}
 							/>
 						</Route>

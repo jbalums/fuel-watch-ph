@@ -68,6 +68,15 @@ export function AdminLayout() {
 					},
 					{ label: "Invites", to: "/admin/invites" },
 					{ label: "Geo Backfill", to: "/admin/geo-backfill" },
+					{ label: "AI Price Fill", to: "/admin/ai-price-fill" },
+					{
+						label: "AI Price Analyzer",
+						to: "/admin/ai-price-analyzer",
+					},
+					{
+						label: "Average Fuel Price",
+						to: "/admin/average-fuel-price",
+					},
 					{ label: "System Preview", to: "/admin/system-preview" },
 				]
 			: []),
