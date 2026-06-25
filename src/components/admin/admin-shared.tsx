@@ -271,23 +271,46 @@ async function fetchReporterProfiles(reports: FuelReportRow[]) {
 	);
 }
 
+const STATIONS_PAGE_SIZE = 1000;
+
 export function useAdminStations(enabled = true) {
 	return useQuery({
 		queryKey: ["admin", "gas_stations"],
 		enabled,
 		queryFn: async () => {
-			const { data, error } = await supabase
-				.from("gas_stations")
-				.select("*")
-				.order("updated_at", { ascending: false });
+			const rows: NonNullable<
+				Awaited<ReturnType<typeof fetchStationsPage>>
+			> = [];
 
-			if (error) {
-				throw error;
+			for (let from = 0; ; from += STATIONS_PAGE_SIZE) {
+				const page = await fetchStationsPage(
+					from,
+					from + STATIONS_PAGE_SIZE - 1,
+				);
+				rows.push(...page);
+
+				if (page.length < STATIONS_PAGE_SIZE) {
+					break;
+				}
 			}
 
-			return data ?? [];
+			return rows;
 		},
 	});
+}
+
+async function fetchStationsPage(from: number, to: number) {
+	const { data, error } = await supabase
+		.from("gas_stations")
+		.select("*")
+		.order("updated_at", { ascending: false })
+		.range(from, to);
+
+	if (error) {
+		throw error;
+	}
+
+	return data ?? [];
 }
 
 export function useAdminStationSummaryPricesAsOf({
