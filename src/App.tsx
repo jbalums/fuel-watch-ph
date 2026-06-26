@@ -20,6 +20,7 @@ import { useMaintenanceModeFeature } from "@/hooks/useSystemFeatureFlags";
 import MaintenancePage from "./pages/MaintenancePage";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 import { Loader2 } from "lucide-react";
+import { PresenceProvider } from "@/contexts/PresenceContext";
 
 const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 const queryClient = new QueryClient();
@@ -82,6 +83,9 @@ const AdminAiPriceAnalyzerPage = lazy(
 );
 const AdminAverageFuelPricePage = lazy(
 	() => import("./pages/AdminAverageFuelPricePage"),
+);
+const AdminLiveUsersPage = lazy(
+	() => import("./pages/AdminLiveUsersPage"),
 );
 const Auth = lazy(() => import("./pages/Auth"));
 const AboutUs = lazy(() => import("./pages/AboutUs"));
@@ -185,7 +189,8 @@ function RouterContent() {
 	}
 
 	return (
-		<div className="flex min-h-screen flex-col">
+		<PresenceProvider>
+			<div className="flex min-h-screen flex-col">
 			<RouteSeo />
 			<PageLoader visible={pageLoaderVisible} />
 			<div className="flex-1">
@@ -344,6 +349,12 @@ function RouterContent() {
 									<AdminAverageFuelPricePage />,
 								)}
 							/>
+							<Route
+								path="live-users"
+								element={withRouteSuspense(
+									<AdminLiveUsersPage />,
+								)}
+							/>
 						</Route>
 						<Route
 							path="/lgu"
@@ -423,6 +434,7 @@ function RouterContent() {
 			</div>
 			{isEmbedRoute ? null : <SiteFooter />}
 		</div>
+		</PresenceProvider>
 	);
 }
 

@@ -102,6 +102,7 @@ export function AdminLayout() {
 						to: "/admin/average-fuel-price",
 					},
 					{ label: "System Preview", to: "/admin/system-preview" },
+					{ label: "Live Users", to: "/admin/live-users" },
 				]
 			: []),
 	];
