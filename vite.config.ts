@@ -113,6 +113,21 @@ export default defineConfig(() => ({
 			},
 		}),
 	],
+	build: {
+		rollupOptions: {
+			output: {
+				// Isolate heavy / admin-only vendors so the home (`/`) chunk
+				// stays lean and these don't leak into shared bundles.
+				manualChunks: {
+					"vendor-google-maps": ["@react-google-maps/api"],
+					"vendor-charts": ["recharts"],
+					"vendor-xlsx": ["xlsx"],
+					"vendor-motion": ["framer-motion", "lottie-react"],
+					"vendor-supabase": ["@supabase/supabase-js"],
+				},
+			},
+		},
+	},
 	resolve: {
 		alias: {
 			"@": path.resolve(__dirname, "./src"),

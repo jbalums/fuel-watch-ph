@@ -187,7 +187,14 @@ export function AppShellLayout() {
 						className="flex items-center gap-0 rounded-xl text-left sovereign-ease transition-opacity hover:opacity-90"
 					>
 						<div className="flex h-9 w-9 items-center justify-center">
-							<img src={logo} className="w-6" />
+							<img
+								src={logo}
+								alt="FuelWatch PH"
+								width={24}
+								height={24}
+								decoding="async"
+								className="w-6"
+							/>
 						</div>
 						<div>
 							<h1 className="text-xs md:text-base font-bold tracking-tight text-foreground">

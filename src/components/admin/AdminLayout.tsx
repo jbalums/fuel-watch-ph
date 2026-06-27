@@ -1,6 +1,14 @@
 import { motion } from "framer-motion";
-import { Loader2, ShieldAlert } from "lucide-react";
-import { NavLink, Outlet } from "react-router-dom";
+import { Check, ChevronDown, Loader2, ShieldAlert } from "lucide-react";
+import { Outlet, useLocation, useNavigate } from "react-router-dom";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuLabel,
+	DropdownMenuSeparator,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
 	useAdminAccessRequests,
 	useAdminInvites,
@@ -18,6 +26,8 @@ import { useAdminRole } from "@/hooks/useAdminRole";
 export function AdminLayout() {
 	const { user } = useAuth();
 	const { isAdmin, isSuperAdmin, isLoading: roleLoading } = useAdminRole();
+	const location = useLocation();
+	const navigate = useNavigate();
 	const { data: reports = [] } = useAdminReports(isAdmin);
 	const { data: experiences = [] } = useAdminStationExperiences("pending");
 	const { data: claims = [] } = useAdminStationClaims(isAdmin);
@@ -43,69 +53,41 @@ export function AdminLayout() {
 	).length;
 	const newUsers = countNewSince(manageableUsers.map((user) => user.createdAt));
 	const newLguUsers = countNewSince(lguUsers.map((user) => user.createdAt));
-	const adminNavItems = [
+	const baseNavItems = [
 		{ label: "Overview", to: "/admin", end: true },
 		{ label: "Stations", to: "/admin/stations" },
 		{ label: "Stations Summary", to: "/admin/stations-summary" },
 		{ label: "Station Discovery", to: "/admin/station-discovery" },
 		{ label: "Brand Logos", to: "/admin/brand-logos" },
 		{ label: "Donation Gateways", to: "/admin/donation-gateways" },
-		{
-			label: "Reports",
-			to: "/admin/reports",
-			pendingCount: pendingReports,
-		},
-		{
-			label: "Experiences",
-			to: "/admin/station-experiences",
-			pendingCount: pendingExperiences,
-		},
-		{
-			label: "Claims",
-			to: "/admin/claims",
-			pendingCount: pendingClaims,
-		},
-		...(isSuperAdmin
-			? [
-					{
-						label: "Users",
-						to: "/admin/users",
-						pendingCount: newUsers,
-					},
-					{
-						label: "LGU Users",
-						to: "/admin/lgu-users",
-						pendingCount: newLguUsers,
-					},
-					{
-						label: "Platform Controls",
-						to: "/admin/platform-controls",
-					},
-					{
-						label: "Access Requests",
-						to: "/admin/access-requests",
-						pendingCount: pendingAccessRequests,
-					},
-					{
-						label: "Invites",
-						to: "/admin/invites",
-						pendingCount: pendingInvites,
-					},
-					{ label: "Geo Backfill", to: "/admin/geo-backfill" },
-					{ label: "AI Price Fill", to: "/admin/ai-price-fill" },
-					{
-						label: "AI Price Analyzer",
-						to: "/admin/ai-price-analyzer",
-					},
-					{
-						label: "Average Fuel Price",
-						to: "/admin/average-fuel-price",
-					},
-					{ label: "System Preview", to: "/admin/system-preview" },
-					{ label: "Live Users", to: "/admin/live-users" },
-				]
-			: []),
+		{ label: "Reports", to: "/admin/reports", pendingCount: pendingReports },
+		{ label: "Experiences", to: "/admin/station-experiences", pendingCount: pendingExperiences },
+		{ label: "Claims", to: "/admin/claims", pendingCount: pendingClaims },
 	];
+	const superAdminNavItems = isSuperAdmin
+		? [
+				{ label: "Users", to: "/admin/users", pendingCount: newUsers },
+				{ label: "LGU Users", to: "/admin/lgu-users", pendingCount: newLguUsers },
+				{ label: "Platform Controls", to: "/admin/platform-controls" },
+				{ label: "Access Requests", to: "/admin/access-requests", pendingCount: pendingAccessRequests },
+				{ label: "Invites", to: "/admin/invites", pendingCount: pendingInvites },
+				{ label: "Geo Backfill", to: "/admin/geo-backfill" },
+				{ label: "AI Price Fill", to: "/admin/ai-price-fill" },
+				{ label: "AI Price Analyzer", to: "/admin/ai-price-analyzer" },
+				{ label: "Average Fuel Price", to: "/admin/average-fuel-price" },
+				{ label: "System Preview", to: "/admin/system-preview" },
+				{ label: "Live Users", to: "/admin/live-users" },
+			]
+		: [];
+	const allNavItems = [...baseNavItems, ...superAdminNavItems];
+
+	function isItemActive(item: { to: string; end?: boolean }) {
+		if (item.end) return location.pathname === item.to;
+		return location.pathname === item.to || location.pathname.startsWith(item.to + "/");
+	}
+
+	const activeItem = allNavItems.find(isItemActive);
+	const totalPending = allNavItems.reduce((sum, item) => sum + (item.pendingCount ?? 0), 0);
 
 	if (roleLoading) {
 		return (
@@ -152,29 +134,76 @@ export function AdminLayout() {
 							: "Manage fuel stations and review community submissions."}
 					</p>
 				</div>
-				<div className="flex flex-wrap gap-2">
-					{adminNavItems.map((item) => (
-						<NavLink
-							key={item.to}
-							to={item.to}
-							end={item.end}
-							className={({ isActive }) =>
-								cn(
-									"inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium sovereign-ease transition-colors relative",
-									isActive
-										? "bg-primary text-primary-foreground"
-										: "bg-secondary text-muted-foreground hover:text-foreground",
-								)
-							}
-						>
-							<span>{item.label}</span>
-							<PendingCountBadge
-								count={item.pendingCount ?? 0}
-								className="border-transparent px-2 py-0 text-[10px] leading-5 absolute -right-1 -top-1"
-							/>
-						</NavLink>
-					))}
-				</div>
+				<DropdownMenu>
+					<DropdownMenuTrigger asChild>
+						<button className="relative inline-flex items-center gap-2 rounded-full bg-secondary px-4 py-2 text-sm font-medium text-foreground sovereign-ease transition-colors hover:bg-secondary/80">
+							<span>{activeItem?.label ?? "Navigate"}</span>
+							{totalPending > 0 && (
+								<PendingCountBadge
+									count={totalPending}
+									className="absolute -right-1 -top-1 border-transparent px-2 py-0 text-[10px] leading-5"
+								/>
+							)}
+							<ChevronDown className="h-4 w-4 text-muted-foreground" />
+						</button>
+					</DropdownMenuTrigger>
+					<DropdownMenuContent align="end" className="w-56 max-h-[70vh] overflow-y-auto">
+						{baseNavItems.map((item) => (
+							<DropdownMenuItem
+								key={item.to}
+								onClick={() => navigate(item.to)}
+								className={cn(
+									"flex cursor-pointer items-center justify-between",
+									isItemActive(item) && "bg-primary/10 text-primary",
+								)}
+							>
+								<span>{item.label}</span>
+								<div className="flex items-center gap-1.5">
+									{(item.pendingCount ?? 0) > 0 && (
+										<PendingCountBadge
+											count={item.pendingCount!}
+											className="relative border-transparent px-2 py-0 text-[10px] leading-5"
+										/>
+									)}
+									{isItemActive(item) && (
+										<Check className="h-3.5 w-3.5 text-primary" />
+									)}
+								</div>
+							</DropdownMenuItem>
+						))}
+						{isSuperAdmin && (
+							<>
+								<DropdownMenuSeparator />
+								<DropdownMenuLabel className="text-xs font-medium text-muted-foreground">
+									Super Admin
+								</DropdownMenuLabel>
+								{superAdminNavItems.map((item) => (
+									<DropdownMenuItem
+										key={item.to}
+										onClick={() => navigate(item.to)}
+										className={cn(
+											"flex cursor-pointer items-center justify-between",
+											isItemActive(item) && "bg-primary/10 text-primary",
+										)}
+									>
+										<span>{item.label}</span>
+										<div className="flex items-center gap-1.5">
+											{(item.pendingCount ?? 0) > 0 && (
+												<PendingCountBadge
+													count={item.pendingCount!}
+													className="relative border-transparent px-2 py-0 text-[10px] leading-5"
+												/>
+											)}
+											{isItemActive(item) && (
+												<Check className="h-3.5 w-3.5 text-primary" />
+											)}
+										</div>
+									</DropdownMenuItem>
+								))}
+							</>
+						)}
+					</DropdownMenuContent>
+				</DropdownMenu>
 			</div>
 
 			<Outlet />

@@ -1,4 +1,3 @@
-import { motion } from "framer-motion";
 import { FuelType, PublicStationSummary } from "@/types/station";
 import { fuelTypes, fuelTypeTextColorClassNames } from "@/lib/fuel-prices";
 
@@ -41,12 +40,9 @@ export function HeroStatus({ summary }: HeroStatusProps) {
 	const reportLabel = sampleReportCount === 1 ? "report" : "reports";
 
 	return (
-		<motion.div
-			initial={{ opacity: 0, filter: "blur(10px)" }}
-			animate={{ opacity: 1, filter: "blur(0px)" }}
-			transition={{ duration: 0.8, ease: [0.2, 0.8, 0.2, 1] }}
-			className="gradient-hero rounded-2xl py-4 px-6 md:p-10"
-		>
+		// Rendered statically (no entrance animation) — this block is the
+		// above-the-fold LCP element; animating opacity/blur deferred paint.
+		<div className="gradient-hero rounded-2xl py-4 px-6 md:p-10">
 			{/* <p className="text-label text-muted-foreground mb-2">Fuel Status</p>
 			<h1 className="text-display text-foreground">
 				Fuel is <span className={statusColor}>{statusText}</span>
@@ -90,6 +86,6 @@ export function HeroStatus({ summary }: HeroStatusProps) {
 				Based on {sampleReportCount} recent approved {reportLabel} in
 				the last {windowDays} days
 			</p> */}
-		</motion.div>
+		</div>
 	);
 }
